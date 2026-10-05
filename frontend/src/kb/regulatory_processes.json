@@ -4880,7 +4880,13 @@
       ],
       "legacy_rule_ids": [
         "RULE_0612",
-        "RULE_0613"
+        "RULE_0613",
+        "RULE_0643",
+        "RULE_0644",
+        "RULE_0645",
+        "RULE_0646",
+        "RULE_0717",
+        "RULE_0718"
       ]
     },
     {

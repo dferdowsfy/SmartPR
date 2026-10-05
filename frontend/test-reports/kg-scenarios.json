@@ -1,8 +1,8 @@
 {
   "summary": {
     "scenarios": 40,
-    "pass": 19,
-    "fail": 21,
+    "pass": 23,
+    "fail": 17,
     "expectations": 617,
     "verified": 571,
     "lint": []
@@ -765,9 +765,7 @@
         "locationContext": "flood_ae"
       },
       "status": "fail",
-      "orderingSkipped": [
-        "DOC_OGPE_CONSTRUCTION_PERMIT before DOC_PERMISO_UNICO (DOC_OGPE_CONSTRUCTION_PERMIT absent)"
-      ],
+      "orderingSkipped": [],
       "items": [
         {
           "key": "DOC_JP_FLOOD_REG13",
@@ -777,73 +775,80 @@
           "agency": "OGPe / Junta de Planificación"
         },
         {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
           "key": "DOC_PROPERTY_DEED",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 1,
+          "position": 2,
           "agency": "Property Registry"
         },
         {
           "key": "DOC_EIN",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 2,
+          "position": 3,
           "agency": "IRS"
         },
         {
           "key": "DOC_MERCHANT_REGISTRATION",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 3,
+          "position": 4,
           "agency": "Departamento de Hacienda"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 4,
+          "position": 5,
           "agency": "OGPe"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 5,
+          "position": 6,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_WORKERS_COMP",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 6,
+          "position": 7,
           "agency": "Corporación del Fondo del Seguro del Estado"
         },
         {
           "key": "DOC_DTRH_EMPLOYER_REG",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 7,
+          "position": 8,
           "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
           "key": "DOC_ANNUAL_REPORT",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 8,
+          "position": 9,
           "agency": "Department of State"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 9,
+          "position": 10,
           "agency": "Department of the Treasury (Hacienda) — SURI"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "other_checks",
           "applicability": "conditional",
-          "position": 10,
+          "position": 11,
           "agency": "Property Owner"
         }
       ],
@@ -856,13 +861,13 @@
       "testName": "KG07 kg-scenario: retail_store / expansion / flood_ae",
       "findingsClassified": [
         {
-          "kind": "missing",
+          "kind": "agency",
           "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "missing DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
           "confidence": "needs-expert-review",
-          "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only).",
-          "cause": "likely-engine-bug",
-          "note": "Expansion fires Reg. 13 (RULE_0706 lists project_type=expansion) but no construction-permit rule covers expansion (RULE_0643/0644 only new_construction/renovation): internally inconsistent.",
+          "rationale": "Bayamón is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Bayamón's current delegation level.",
+          "cause": "kb-gap",
+          "note": "Bayamon permits office not modeled (surfaced once the expansion permit started rendering).",
           "triaged": true
         }
       ]
@@ -935,24 +940,31 @@
           "agency": "Department of State"
         },
         {
+          "key": "DOC_PHARMACY_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Departamento de Salud (Secretario de Salud)"
+        },
+        {
           "key": "DOC_HEALTH_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 8,
+          "position": 9,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 9,
+          "position": 10,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 10,
+          "position": 11,
           "agency": "Property Owner"
         }
       ],
@@ -1978,7 +1990,7 @@
         "projectType": "expansion",
         "locationContext": "flood_ae"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -1989,94 +2001,101 @@
           "agency": "OGPe / Junta de Planificación"
         },
         {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
           "key": "DOC_VEHICLE_REGISTRATION",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 1,
+          "position": 2,
           "agency": "DTOP"
         },
         {
           "key": "DOC_TRANSPORT_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 2,
+          "position": 3,
           "agency": "Comisión de Servicio Público"
         },
         {
           "key": "DOC_PROPERTY_DEED",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 3,
+          "position": 4,
           "agency": "Property Registry"
         },
         {
           "key": "DOC_PORT_FACILITY_PERMIT",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 4,
+          "position": 5,
           "agency": "Autoridad de los Puertos de Puerto Rico"
         },
         {
           "key": "DOC_EIN",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 5,
+          "position": 6,
           "agency": "IRS"
         },
         {
           "key": "DOC_MERCHANT_REGISTRATION",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 6,
+          "position": 7,
           "agency": "Departamento de Hacienda"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 7,
+          "position": 8,
           "agency": "OGPe"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 8,
+          "position": 9,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_WORKERS_COMP",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 9,
+          "position": 10,
           "agency": "Corporación del Fondo del Seguro del Estado"
         },
         {
           "key": "DOC_DTRH_EMPLOYER_REG",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 10,
+          "position": 11,
           "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
           "key": "DOC_ANNUAL_REPORT",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 11,
+          "position": 12,
           "agency": "Department of State"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 12,
+          "position": 13,
           "agency": "Department of the Treasury (Hacienda) — SURI"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "other_checks",
           "applicability": "conditional",
-          "position": 13,
+          "position": 14,
           "agency": "Property Owner"
         }
       ],
@@ -2087,18 +2106,7 @@
       ],
       "discardedModelFacts": [],
       "testName": "KG17 kg-scenario: warehouse_logistics / expansion / flood_ae",
-      "findingsClassified": [
-        {
-          "kind": "missing",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "missing DOC_OGPE_CONSTRUCTION_PERMIT",
-          "confidence": "needs-expert-review",
-          "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only).",
-          "cause": "likely-engine-bug",
-          "note": "Same expansion gap: Reg. 13 fires, construction permit does not.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG18",
@@ -2283,32 +2291,32 @@
           "agency": "Departamento de Hacienda"
         },
         {
-          "key": "DOC_FIRE_CERT",
+          "key": "DOC_PERMISO_UNICO",
           "group": "required_now",
           "applicability": "required",
           "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
           "agency": "Cuerpo de Bomberos"
         },
         {
           "key": "DOC_WORKERS_COMP",
           "group": "required_now",
           "applicability": "required",
-          "position": 3,
+          "position": 4,
           "agency": "Corporación del Fondo del Seguro del Estado"
         },
         {
           "key": "DOC_DTRH_EMPLOYER_REG",
           "group": "required_now",
           "applicability": "required",
-          "position": 4,
-          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
-        },
-        {
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "group": "required_now",
-          "applicability": "required",
           "position": 5,
-          "agency": "OGPe"
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
@@ -2325,24 +2333,17 @@
           "agency": "Department of State"
         },
         {
-          "key": "DOC_PERMISO_UNICO",
-          "group": "prerequisites",
-          "applicability": "required",
-          "position": 8,
-          "agency": "OGPe"
-        },
-        {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 9,
+          "position": 8,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 10,
+          "position": 9,
           "agency": "Property Owner"
         }
       ],
@@ -2371,16 +2372,6 @@
           "cause": "kb-gap",
           "note": "No DRNA solid-waste / recycler authorization document.",
           "triaged": true
-        },
-        {
-          "kind": "unexpected",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "unexpected DOC_OGPE_CONSTRUCTION_PERMIT (required_now, required)",
-          "confidence": "needs-expert-review",
-          "rationale": "The description states a change of use with no works; a change of use without construction is a Permiso Unico matter (Ley 161-2009), and 'converting' alone is not renovation language (RULE_0644 fires on an inferred project_type=renovation).",
-          "cause": "likely-engine-bug",
-          "note": "interpretScenario reads 'converting an empty warehouse' as project_type=renovation (confidence 0.95) and RULE_0644 makes the construction permit REQUIRED for a change of use with no stated works.",
-          "triaged": true
         }
       ]
     },
@@ -2392,7 +2383,7 @@
         "projectType": "new_business_existing_building",
         "locationContext": "urban_residential_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -2438,45 +2429,38 @@
           "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "group": "required_now",
-          "applicability": "required",
-          "position": 6,
-          "agency": "OGPe"
-        },
-        {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
           "group": "required_now",
           "applicability": "required",
-          "position": 7,
+          "position": 6,
           "agency": "Department of the Treasury (Hacienda) — SURI"
         },
         {
           "key": "DOC_CERT_ORGANIZATION",
           "group": "required_now",
           "applicability": "required",
-          "position": 8,
+          "position": 7,
           "agency": "Department of State"
         },
         {
           "key": "DOC_DOMICILIARY_USE_PERMIT",
           "group": "required_now",
           "applicability": "required",
-          "position": 9,
+          "position": 8,
           "agency": "OGPe / Municipality"
         },
         {
           "key": "DOC_VEHICLE_REGISTRATION",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 10,
+          "position": 9,
           "agency": "DTOP"
         },
         {
           "key": "DOC_TRANSPORT_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 11,
+          "position": 10,
           "agency": "Comisión de Servicio Público"
         }
       ],
@@ -2485,18 +2469,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG20 kg-scenario: construction_contractor / new_business_existing_building / urban_residential_x",
-      "findingsClassified": [
-        {
-          "kind": "unexpected",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "unexpected DOC_OGPE_CONSTRUCTION_PERMIT (required_now, required)",
-          "confidence": "needs-expert-review",
-          "rationale": "The contractor's own premises is a home office with no works; remodeling done at clients' properties is the service sold, not this business's project, so no construction permit belongs on its checklist (RULE_0644 fires on project_type=renovation read from 'remodeling').",
-          "cause": "likely-engine-bug",
-          "note": "interpretScenario reads 'I do residential remodeling at their properties' (the contractor's service) as this business's renovation project: REQUIRED construction permit for a home office.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG21",
@@ -3525,7 +3498,7 @@
         "projectType": "new_construction",
         "locationContext": "urban_industrial_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -3613,17 +3586,10 @@
           "agency": "LUMA / OGPe"
         },
         {
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "group": "required_now",
-          "applicability": "required",
-          "position": 12,
-          "agency": "OGPe"
-        },
-        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 13,
+          "position": 12,
           "agency": "Property Owner"
         }
       ],
@@ -3636,18 +3602,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG31 kg-scenario: standalone_battery / new_construction / urban_industrial_x",
-      "findingsClassified": [
-        {
-          "kind": "duplicate",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT renders as its own card AND as energy item process:PR_UTILITY_CONSTRUCTION_PERMIT",
-          "confidence": "verified-in-code",
-          "rationale": "One source of truth for energy items (processes/legacyCards.ts).",
-          "cause": "likely-engine-bug",
-          "note": "supersededLegacyCards does not suppress the legacy OGPe card when PR_UTILITY_CONSTRUCTION_PERMIT renders: same permit shown twice.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG32",
@@ -3748,7 +3703,7 @@
         "projectType": "new_construction",
         "locationContext": "floodway"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -3836,17 +3791,10 @@
           "agency": "LUMA / OGPe"
         },
         {
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "group": "required_now",
-          "applicability": "required",
-          "position": 12,
-          "agency": "OGPe"
-        },
-        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 13,
+          "position": 12,
           "agency": "Property Owner"
         }
       ],
@@ -3858,18 +3806,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG33 kg-scenario: utility_scale_solar / new_construction / floodway",
-      "findingsClassified": [
-        {
-          "kind": "duplicate",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT renders as its own card AND as energy item process:PR_UTILITY_CONSTRUCTION_PERMIT",
-          "confidence": "verified-in-code",
-          "rationale": "One source of truth for energy items (processes/legacyCards.ts).",
-          "cause": "likely-engine-bug",
-          "note": "Same duplicate OGPe card next to PR_UTILITY_CONSTRUCTION_PERMIT.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG34",
@@ -4475,24 +4412,31 @@
           "agency": "Department of State"
         },
         {
+          "key": "DOC_PHARMACY_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Departamento de Salud (Secretario de Salud)"
+        },
+        {
           "key": "DOC_HEALTH_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 8,
+          "position": 9,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 9,
+          "position": 10,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 10,
+          "position": 11,
           "agency": "Property Owner"
         }
       ],
@@ -4523,9 +4467,7 @@
         "locationContext": "coastal_zone_x"
       },
       "status": "fail",
-      "orderingSkipped": [
-        "DOC_OGPE_CONSTRUCTION_PERMIT before DOC_PERMISO_UNICO (DOC_OGPE_CONSTRUCTION_PERMIT absent)"
-      ],
+      "orderingSkipped": [],
       "items": [
         {
           "key": "DOC_CZM_COASTAL_REVIEW",
@@ -4535,136 +4477,143 @@
           "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
         },
         {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
           "key": "DOC_ALCOHOL_SALES_PROJECTION",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 1,
+          "position": 2,
           "agency": "Department of the Treasury (Hacienda)"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 2,
+          "position": 3,
           "agency": "Property Owner"
         },
         {
           "key": "DOC_EIN",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 3,
+          "position": 4,
           "agency": "IRS"
         },
         {
           "key": "DOC_MERCHANT_REGISTRATION",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 4,
+          "position": 5,
           "agency": "Departamento de Hacienda"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 5,
+          "position": 6,
           "agency": "OGPe"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 6,
+          "position": 7,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_HEALTH_PERMIT",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 7,
+          "position": 8,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_FIRE_CERT",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 8,
+          "position": 9,
           "agency": "Cuerpo de Bomberos"
         },
         {
           "key": "DOC_CFPM",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 9,
+          "position": 10,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_ALCOHOL_LICENSE",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 10,
+          "position": 11,
           "agency": "Departamento de Hacienda"
         },
         {
           "key": "DOC_WORKERS_COMP",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 11,
+          "position": 12,
           "agency": "Corporación del Fondo del Seguro del Estado"
         },
         {
           "key": "DOC_OUTDOOR_SEATING_AUTH",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 12,
+          "position": 13,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_DTRH_EMPLOYER_REG",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 13,
+          "position": 14,
           "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
           "key": "DOC_CRIM_CLEARANCE",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 14,
+          "position": 15,
           "agency": "CRIM"
         },
         {
           "key": "DOC_ASUME_CLEARANCE",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 15,
+          "position": 16,
           "agency": "Administración para el Sustento de Menores (ASUME)"
         },
         {
           "key": "DOC_BACKGROUND_CHECK",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 16,
+          "position": 17,
           "agency": "Policía de Puerto Rico"
         },
         {
           "key": "DOC_ANNUAL_REPORT",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 17,
+          "position": 18,
           "agency": "Department of State"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 18,
+          "position": 19,
           "agency": "Department of the Treasury (Hacienda) — SURI"
         },
         {
           "key": "DOC_HACIENDA_TAX_COMPLIANCE",
           "group": "registrations",
           "applicability": "verify_existing",
-          "position": 19,
+          "position": 20,
           "agency": "Department of the Treasury (Hacienda)"
         }
       ],
@@ -4675,13 +4624,13 @@
       "testName": "KG39 kg-scenario: restaurant_with_alcohol / expansion / coastal_zone_x",
       "findingsClassified": [
         {
-          "kind": "missing",
+          "kind": "agency",
           "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "missing DOC_OGPE_CONSTRUCTION_PERMIT",
+          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
           "confidence": "needs-expert-review",
-          "rationale": "An expansion (ampliacion) of a building needs a construction permit under Ley 161-2009 / RC-2023; no KB rule keys on project_type=expansion (RULE_0643/0644 cover new_construction/renovation only).",
-          "cause": "likely-engine-bug",
-          "note": "Same expansion gap (covered terrace): CZM fires, construction permit does not.",
+          "rationale": "Carolina is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Carolina's current delegation level.",
+          "cause": "kb-gap",
+          "note": "Carolina permits office not modeled (surfaced once the expansion permit started rendering).",
           "triaged": true
         }
       ]

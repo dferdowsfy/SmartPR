@@ -2,55 +2,6 @@
   "_comment": "Hand triage of known findings (scenario id + finding kind + key). Causes: likely-engine-bug | kb-gap | likely-wrong-expectation | harness-issue. Unlisted findings get a default by kind/confidence in runKgScenarios.ts.",
   "entries": [
     {
-      "id": "KG07",
-      "kind": "missing",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "Expansion fires Reg. 13 (RULE_0706 lists project_type=expansion) but no construction-permit rule covers expansion (RULE_0643/0644 only new_construction/renovation): internally inconsistent."
-    },
-    {
-      "id": "KG17",
-      "kind": "missing",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "Same expansion gap: Reg. 13 fires, construction permit does not."
-    },
-    {
-      "id": "KG39",
-      "kind": "missing",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "Same expansion gap (covered terrace): CZM fires, construction permit does not."
-    },
-    {
-      "id": "KG19",
-      "kind": "unexpected",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "interpretScenario reads 'converting an empty warehouse' as project_type=renovation (confidence 0.95) and RULE_0644 makes the construction permit REQUIRED for a change of use with no stated works."
-    },
-    {
-      "id": "KG20",
-      "kind": "unexpected",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "interpretScenario reads 'I do residential remodeling at their properties' (the contractor's service) as this business's renovation project: REQUIRED construction permit for a home office."
-    },
-    {
-      "id": "KG31",
-      "kind": "duplicate",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "supersededLegacyCards does not suppress the legacy OGPe card when PR_UTILITY_CONSTRUCTION_PERMIT renders: same permit shown twice."
-    },
-    {
-      "id": "KG33",
-      "kind": "duplicate",
-      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-      "cause": "likely-engine-bug",
-      "note": "Same duplicate OGPe card next to PR_UTILITY_CONSTRUCTION_PERMIT."
-    },
-    {
       "id": "KG18",
       "kind": "ordering",
       "key": "DOC_CONSULTA_UBICACION<DOC_OGPE_CONSTRUCTION_PERMIT",
@@ -217,6 +168,20 @@
       "key": "DOC_FIRE_CERT",
       "cause": "likely-wrong-expectation",
       "note": "No rule attaches the Bomberos certificate to Auto Repair Shop; expert to confirm it is required for this occupancy (it is for food/assembly)."
+    },
+    {
+      "id": "KG07",
+      "kind": "agency",
+      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+      "cause": "kb-gap",
+      "note": "Bayamon permits office not modeled (surfaced once the expansion permit started rendering)."
+    },
+    {
+      "id": "KG39",
+      "kind": "agency",
+      "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+      "cause": "kb-gap",
+      "note": "Carolina permits office not modeled (surfaced once the expansion permit started rendering)."
     }
   ]
 }
