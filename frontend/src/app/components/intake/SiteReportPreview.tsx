@@ -8,7 +8,7 @@
  */
 import { AlertTriangle, ChevronRight, FileText, Loader2, RotateCw } from "lucide-react";
 import type { Lang } from "../../forms/engine/types";
-import { findingStateText, type PropertyReport, type ReportFinding } from "../../locations/propertyReport";
+import { findingStateText, SCOPE_TEXT, type PropertyReport, type ReportFinding } from "../../locations/propertyReport";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -18,10 +18,10 @@ export function FindingValue({ f, lang }: { f: ReportFinding; lang: Lang }) {
   return <span className="spr-srp-muted">{findingStateText(f.state)[lang]}</span>;
 }
 
-export const scopeText = (f: ReportFinding, lang: Lang) =>
-  f.scope === "parcel" ? L("checked across the parcel", "verificado en toda la parcela", lang) : f.scope === "point" ? L("at the pin", "en el pin", lang) : L("municipality", "municipio", lang);
+export const scopeText = (f: ReportFinding, lang: Lang) => (SCOPE_TEXT[f.scope] ?? SCOPE_TEXT.not_evaluated)[lang];
 
-export function SiteReportPreview({ report, lang, onOpen, onRetry }: { report: PropertyReport; lang: Lang; onOpen: () => void; onRetry?: () => void }) {
+export function SiteReportPreview({ report, lang, onOpen, onRetry, onAdjustPin, onConfirmPoint }: { report: PropertyReport; lang: Lang; onOpen: () => void; onRetry?: () => void; onAdjustPin?: () => void; onConfirmPoint?: () => void }) {
+  const loc = report.property.location;
   // Pills only: the most useful findings in plain words, colour-coded. Every
   // detail (codes, sources, gaps) lives in the full report.
   const order = ["zoning", "land_class", "flood_zone", "floodway", "flood_advisory", "terrain", "coastal_zone", "historic_zone", "protected_area"];
@@ -43,6 +43,15 @@ export function SiteReportPreview({ report, lang, onOpen, onRetry }: { report: P
           </li>
         ))}
       </ul>
+      {loc && loc.notices.length > 0 && (
+        <div className={`spr-srp-location${loc.roadway ? " road" : ""}`} role="note" data-testid="preview-location-notice" data-parcel={loc.parcel} data-roadway={loc.roadway ? "true" : undefined}>
+          {loc.notices.map((n, i) => <p key={i}>{n[lang]}</p>)}
+          <div>
+            {onAdjustPin && <button type="button" className="spr-link" onClick={onAdjustPin} data-testid="preview-adjust-pin">{L("Adjust pin", "Ajustar pin", lang)}</button>}
+            {onConfirmPoint && !loc.point_confirmed && <button type="button" className="spr-link" onClick={onConfirmPoint} data-testid="preview-confirm-point">{L("Confirm this point", "Confirmar este punto", lang)}</button>}
+          </div>
+        </div>
+      )}
       {keyDown.length > 0 && onRetry && !loading && (
         <p className="spr-srp-retry" role="status">
           <AlertTriangle aria-hidden="true" /> {L("Some official map services didn't respond.", "Algunos servicios oficiales de mapas no respondieron.", lang)}{" "}

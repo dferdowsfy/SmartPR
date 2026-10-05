@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 import { applyReviewAction, attachReportVersion, emptyReview, parseReviewAction, type PropertyReview } from "../src/app/locations/propertyReview";
 import { resolveParcelFindings } from "../src/app/locations/parcelService";
 import { LAYER_SOURCES } from "../src/app/locations/layers";
+import { parseFloodZones, parseParcelBoundary, parseZoningDistricts } from "../src/app/locations/parcel";
 
 const OUT = process.argv[2] || path.join(os.tmpdir(), "property-report");
 mkdirSync(OUT, { recursive: true });
@@ -57,6 +58,32 @@ const C = FX.cases as Record<string, Case>;
       { ...b, layer: "coastal_zone", status: "none", code: null, name: null, source: s("jp_zona_costanera") },
     ] },
     parcel,
+  };
+}
+// Guayama · Machete (reconstructed from the reported failure): no CRIM parcel
+// at the pin, VIAL / Sistema vial at the pin, everything answered point-only.
+{
+  const lat = 17.9851, lng = -66.1418, at = "2026-10-05T14:00:00.000Z";
+  const s = (k: keyof typeof LAYER_SOURCES) => ({ id: LAYER_SOURCES[k].id, name: LAYER_SOURCES[k].name, url: LAYER_SOURCES[k].url, layer: LAYER_SOURCES[k].layer, dataset_date: LAYER_SOURCES[k].dataset_date, version: null });
+  const b = { tags: [] as string[], attributes: {}, retrieval: "live", approximate: false, reason: null, retrieved_at: at };
+  C.guayama_machete = {
+    latitude: lat, longitude: lng,
+    place: { municipio: { name: "Guayama", fips: "72057" }, barrio: { name: "Machete" } },
+    layers: { latitude: lat, longitude: lng, resolved_at: at, results: [
+      { ...b, layer: "flood_zone", status: "resolved", code: "X", name: "Zone X", attributes: { FIRM_PAN: "72000C1425J", EFF_DATE: "2009-11-18", ZONE_SUBTY: "AREA OF MINIMAL FLOOD HAZARD" }, source: s("fema_flood_zones") },
+      { ...b, layer: "flood_advisory", status: "none", code: null, name: null, source: s("jp_advisory_flood") },
+      { ...b, layer: "zoning", status: "resolved", code: "VIAL", name: "Sistema vial", tags: ["road"], source: s("jp_calificacion") },
+      { ...b, layer: "terrain", status: "resolved", code: "Low", name: "Low", tags: ["LANDSLIDE_LOW"], source: s("usgs_landslide") },
+      { ...b, layer: "coastal_zone", status: "none", code: null, name: null, source: s("jp_zona_costanera") },
+    ] },
+    parcel: {
+      latitude: lat, longitude: lng, retrieved_at: at,
+      boundary: parseParcelBoundary({ features: [] } as never, lng, lat),
+      zoning: parseZoningDistricts({ features: [{ attributes: { cali: "VIAL", descrip: "Sistema vial" } }] } as never, "point"),
+      flood: parseFloodZones({ features: [{ attributes: { FLD_ZONE: "X", ZONE_SUBTY: "AREA OF MINIMAL FLOOD HAZARD", SFHA_TF: "F" } }] } as never, "point"),
+      areas_reliable: { zoning: false, flood: false },
+      extras: {},
+    },
   };
 }
 const GURABO = C.protected_rural!, CAGUAS = C.straightforward!, CAROLINA = C.multi_district_b!;
@@ -166,7 +193,7 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   await page.locator('[data-testid="project-location-catastro"]').first().waitFor({ timeout: 20000 }).catch(() => undefined);
   check("compact preview: catastro + key findings for the confirmed parcel", (await text(page, '[data-testid="project-location-catastro"]')).includes("173-000-001-39") && (await visible(page, `${preview} [data-finding="zoning"]`)));
   check("compact preview: no professional review controls", (await page.locator(`${preview} [data-testid="finding-review"], [data-testid="project-location"] [data-testid="review-panel"]`).count()) === 0);
-  check("compact preview: colour-coded plain-language pills only (no source list, no long text)", (await page.locator(`${preview} .spr-srp-pill`).count()) >= 3 && (await page.locator(`${preview} .spr-srp-sources`).count()) === 0 && /Low flood risk/.test(await text(page, preview)));
+  check("compact preview: colour-coded plain-language pills only (no source list, no long text)", (await page.locator(`${preview} .spr-srp-pill`).count()) >= 3 && (await page.locator(`${preview} .spr-srp-sources`).count()) === 0 && /FEMA Zone X/.test(await text(page, preview)) && !/Low flood risk/.test(await text(page, preview)));
   check("no unexplained numeric 'Place name'", (await page.locator('[data-testid="project-location-place"]').count()) === 0);
   await page.screenshot({ path: path.join(OUT, "1-conflict.png"), fullPage: false });
   await page.click('[data-testid="conflict-keep"]');
@@ -212,7 +239,7 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   // exports
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-json"]')]);
   const json = JSON.parse(readFileSync((await dl.path())!, "utf8"));
-  check("export JSON: same model, confirmed parcel, every finding at the confirmed point", json.schema === "smartpr.property-report/v2" && Array.isArray(json.summary?.mapped) && json.property.catastro.value === "173-000-001-39" && json.findings.every((f: { point: { latitude: number } | null }) => !f.point || Math.abs(f.point.latitude - GURABO.latitude) < 1e-7));
+  check("export JSON: same model, confirmed parcel, every finding at the confirmed point", json.schema === "smartpr.property-report/v3" && Array.isArray(json.summary?.mapped) && json.property.catastro.value === "173-000-001-39" && json.findings.every((f: { point: { latitude: number } | null }) => !f.point || Math.abs(f.point.latitude - GURABO.latitude) < 1e-7));
   const [pdf] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-pdf"]')]);
   check("export PDF downloads", /\.pdf$/.test(pdf.suggestedFilename()), pdf.suggestedFilename());
   await pdf.saveAs(path.join(OUT, "report.pdf"));
@@ -467,7 +494,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   const [dl] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-json"]')]);
   const json = JSON.parse(readFileSync((await dl.path())!, "utf8"));
   const zj = json.findings.find((f: { id: string }) => f.id === "zoning");
-  check("AB: JSON keeps precise shares, coverage method and versions", zj.coverage.parts[0].share > 0.8614 && zj.coverage.parts[0].share < 0.8616 && String(zj.coverage.parts[0].share).length > 6 && /EPSG:32161/.test(json.versions.coverage_method) && json.schema === "smartpr.property-report/v2");
+  check("AB: JSON keeps precise shares, coverage method and versions", zj.coverage.parts[0].share > 0.8614 && zj.coverage.parts[0].share < 0.8616 && String(zj.coverage.parts[0].share).length > 6 && /EPSG:32161/.test(json.versions.coverage_method) && json.schema === "smartpr.property-report/v3");
   await page.screenshot({ path: path.join(OUT, "12-aguas-buenas-report.png"), fullPage: false });
   await page.locator('[data-testid="key-findings"]').screenshot({ path: path.join(OUT, "12b-key-findings.png") });
   await page.locator('[data-testid="next-steps"]').screenshot({ path: path.join(OUT, "12f-next-steps.png") });
@@ -487,6 +514,54 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   check("AB mobile: coverage tables and summary fit (no horizontal scroll)", over <= 1, String(over));
   await m.screenshot({ path: path.join(OUT, "12e-mobile.png"), fullPage: false });
   await m.context().close();
+}
+// 13 — location validation: Guayama / Machete (no parcel, VIAL at the pin)
+{
+  const GM = C.guayama_machete!;
+  const NO_PARCEL = "No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.";
+  const ROADWAY = "This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements.";
+  const page = await open(1440, 900, { state: state("Open a small retail store", siteOf(GM)) });
+  const pn = page.locator('[data-testid="preview-location-notice"]');
+  await pn.waitFor({ timeout: 20000 });
+  const pt = await pn.innerText();
+  check("GM preview: no-parcel + roadway notice with Adjust pin / Confirm this point", pt.includes(NO_PARCEL) && pt.includes(ROADWAY) && (await page.locator('[data-testid="preview-adjust-pin"]').isVisible()) && (await page.locator('[data-testid="preview-confirm-point"]').isVisible()));
+  check("GM preview: FEMA zone named, never 'Low flood risk'", !/Low flood risk/.test(await text(page, '[data-testid="site-report-preview"]')) && /FEMA Zone X/.test(await text(page, '[data-testid="site-report-preview"]')));
+  await page.click('[data-testid="open-property-report"]');
+  const rep = page.locator('[data-testid="property-report"]');
+  await rep.waitFor();
+  const ln = await text(page, '[data-testid="location-notice"]');
+  check("GM report: notice prominent in the site summary, with both actions", ln.includes(NO_PARCEL) && ln.includes(ROADWAY) && (await page.locator('[data-testid="adjust-pin"]').isVisible()) && (await page.locator('[data-testid="confirm-point"]').isVisible()));
+  check("GM report: labelled preliminary, selected point only", /Preliminary — selected point only/i.test(await text(page, '[data-testid="report-preliminary"]')));
+  check("GM report: catastro + area say what is missing (no disclaimer text, no number)", (await text(page, '[data-testid="report-catastro"]')).trim() === "No cadastral parcel identified at the selected point" && /^Not available/.test((await text(page, '[data-testid="report-area"]')).trim()));
+  check("GM report: exact-property confirmation ranks first, before use", (await page.locator('[data-testid="next-steps"] li[data-action]').first().getAttribute("data-action")) === "location");
+  check("GM report: 'No mapped intersection identified' group, qualified by scope + dataset", /No mapped intersection identified/i.test(await text(page, '[data-testid="key-findings"] [data-status="clear"] h4')) && /At selected point only/.test(await text(page, '[data-testid="key-findings"] [data-status="clear"] li[data-item="coastal_zone"]')));
+  check("GM report: FEMA Zone X with FEMA's own description", /FEMA Zone X — Area of Minimal Flood Hazard/.test(await text(page, '[data-testid="key-findings"] li[data-item="flood_zone"]')));
+  await expandAll(page);
+  const all = await rep.innerText();
+  check("GM report: nothing claims parcel-wide checks or polygon clipping", !/Checked across (verified )?parcel/i.test(all) && !/clipped to the CRIM parcel/.test(all) && /Parcel calculations not performed/.test(all), "");
+  check("GM report: zoning VIAL shown as a roadway at the selected point, not a district with uses", /Roadway|roadway/.test(await text(page, '[data-testid="property-report"] [data-finding="zoning"]')) && /At selected point only/.test(await text(page, '[data-testid="property-report"] [data-finding="zoning"] [data-testid="finding-scope"]')));
+  const pu = page.locator('[data-testid="property-report"] [data-finding="permitted_uses"]');
+  check("GM report: permitted uses not evaluated (scope 'Not evaluated'), even with an activity described", (await pu.getAttribute("data-state")) === "not_evaluated" && /Scope: Not evaluated/.test(await pu.innerText()) && /not a developable zoning district/.test(await pu.innerText()));
+  check("GM report: every finding shows scope + retrieval + source link", (await page.locator('[data-testid="property-report"] [data-finding] [data-testid="finding-evidence"]').count()) === (await page.locator('[data-testid="property-report"] [data-finding]').count()) && (await page.locator('[data-testid="property-report"] [data-finding="flood_zone"] a[href^="https://hazards.fema.gov"]').count()) > 0);
+  check("GM report: regulation publication date kept apart from applicability (not verified)", /publication date 2023-06-16 · applicability to this site: not verified/.test(await text(page, '[data-testid="report-regulation"]')));
+  await page.screenshot({ path: path.join(OUT, "13-guayama-machete.png"), fullPage: false });
+  await page.click('[data-testid="confirm-point"]');
+  await page.waitForTimeout(300);
+  const ln2 = await text(page, '[data-testid="location-notice"]');
+  check("GM confirm: recorded, still no parcel, still preliminary", /You confirmed this point as your property/.test(ln2) && ln2.includes(NO_PARCEL) && (await page.locator('[data-testid="confirm-point"]').count()) === 0 && (await page.locator('[data-testid="report-preliminary"]').count()) === 1 && (await page.locator('[data-testid="location-notice"]').getAttribute("data-parcel")) === "not_identified");
+  await page.click('[data-testid="report-copy"]');
+  const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
+  check("GM copy: preliminary label, notices, catastro text, no parcel-wide claims", clip.includes("PRELIMINARY — SELECTED POINT ONLY") && clip.includes(NO_PARCEL) && clip.includes(ROADWAY) && clip.includes("Catastro: No cadastral parcel identified at the selected point") && !/Checked across (verified )?parcel/i.test(clip));
+  const [pdf] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-pdf"]')]);
+  const pdfText = readFileSync((await pdf.path())!, "latin1");
+  check("GM PDF: preliminary label + roadway notice, no parcel-wide claims", /PRELIMINARY/.test(pdfText) && /may be on a roadway/.test(pdfText) && !/Checked across verified parcel/.test(pdfText) && /Parcel calculations not performed/.test(pdfText));
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.click('[data-testid="report-json"]')]);
+  const json = JSON.parse(readFileSync((await dl.path())!, "utf8"));
+  check("GM JSON: v3, location status, every scope evidence-based", json.schema === "smartpr.property-report/v3" && json.property.location.parcel === "not_identified" && json.property.location.roadway === true && json.property.location.point_confirmed === true && json.findings.every((f: { scope: string }) => f.scope !== "parcel"));
+  await page.click('[data-testid="adjust-pin"]');
+  await page.locator('[data-testid="location-edit-cancel"]').waitFor({ timeout: 10000 });
+  check("GM adjust pin: report closes and the location editor opens (pin not moved automatically)", (await page.locator('[data-testid="property-report"]').count()) === 0 && (await page.locator('[data-testid="location-edit-cancel"]').isVisible()));
+  await page.context().close();
 }
 // 11 — admin QA: parcel scenarios
 {

@@ -13,7 +13,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { BookmarkPlus, Check, ChevronDown, Copy, Download, FileJson, Loader2, X } from "lucide-react";
 import type { Lang } from "../../forms/engine/types";
 import { PassportMap } from "../map/PassportMap";
-import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, reportSummaryText, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
+import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, reportSummaryText, RETRIEVAL_TEXT, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
 import { FindingValue } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
 import { downloadPropertyReportPdf } from "../../locations/propertyReportPdf";
@@ -51,6 +51,11 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
       </div>
       <details className="spr-prd-srcdet">
       <summary>{L("Source details", "Detalles de la fuente", lang)}</summary>
+      <p className="spr-prd-evidence" data-testid="finding-evidence">
+        <span>{L("Scope", "Alcance", lang)}: {SCOPE_TEXT[f.scope][lang]}{f.scope === "not_evaluated" && f.attempted_scope ? ` (${L("attempted", "intentado", lang)}: ${SCOPE_TEXT[f.attempted_scope][lang].toLowerCase()})` : ""}</span>
+        <span> · {L("Retrieval", "Consulta", lang)}: {RETRIEVAL_TEXT[f.retrieval ?? (f.state === "sourced" || f.state === "none_mapped" ? "answered" : f.state === "unavailable" || f.state === "stale" ? "no_response" : "not_performed")][lang]}</span>
+        {f.looked_up_at && <span> · {L("Looked up", "Consultado", lang)} {new Date(f.looked_up_at).toLocaleString(lang === "es" ? "es-PR" : "en-US")}</span>}
+      </p>
       <div className="spr-prd-tags">
         <span className={`spr-prv-basis spr-prv-basis-${basis}`} data-testid="finding-basis">{BASIS_TEXT[basis][lang]}</span>
         {f.constraint !== "information" && <span className={`spr-prv-basis spr-prv-constraint-${f.constraint}`} data-testid="finding-constraint" data-constraint={f.constraint}>{CONSTRAINT_TEXT[f.constraint][lang]}</span>}
@@ -94,7 +99,7 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
       {(f.sources.length > 0 || f.looked_up_at) && (
         <p className="spr-prd-finding-src">
           {f.sources.map((s, i) => (
-            <span key={i}>{i > 0 && " · "}{s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> : s.name}{s.dataset_date ? ` (${L("data", "datos", lang)} ${s.dataset_date})` : ""}{s.version ? ` · ${s.version}` : ""}</span>
+            <span key={i}>{i > 0 && " · "}{s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> : s.name}{s.dataset_date ? ` (${L("dataset date", "fecha del conjunto de datos", lang)} ${s.dataset_date})` : ""}{s.version ? ` · ${s.version}` : ""}</span>
           ))}
           {f.looked_up_at && <span className="spr-prd-lookup"> · {L("looked up", "consultado", lang)} {new Date(f.looked_up_at).toLocaleString(lang === "es" ? "es-PR" : "en-US")}</span>}
         </p>
@@ -110,7 +115,7 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
 
 const STATUS_HEAD = {
   review: { en: "Review required", es: "Requiere revisión", note: { en: "Material constraint or issue detected.", es: "Se detectó una restricción o asunto importante." } },
-  clear: { en: "Clear", es: "Despejado", note: { en: "Checked and no mapped constraint identified.", es: "Verificado y sin restricción mapeada." } },
+  clear: { en: "No mapped intersection identified", es: "No se identificó intersección mapeada", note: { en: "Checked; nothing mapped in the stated dataset at the stated scope. Not a clearance.", es: "Verificado; nada mapeado en el conjunto de datos y alcance indicados. No es una autorización." } },
   unable: { en: "Unable to verify", es: "No se pudo verificar", note: { en: "Source unavailable, did not respond, or evidence is insufficient — unknown, not clear.", es: "Fuente no disponible, no respondió o evidencia insuficiente — desconocido, no despejado." } },
 } as const;
 
@@ -123,7 +128,7 @@ function KeyFindings({ report, lang }: { report: PropertyReport; lang: Lang }) {
         <div key={k} className={`spr-rv-group spr-rv-${k}`} data-status={k}>
           <h4>{STATUS_HEAD[k][lang]} <small>{STATUS_HEAD[k].note[lang]}</small></h4>
           <ul>{a[k].map((x) => (
-            <li key={x.id} data-item={x.id} data-severe={x.severe ? "true" : undefined}><span className="spr-rv-dot" aria-hidden="true" /><strong>{x.label[lang]}</strong><span>{x.value[lang]}</span></li>
+            <li key={x.id} data-item={x.id} data-scope={x.scope} data-severe={x.severe ? "true" : undefined}><span className="spr-rv-dot" aria-hidden="true" /><strong>{x.label[lang]}</strong><span>{x.value[lang]}{(x.scope || x.dataset) && <small className="spr-rv-meta-line">{x.scope ? SCOPE_TEXT[x.scope][lang] : ""}{x.dataset ? <>{x.scope ? " · " : ""}{x.dataset.url ? <a href={x.dataset.url} target="_blank" rel="noreferrer">{x.dataset.name}</a> : x.dataset.name}{x.dataset.date ? ` (${x.dataset.date})` : ""}</> : null}</small>}</span></li>
           ))}</ul>
         </div>
       ))}
@@ -191,11 +196,13 @@ function legacyCopy(text: string, host: HTMLElement | null): boolean {
 }
 
 export function PropertyReportDrawer({
-  open, report, lang, onClose, onEditLocation, passport, returnFocusTo, reviewTarget = null, activity, onActivityChange,
+  open, report, lang, onClose, onEditLocation, passport, returnFocusTo, reviewTarget = null, activity, onActivityChange, onConfirmPoint,
 }: {
   /** Proposed activity (natural language + answers to follow-up questions). */
   activity?: ActivityInput;
   onActivityChange?: (next: ActivityInput) => void;
+  /** Records the user's confirmation of the selected point (never a parcel verification). */
+  onConfirmPoint?: () => void;
   /** Professional review is available once the report is saved to a Passport location. */
   reviewTarget?: ReviewTarget | null;
   open: boolean;
@@ -277,7 +284,7 @@ export function PropertyReportDrawer({
       <div ref={panelRef} className="spr-prd" role="dialog" aria-modal="true" aria-labelledby={titleId} data-testid="property-report" data-revision={report.location_revision}>
         <header className="spr-prd-head">
           <div>
-            <p className="spr-prd-kicker">{L("Property & Site Report", "Informe de propiedad y lugar", lang)}</p>
+            <p className="spr-prd-kicker">{L("Property & Site Report", "Informe de propiedad y lugar", lang)}{p.location?.preliminary && p.location.parcel !== "loading" ? <span className="spr-rv-prelim" data-testid="report-preliminary"> · {L("Preliminary — selected point only", "Preliminar — solo el punto seleccionado", lang)}</span> : null}</p>
             <h2 id={titleId} className="spr-prd-title">{p.title}</h2>
             <p className="spr-prd-sub">{p.address.primary} · {p.address.secondary}</p>
             {api.review && (
@@ -326,9 +333,18 @@ export function PropertyReportDrawer({
             <h3 id={`${titleId}-sum`} className="sr-only">{L("Site summary", "Resumen del lugar", lang)}</h3>
             <dl className="spr-rv-meta">
               <div><dt>{L("Coordinates", "Coordenadas", lang)}</dt><dd>{p.latitude.toFixed(6)}, {p.longitude.toFixed(6)}</dd></div>
-              <div><dt>{L("Catastro", "Catastro", lang)}</dt><dd data-testid="report-catastro">{p.catastro.value ?? findingStateText(p.catastro.state)[lang]}</dd></div>
+              <div><dt>{L("Catastro", "Catastro", lang)}</dt><dd data-testid="report-catastro">{p.catastro.text?.[lang] ?? p.catastro.value ?? findingStateText(p.catastro.state)[lang]}</dd></div>
               <div><dt>{L("Approximate parcel area", "Área aproximada de la parcela", lang)}</dt><dd data-testid="report-area">{area.text[lang]}<small className="spr-rv-subtle">{area.note[lang]}</small></dd></div>
             </dl>
+            {(p.location?.notices.length ?? 0) > 0 && (
+              <div className={`spr-rv-location${p.location!.roadway ? " spr-rv-location-road" : ""}`} role="note" data-testid="location-notice" data-parcel={p.location!.parcel} data-roadway={p.location!.roadway ? "true" : undefined}>
+                {p.location!.notices.map((n, i) => <p key={i}>{n[lang]}</p>)}
+                <div className="spr-rv-location-actions">
+                  <button type="button" className="spr-loc-btn" onClick={onEditLocation} data-testid="adjust-pin">{L("Adjust pin", "Ajustar pin", lang)}</button>
+                  {onConfirmPoint && !p.location!.point_confirmed && <button type="button" className="spr-loc-btn" onClick={onConfirmPoint} data-testid="confirm-point">{L("Confirm this point", "Confirmar este punto", lang)}</button>}
+                </div>
+              </div>
+            )}
             <p className="spr-rv-conclusion" data-testid="reviewer-conclusion">{assessment.conclusion[lang]}</p>
           </section>
 
@@ -414,6 +430,7 @@ export function PropertyReportDrawer({
               </div>
               <h4>{L("Sources", "Fuentes", lang)}</h4>
               <ul>{report.sources.map((s, i) => <li key={i}>{s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.name}</a> : s.name}{s.dataset_date ? ` · ${L("data", "datos", lang)} ${s.dataset_date}` : ""}{s.version ? ` · ${s.version}` : ""}</li>)}</ul>
+              {report.regulation && <p className="spr-prd-because" data-testid="report-regulation">{L("Regulation for use rules", "Reglamento para reglas de uso", lang)}: {report.regulation.url ? <a href={report.regulation.url} target="_blank" rel="noreferrer">{report.regulation.name}</a> : report.regulation.name}{report.regulation.publication_date ? ` · ${L("publication date", "fecha de publicación", lang)} ${report.regulation.publication_date}` : ""} · {L("applicability to this site", "aplicabilidad a este lugar", lang)}: <strong>{report.regulation.applicability === "verified" ? L("verified", "verificada", lang) : L("not verified", "no verificada", lang)}</strong>. {report.regulation.note[lang]}</p>}
               {report.versions && <p className="spr-prd-because" data-testid="report-versions">{L("Area method", "Método de áreas", lang)}: {report.versions.coverage_method} · {L("Rules", "Reglas", lang)}: {report.versions.rules}</p>}
             </details>
           </details>

@@ -177,8 +177,10 @@ function SiteDetails({ site, lang, status, report, proposed }: { site: IntakeSit
 
 export function ProjectLocationCard({
   mode, lang, site, businessId, onConfirm, onRetryLayers, initialQuery, municipalityFallback, searchInputId, missingNote, invalid, knownMunicipality, onClear,
-  report, onOpenReport, proposal, onProposalCancel, editRequest,
+  report, onOpenReport, proposal, onProposalCancel, editRequest, onConfirmPoint,
 }: {
+  /** The user confirms the selected point as their property (never a parcel verification). */
+  onConfirmPoint?: () => void;
   /** Shared Property & Site Report for the confirmed site (preview + parcel boundary). */
   report?: PropertyReport | null;
   onOpenReport?: (opener: HTMLElement | null) => void;
@@ -594,7 +596,7 @@ export function ProjectLocationCard({
       {isSaved && !summary && site && (
         <div className="spr-plc-intel">
           {report && onOpenReport
-            ? <SiteReportPreview report={report} lang={lang} onRetry={onRetryLayers} onOpen={() => onOpenReport(document.activeElement as HTMLElement | null)} />
+            ? <SiteReportPreview report={report} lang={lang} onRetry={onRetryLayers} onOpen={() => onOpenReport(document.activeElement as HTMLElement | null)} onAdjustPin={startEdit} onConfirmPoint={onConfirmPoint} />
             : <SiteLayerChips site={site} lang={lang} onRetry={onRetryLayers} />}
         </div>
       )}

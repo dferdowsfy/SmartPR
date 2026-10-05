@@ -7,7 +7,7 @@
 // ============================================================================
 
 import type { jsPDF as JsPDF } from "jspdf";
-import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
+import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, RETRIEVAL_TEXT, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
 import { COMPATIBILITY_TEXT } from "./landUse";
 import type { exportableReview } from "./propertyReview";
 
@@ -94,7 +94,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   const facts: Array<[string, string]> = [
     [L("Municipality", "Municipio"), p.municipality],
     [L("Barrio", "Barrio"), p.barrio ?? "—"],
-    [L("Catastro", "Catastro"), p.catastro.value ?? findingStateText(p.catastro.state)[lang]],
+    [L("Catastro", "Catastro"), p.catastro.text?.[lang] ?? p.catastro.value ?? findingStateText(p.catastro.state)[lang]],
     [L("Approx. area", "Área aprox."), area.text[lang]],
     [L("Coordinates (WGS84)", "Coordenadas (WGS84)"), `${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`],
     [L("Report", "Informe"), `${report.schema.replace("smartpr.property-report/", "")} · ${L("rev.", "rev.")} ${report.location_revision}`],
@@ -113,6 +113,13 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   y += boxH + 2;
   para(`${L("Area", "Área")}: ${area.note[lang]}`, 7.5, "italic", MUTED);
 
+  // ---- Location validation ------------------------------------------------------------
+  if (p.location?.notices.length) {
+    if (p.location.preliminary) para(L("PRELIMINARY — SELECTED POINT ONLY", "PRELIMINAR — SOLO EL PUNTO SELECCIONADO"), 9.5, "bold", TONE.attention.fg);
+    for (const n of p.location.notices) para(n[lang], 9.5, "normal", p.location.roadway ? TONE.attention.fg : INK);
+    y += 2;
+  }
+
   // ---- Reviewer conclusion ----------------------------------------------------------
   const A = assessmentOf(report);
   ensure(20);
@@ -126,13 +133,17 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
 
   // ---- Key regulatory findings -------------------------------------------------------
   heading(L("Key regulatory findings", "Hallazgos regulatorios clave"));
-  const GROUP: Array<["review" | "clear" | "unable", string, string, ReportTone]> = [["review", "REVIEW REQUIRED", "REQUIERE REVISIÓN", "attention"], ["clear", "CLEAR", "DESPEJADO", "ok"], ["unable", "UNABLE TO VERIFY", "NO SE PUDO VERIFICAR", "unknown"]];
+  const GROUP: Array<["review" | "clear" | "unable", string, string, ReportTone]> = [["review", "REVIEW REQUIRED", "REQUIERE REVISIÓN", "attention"], ["clear", "NO MAPPED INTERSECTION IDENTIFIED", "NO SE IDENTIFICÓ INTERSECCIÓN MAPEADA", "ok"], ["unable", "UNABLE TO VERIFY", "NO SE PUDO VERIFICAR", "unknown"]];
   for (const [k, en, es, tone] of GROUP) {
     if (!A[k].length) continue;
     ensure(10);
     pill(M, y, L(en, es), tone);
     y += 6;
-    for (const x of A[k]) para(`• ${x.label[lang]}: ${x.value[lang]}`, 9.5, x.severe ? "bold" : "normal", x.severe ? TONE.hazard.fg : INK, M + 3, CW - 3);
+    for (const x of A[k]) {
+      para(`• ${x.label[lang]}: ${x.value[lang]}`, 9.5, x.severe ? "bold" : "normal", x.severe ? TONE.hazard.fg : INK, M + 3, CW - 3);
+      const m = [x.scope ? SCOPE_TEXT[x.scope][lang] : null, x.dataset ? `${x.dataset.name}${x.dataset.date ? ` (${x.dataset.date})` : ""}` : null].filter(Boolean).join(" · ");
+      if (m) para(m, 7.5, "normal", MUTED, M + 6, CW - 6);
+    }
     y += 2;
   }
 
@@ -169,7 +180,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
       ...(f.notes ?? []).map((n) => n[lang]),
       ...(f.ambiguities ?? []).map((a) => `${L("Ambiguity", "Ambigüedad")}: ${a[lang]}`),
     ].join(" ");
-    const src = f.sources.map((s) => `${s.name}${s.dataset_date ? ` (${s.dataset_date})` : ""}`).join("; ") + (f.looked_up_at ? ` · ${L("looked up", "consultado")} ${f.looked_up_at.slice(0, 10)}` : "");
+    const src = f.sources.map((s) => `${s.name}${s.dataset_date ? ` (${s.dataset_date})` : ""}`).join("; ") + (f.retrieval ? ` · ${RETRIEVAL_TEXT[f.retrieval][lang]}` : "") + (f.looked_up_at ? ` · ${L("looked up", "consultado")} ${f.looked_up_at.slice(0, 10)}` : "") + (f.sources[0]?.url ? ` · ${f.sources[0].url}` : "");
     const mainL = lines(main, CW - 62);
     const subL = sub ? lines(sub, CW - 62) : [];
     const extraL = extra ? lines(extra, CW - 62) : [];
@@ -245,6 +256,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   para(`${nad.crs ?? "NAD83 / Puerto Rico & Virgin Is. (EPSG:32161)"}: X ${nad.x.toLocaleString("en-US")} m, Y ${nad.y.toLocaleString("en-US")} m (${L("units", "unidades")}: ${nad.units ?? "metres"}${nad.projection ? `; ${nad.projection}` : ""}).`, 8.5, "normal", INK);
   para(`${nad.note[lang]}${nad.datum_note ? ` ${nad.datum_note[lang]}` : ""}`, 7.5, "italic", MUTED);
   para(`WGS84 (EPSG:4326): ${p.latitude.toFixed(7)}, ${p.longitude.toFixed(7)}`, 8.5, "normal", INK);
+  if (report.regulation) para(`${L("Regulation for use rules", "Reglamento para reglas de uso")}: ${report.regulation.name}${report.regulation.publication_date ? ` (${L("publication date", "fecha de publicación")} ${report.regulation.publication_date})` : ""} — ${L("applicability to this site", "aplicabilidad a este lugar")}: ${report.regulation.applicability === "verified" ? L("verified", "verificada") : L("not verified", "no verificada")}. ${report.regulation.note[lang]}`, 7.5, "normal", MUTED);
   if (report.versions) para(`${L("Area method", "Método de áreas")}: ${report.versions.coverage_method} ${L("Rules", "Reglas")}: ${report.versions.rules}.`, 7.5, "normal", MUTED);
   para(`${report.schema} · ${L("report", "informe")} ${report.fingerprint} · ${L("location revision", "revisión de ubicación")} ${report.location_revision} · ${L("generated", "generado")} ${report.generated_at}`, 7.5, "normal", MUTED);
 

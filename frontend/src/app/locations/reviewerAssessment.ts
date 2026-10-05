@@ -10,7 +10,7 @@
 // Works on saved v1 reports too (everything is derived from findings).
 // ============================================================================
 
-import type { Bi, PropertyReport, ReportFinding, ReportSource } from "./propertyReport.ts";
+import type { Bi, PropertyReport, ReportFinding, ReportScope, ReportSource } from "./propertyReport.ts";
 import { COMPATIBILITY_TEXT } from "./landUse.ts";
 
 export type AssessmentStatus = "review" | "clear" | "unable";
@@ -23,6 +23,9 @@ export interface AssessmentItem {
   /** Short clause for the conclusion sentence. */
   phrase?: Bi;
   finding_ids: string[];
+  /** Evaluation scope and dataset the item rests on (shown with "no mapped intersection" items). */
+  scope?: ReportScope;
+  dataset?: { name: string; url: string | null; date: string | null } | null;
 }
 export interface AssessmentAction {
   id: string;
@@ -62,6 +65,28 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   const actions: Array<AssessmentAction & { rank: number }> = [];
   const act = (rank: number, a: AssessmentAction) => actions.push({ ...a, rank });
   const lu = r.land_use?.activity.use ? r.land_use : null;
+  const NONE = bi("No mapped intersection identified", "No se identificó intersección mapeada");
+
+  // ---- Location validation (first: everything else depends on the right place) ----
+  const loc = r.property.location;
+  const roadway = !!loc?.roadway;
+  const noParcel = !!loc && loc.parcel !== "verified" && loc.parcel !== "loading";
+  if (noParcel) {
+    review.push({ id: "location", label: bi("Location", "Ubicación"),
+      value: roadway ? bi("Selected point mapped as a roadway (VIAL); no cadastral parcel identified — findings are point-only", "Punto seleccionado mapeado como vía (VIAL); no se identificó parcela catastral — hallazgos solo del punto")
+        : loc!.parcel === "unavailable" ? bi("Parcel source did not respond — findings are point-only", "La fuente de parcelas no respondió — hallazgos solo del punto")
+        : bi("No cadastral parcel identified — findings are point-only", "No se identificó parcela catastral — hallazgos solo del punto"),
+      phrase: roadway ? bi("the selected point appears to be on a roadway (VIAL) and no cadastral parcel was identified", "el punto seleccionado parece estar sobre una vía (VIAL) y no se identificó parcela catastral")
+        : bi("no cadastral parcel was identified, so parcel-wide checks have not been performed", "no se identificó parcela catastral, así que no se realizaron verificaciones de toda la parcela"),
+      finding_ids: [], scope: "point" });
+    act(1, { id: "location", issue: bi("Confirm the exact property", "Confirme la propiedad exacta"),
+      action: loc!.point_confirmed
+        ? bi("You confirmed this point. No cadastral parcel boundary was identified, so parcel-wide checks remain not performed; obtain the parcel record (CRIM catastro) if parcel-wide results are needed.", "Usted confirmó este punto. No se identificó un límite de parcela catastral, así que las verificaciones de toda la parcela siguen sin realizarse; obtenga el registro de la parcela (catastro del CRIM) si necesita resultados de toda la parcela.")
+        : roadway
+          ? bi("This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements (Adjust pin / Confirm this point).", "Este punto puede estar sobre una vía y no en su propiedad. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar (Ajustar pin / Confirmar este punto).")
+          : bi("Move the pin onto the property or confirm this point. Parcel-wide checks have not been performed.", "Mueva el pin a la propiedad o confirme este punto. No se han realizado verificaciones de toda la parcela."),
+      why: loc!.notices[0] ?? null, sources: r.property.catastro.source ? [r.property.catastro.source] : [] });
+  }
 
   // ---- Flood ----------------------------------------------------------------
   const fz = F("flood_zone"), fw = F("floodway"), adv = F("flood_advisory");
@@ -72,7 +97,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       action: bi("Plan development outside the mapped floodway where possible. If encroachment is proposed, confirm whether engineering analysis and no-rise documentation are required.", "Planifique el desarrollo fuera del cauce mayor mapeado cuando sea posible. Si se propone una intrusión, confirme si se requieren un análisis de ingeniería y documentación de no aumento (no-rise)."),
       why: s ? bi(`${s.text.en} ${s.because.en}`, `${s.text.es} ${s.because.es}`) : null, sources: s?.sources ?? fw.sources });
   } else if (fw?.state === "none_mapped") {
-    clear.push({ id: "floodway", label: bi("Regulatory floodway", "Cauce mayor"), value: bi("No mapped floodway", "Sin cauce mayor mapeado"), finding_ids: ["floodway"] });
+    clear.push({ id: "floodway", label: bi("Regulatory floodway", "Cauce mayor"), value: NONE, finding_ids: ["floodway"] });
   }
   if (fz?.state === "sourced" && fz.tone === "hazard") {
     const parts = (fz.coverage?.parts ?? []).filter((p) => /^(A|V)/.test(p.key));
@@ -87,7 +112,8 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       action: bi("Keep proposed work outside the mapped flood hazard area where possible. If work falls inside it, confirm with the reviewing agency whether floodplain review applies.", "Mantenga la obra propuesta fuera del área de riesgo mapeada cuando sea posible. Si la obra cae dentro, confirme con la agencia evaluadora si aplica la revisión de zona inundable."),
       why: s ? s.text : fz.plain ?? null, sources: s?.sources ?? fz.sources });
   } else if (fz?.state === "sourced") {
-    clear.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: fz.pill ?? fz.value ?? bi("No high-risk zone mapped", "Sin zona de alto riesgo mapeada"), finding_ids: ["flood_zone"] });
+    const first = (s: string) => s.split(/\. /)[0]!.replace(/\.$/, "");
+    clear.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: fz.plain ? bi(first(fz.plain.en), first(fz.plain.es)) : fz.value ?? bi("No high-risk zone mapped", "Sin zona de alto riesgo mapeada"), finding_ids: ["flood_zone"] });
   } else if (fz) {
     unable.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: unableValue(fz), finding_ids: ["flood_zone"] });
   }
@@ -95,7 +121,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
     review.push({ id: "flood_advisory", label: bi("JP advisory flood map", "Mapa de inundación de asesoramiento (JP)"), value: bi("Advisory flood area mapped at the pin (not the effective FEMA map)", "Área inundable de asesoramiento mapeada en el pin (no es el mapa vigente de FEMA)"), phrase: bi("the JP advisory flood map shows a flood area at the pin", "el mapa de asesoramiento de la JP muestra un área inundable en el pin"), finding_ids: ["flood_advisory"] });
     act(55, { id: "flood_advisory", issue: bi("Advisory flood map", "Mapa de inundación de asesoramiento"), action: bi("Ask the reviewing agency whether it will apply the JP advisory flood map or the effective FEMA map to this site.", "Pregunte a la agencia evaluadora si aplicará el mapa de asesoramiento de la JP o el mapa vigente de FEMA a este lugar."), why: adv.plain ?? null, sources: adv.sources });
   } else if (adv?.state === "none_mapped") {
-    clear.push({ id: "flood_advisory", label: bi("JP advisory flood map", "Mapa de asesoramiento (JP)"), value: bi("None mapped at the pin", "Nada mapeado en el pin"), finding_ids: ["flood_advisory"] });
+    clear.push({ id: "flood_advisory", label: bi("JP advisory flood map", "Mapa de asesoramiento (JP)"), value: NONE, finding_ids: ["flood_advisory"] });
   } else if (adv) {
     unable.push({ id: "flood_advisory", label: bi("JP advisory flood map", "Mapa de asesoramiento (JP)"), value: unableValue(adv), finding_ids: ["flood_advisory"] });
   }
@@ -119,7 +145,11 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
     unable.push({ id: "zoning", label: bi("Zoning", "Calificación"), value: unableValue(zf), finding_ids: ["zoning"] });
   }
   const districts = zoningParts.length ? zoningParts.filter((p) => !p.small).map((p) => `${p.key} ${p.share_text}`).join(" · ") : zf?.value?.en ?? "";
-  if (!lu) {
+  if (roadway) {
+    review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
+      value: bi("Not evaluated — the selected point is mapped as a roadway (VIAL), not a developable district; confirm the property first", "No evaluado — el punto seleccionado está mapeado como vía (VIAL), no como distrito desarrollable; confirme primero la propiedad"),
+      finding_ids: ["permitted_uses"] });
+  } else if (!lu) {
     review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
       value: bi(`Proposed activity required before compatibility can be evaluated${districts ? ` (zoning: ${districts})` : ""}`, `Se requiere la actividad propuesta para evaluar la compatibilidad${districts ? ` (calificación: ${districts})` : ""}`),
       phrase: bi("land-use compatibility cannot be determined until the proposed activity is provided", "la compatibilidad de uso no puede determinarse hasta que se indique la actividad propuesta"), finding_ids: ["permitted_uses", "zoning"] });
@@ -127,19 +157,26 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       action: bi(`Describe the proposed activity so SmartPR can evaluate compatibility with the ${joinList(zoningCodes, "and") || "mapped"} zoning district${zoningCodes.length > 1 ? "s" : ""}.`, `Describa la actividad propuesta para que SmartPR evalúe la compatibilidad con ${zoningCodes.length > 1 ? "los distritos" : "el distrito"} ${joinList(zoningCodes, "y") || "mapeado"}.`),
       why: bi("Permitted uses depend on the zoning district and on what you plan to do.", "Los usos permitidos dependen del distrito y de lo que planifica hacer."), sources: F("permitted_uses")?.sources ?? [] });
   } else {
+    // The governing regulation is not verified: the rule reading is preliminary
+    // and the analysis stays pending — never "clear", never "permitted".
     const o = lu.compatibility.outcome;
+    const reg = r.regulation;
+    const pending = !reg || reg.applicability !== "verified";
     const val = bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[o].en}`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[o].es}`);
     const reasons = bi(lu.compatibility.reasons.join(" "));
-    if (o === "permitted") clear.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: bi(`${val.en} under the mapped district rules (conditions may still apply)`, `${val.es} según las reglas del distrito mapeado (pueden aplicar condiciones)`), finding_ids: ["permitted_uses"] });
-    else if (o === "insufficient") unable.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: bi("Insufficient verified rules to evaluate", "Reglas verificadas insuficientes para evaluar"), finding_ids: ["permitted_uses"] });
-    else {
-      review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: bi(`${val.en} — requires review`, `${val.es} — requiere revisión`), phrase: bi(`land-use compatibility for ${lu.activity.useName} requires review`, `la compatibilidad de uso para ${lu.activity.useName} requiere revisión`), severe: o === "potentially_prohibited", finding_ids: ["permitted_uses"] });
-      const how = o === "conditional" ? bi("Review the conditions listed for this use before design.", "Revise las condiciones listadas para este uso antes del diseño.")
-        : o === "discretionary" ? bi("Expect a discretionary process (consulta de ubicación or exception); approval is not assured.", "Prevea un proceso discrecional (consulta de ubicación o excepción); la aprobación no está asegurada.")
-        : o === "potentially_prohibited" ? bi("The mapped district's rules do not list this use; confirm with the Junta de Planificación before proceeding.", "Las reglas del distrito mapeado no listan este uso; confirme con la Junta de Planificación antes de continuar.")
-        : bi("Have a land-use professional review the site factors listed before proceeding.", "Haga que un profesional de usos de terreno revise los factores listados antes de continuar.");
-      act(25, { id: "compatibility", issue: bi("Land-use compatibility", "Compatibilidad de uso"), action: how, why: reasons, sources: F("permitted_uses")?.sources ?? [] });
-    }
+    const pointOnly = F("permitted_uses")?.scope === "point";
+    review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
+      value: pending ? bi(`Pending — governing regulation not verified (preliminary reading under ${reg?.name ?? "the listed regulation"}: ${val.en}${pointOnly ? "; selected point only" : ""})`, `Pendiente — reglamento aplicable no verificado (lectura preliminar según ${reg?.name ?? "el reglamento listado"}: ${val.es}${pointOnly ? "; solo el punto seleccionado" : ""})`) : bi(`${val.en} — requires review`, `${val.es} — requiere revisión`),
+      phrase: pending ? bi(`permitted-use analysis for ${lu.activity.useName} is pending because the governing regulation has not been verified`, `el análisis de usos para ${lu.activity.useName} está pendiente porque no se ha verificado el reglamento aplicable`) : bi(`land-use compatibility for ${lu.activity.useName} requires review`, `la compatibilidad de uso para ${lu.activity.useName} requiere revisión`),
+      severe: false, finding_ids: ["permitted_uses"] });
+    const how = o === "conditional" ? bi("The preliminary reading lists conditions for this use; review them before design.", "La lectura preliminar lista condiciones para este uso; revíselas antes del diseño.")
+      : o === "discretionary" ? bi("The preliminary reading points to a discretionary process (consulta de ubicación or exception); approval is not assured.", "La lectura preliminar apunta a un proceso discrecional (consulta de ubicación o excepción); la aprobación no está asegurada.")
+      : o === "potentially_prohibited" ? bi("The preliminary reading does not list this use for the mapped district; confirm with the Junta de Planificación.", "La lectura preliminar no lista este uso para el distrito mapeado; confírmelo con la Junta de Planificación.")
+      : o === "permitted" ? bi("The preliminary reading lists this use for the mapped district; conditions may still apply.", "La lectura preliminar lista este uso para el distrito mapeado; pueden aplicar condiciones.")
+      : bi("The preliminary reading is incomplete; have a land-use professional review it.", "La lectura preliminar está incompleta; haga que un profesional la revise.");
+    act(25, { id: "compatibility", issue: bi("Land-use compatibility", "Compatibilidad de uso"),
+      action: pending ? bi(`Confirm which regulation governs this site (Reglamento Conjunto 2023, a municipal Plan Territorial regulation, or later amendments) before relying on the result. ${how.en}`, `Confirme qué reglamento rige este lugar (Reglamento Conjunto 2023, un reglamento de Plan Territorial municipal o enmiendas posteriores) antes de depender del resultado. ${how.es}`) : how,
+      why: reg ? bi(`${reasons.en} ${reg.note.en}`.trim(), `${reasons.es} ${reg.note.es}`.trim()) : reasons, sources: F("permitted_uses")?.sources ?? [] });
     for (const [i, a] of lu.approvals.entries()) {
       act(32 + i / 100, { id: `approval_${a.id}`, issue: bi(a.name), action: bi(`${a.status === "confirmed" ? "Required by a verified rule" : a.status === "likely" ? "Likely required" : "Needs professional review"}: ${a.trigger}${a.evidence.length ? ` Typical evidence: ${a.evidence.join("; ")}.` : ""}`), why: a.citation ? bi(a.citation) : null, sources: a.sources.map((s) => ({ name: s.name, url: s.url, dataset_date: null, version: s.citation || null })) });
     }
@@ -164,7 +201,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       review.push({ id, label, value: mapped, phrase, severe: opts.severe, finding_ids: [id] });
       const s = r.next_steps.steps.find((x) => x.sources.some((src) => f.sources.some((fs) => fs.name === src.name)));
       act(rank, { id, issue: label, action, why: s ? s.because : f.plain ?? null, sources: f.sources });
-    } else if (f.state === "none_mapped") clear.push({ id, label, value: opts.clearValue ?? bi("No mapped constraint", "Sin restricción mapeada"), finding_ids: [id] });
+    } else if (f.state === "none_mapped") clear.push({ id, label, value: opts.clearValue ?? NONE, finding_ids: [id] });
     else unable.push({ id, label, value: unableValue(f), finding_ids: [id] });
   };
   env("protected_area", bi("Protected natural area", "Área natural protegida"), bi("Protected natural area mapped", "Área natural protegida mapeada"), bi("a protected natural area is mapped", "hay un área natural protegida mapeada"), 11,
@@ -205,8 +242,9 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
 
   // ---- Still needed (user input only) -------------------------------------------------
   const still: ReviewerAssessment["still_needed"] = [];
-  if (!lu) still.push({ id: "activity", title: bi("Proposed activity", "Actividad propuesta"), text: bi("Describe what you plan to build, operate, renovate, or use the property for so SmartPR can evaluate land-use compatibility and permitted-use rules.", "Describa qué planifica construir, operar, remodelar o para qué usará la propiedad, para que SmartPR evalúe la compatibilidad de uso y las reglas de usos permitidos.") });
-  if (r.property.coordinate_source === "GEOCODED_ADDRESS") still.push({ id: "pin", title: bi("Exact property location", "Ubicación exacta de la propiedad"), text: bi("The pin comes from an address search. Move it onto the exact property so the findings are for the right parcel.", "El pin viene de una búsqueda de dirección. Muévalo a la propiedad exacta para que los hallazgos sean de la parcela correcta.") });
+  if (!lu && !roadway) still.push({ id: "activity", title: bi("Proposed activity", "Actividad propuesta"), text: bi("Describe what you plan to build, operate, renovate, or use the property for so SmartPR can evaluate land-use compatibility and permitted-use rules.", "Describa qué planifica construir, operar, remodelar o para qué usará la propiedad, para que SmartPR evalúe la compatibilidad de uso y las reglas de usos permitidos.") });
+  if (noParcel && !loc!.point_confirmed) still.push({ id: "pin", title: bi("Exact property location", "Ubicación exacta de la propiedad"), text: roadway ? bi("This point may be on a roadway rather than your intended property. Adjust the pin onto the property or confirm this point.", "Este punto puede estar sobre una vía y no en su propiedad. Ajuste el pin a la propiedad o confirme este punto.") : bi("No cadastral parcel was identified at the pin. Adjust the pin onto the property or confirm this point.", "No se identificó parcela catastral en el pin. Ajuste el pin a la propiedad o confirme este punto.") });
+  else if (r.property.coordinate_source === "GEOCODED_ADDRESS") still.push({ id: "pin", title: bi("Exact property location", "Ubicación exacta de la propiedad"), text: bi("The pin comes from an address search. Move it onto the exact property so the findings are for the right parcel.", "El pin viene de una búsqueda de dirección. Muévalo a la propiedad exacta para que los hallazgos sean de la parcela correcta.") });
   if (r.property.near_boundary) still.push({ id: "municipio", title: bi("Municipality", "Municipio"), text: bi("The pin is near a municipal boundary. Confirm the property is in the municipality shown.", "El pin está cerca de un límite municipal. Confirme que la propiedad está en el municipio indicado.") });
 
   // ---- Conclusion ---------------------------------------------------------------------
@@ -218,8 +256,17 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
          `Según las fuentes cartográficas oficiales disponibles, la revisión encontró ${n === 1 ? "un punto" : `${n} puntos`} que requieren atención: ${joinList(phrases.map((p) => p.es), "y")}.`)
     : bi("Based on available official map sources, no mapped constraint requiring review was identified among the checks that responded. This is not a clearance.", "Según las fuentes cartográficas oficiales disponibles, no se identificó una restricción mapeada que requiera revisión entre las verificaciones que respondieron. Esto no es una autorización.");
   const tail = unable.length ? bi(` ${unable.length === 1 ? "One check" : `${cap(String(unable.length))} checks`} could not be verified because the source did not respond or was not checked.`, ` ${unable.length === 1 ? "Una verificación" : `${unable.length} verificaciones`} no se ${unable.length === 1 ? "pudo" : "pudieron"} confirmar porque la fuente no respondió o no se consultó.`) : bi("");
+  const pre = noParcel ? bi("Preliminary, point-only review. ", "Revisión preliminar, solo del punto. ") : bi("");
+  // Items stay qualified by the scope and dataset they rest on.
+  for (const x of [...review, ...clear, ...unable]) {
+    const f = x.finding_ids[0] ? F(x.finding_ids[0]) : undefined;
+    if (!f) continue;
+    x.scope ??= f.scope;
+    const s = f.sources[0];
+    x.dataset ??= s ? { name: s.name, url: s.url, date: s.dataset_date } : null;
+  }
   return {
-    conclusion: bi(`${lead.en}${tail.en}`, `${lead.es}${tail.es}`),
+    conclusion: bi(`${pre.en}${lead.en}${tail.en}`, `${pre.es}${lead.es}${tail.es}`),
     review: review.sort((a, b) => Number(!!b.severe) - Number(!!a.severe)),
     clear, unable,
     actions: actions.sort((a, b) => a.rank - b.rank).map((x) => ({ id: x.id, issue: x.issue, action: x.action, why: x.why, sources: x.sources })),

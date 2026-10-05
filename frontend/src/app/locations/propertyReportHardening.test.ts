@@ -127,7 +127,7 @@ test("no activity: 'Not evaluated', no complexity score, nothing prescribed", as
 
 test("summary leads with mapped → may affect → unverified → next; copy/JSON carry it; area is a number with units", async () => {
   const r = await abReport();
-  assert.ok(r.summary!.mapped.some((m) => /^Calificación \(zoning\): R-G 86\.1% · R-I 13\.9% \(across the parcel; at the pin: R-G — Rural General\)\.$/.test(m.en)));
+  assert.ok(r.summary!.mapped.some((m) => /^Calificación \(zoning\): R-G 86\.1% · R-I 13\.9% \(across the verified parcel; at the pin: R-G — Rural General\)\.$/.test(m.en)));
   assert.ok(r.summary!.mapped.some((m) => /None mapped in: .*not the same as no constraint/.test(m.en)));
   assert.ok(r.summary!.next.some((n) => /Describe the proposed activity/.test(n.en)));
   assert.equal(r.property.area!.text.en, "15,152 m² (3.86 cuerdas)");
@@ -137,9 +137,10 @@ test("summary leads with mapped → may affect → unverified → next; copy/JSO
   assert.ok(idx.every((i, k) => i > 0 && (k === 0 || i > idx[k - 1]!)), JSON.stringify(idx));
   assert.match(txt, /Approximate area: 15,152 m² \(3\.86 cuerdas\) \(From the mapped CRIM boundary/);
   assert.match(txt, /NAD83 \/ Puerto Rico & Virgin Is\. \(EPSG:32161\): X [\d,.]+ m, Y [\d,.]+ m \(units: metres\)/);
-  assert.match(txt, /• Historic zone: Unable to verify — source did not respond — Checked across parcel; Source unavailable/);
+  // A check whose source did not answer was not evaluated — never labelled "checked across parcel".
+  assert.match(txt, /• Historic zone: Unable to verify — source did not respond — Not evaluated; Source unavailable; Source did not respond/);
   assert.doesNotMatch(txt, /(^|\s)0(\s|$)/m, "no stray 0");
-  assert.equal(r.schema, "smartpr.property-report/v2");
+  assert.equal(r.schema, "smartpr.property-report/v3");
   assert.ok(r.versions!.coverage_method.includes("EPSG:32161"));
   const json = JSON.parse(JSON.stringify(r)) as PropertyReport;
   assert.deepEqual(json.summary, r.summary);
@@ -173,7 +174,7 @@ test("FEMA Zone X at the pin + Zone AE on part of the parcel: both shown, explai
   assert.equal(f.pin!.value.en, "Zone X");
   assert.ok(f.notes!.some((n) => /^The pin is in Zone X, and the parcel also has AE on 30\.0% of its area in a Special Flood Hazard Area\. Both are true/.test(n.en)));
   assert.equal(f.tone, "hazard");
-  assert.equal(f.pill!.en, "High flood risk on part of the parcel");
+  assert.equal(f.pill!.en, "FEMA Zone AE — High flood risk on part of the parcel");
   assert.equal(r.flags!.find((x) => x.id === "flood")!.value.en, "High-risk area on 30.0% of the parcel");
   assert.equal(r.discrepancies!.length, 0, "different scopes are not a discrepancy");
   const step = r.next_steps.steps.find((s) => s.id === "flood_mapped")!;
@@ -240,7 +241,9 @@ test("saved v1 reports still open: area, lead summary and basis are derived, nev
   assert.equal(reportArea(r).text.en, "Not available");
   assert.equal(basisOf(r.findings[0]!), "source_unavailable");
   assert.equal(reportLeadSummary(r).may_affect[0]!.en, "Pending proposed activity");
-  assert.match(reportSummaryText(r, "en"), /Historic zone: Unable to verify — source did not respond — Checked across parcel; Source unavailable/);
+  // Saved earlier-format reports are shown as saved (scope not re-verified), never silently rewritten.
+  assert.match(reportSummaryText(r, "en"), /Historic zone: Unable to verify — source did not respond — parcel \(as saved; not re-verified\); Source unavailable/);
+  assert.match(reportSummaryText(r, "en"), /Saved with an earlier report format \(smartpr\.property-report\/v1\)/);
   // The reviewer assessment is derived for saved v1 reports: unable stays unable.
   assert.ok(reportSummaryText(r, "en").includes("Unable to verify:\n• Historic zone: Source did not respond"));
 });
@@ -309,14 +312,18 @@ test("reviewer: conclusion, three status groups and ranked actions come only fro
   assert.equal(r.disclaimer.en, "Reference information from official map sources. This is not a survey, permit decision, or approval.");
 });
 
-test("reviewer: with no review items the conclusion says so without claiming a clearance", () => {
+test("reviewer: a 'permitted' rule reading stays pending while the governing regulation is unverified — never clear", () => {
   const p = synthParcel(0.5, [{ zone: "X", x0: 0, x1: 1 }]);
   const lu = { activity: { use: "LU_X", useName: "Shop", raw: "shop" }, compatibility: { outcome: "permitted", reasons: [], confidence: "high", baseOutcome: "permitted", path: [] }, approvals: [], evidence: [], unresolved: [], districts: [], standards: [], questions: [], coverageGaps: [], rulesEvaluated: [], complexity: { level: "low", score: 0, factors: [] } } as never;
   const layers = abLayers(p.latitude, p.longitude);
   layers.results = layers.results.filter((x) => x.layer !== "terrain" && x.layer !== "flood_advisory");
   const r = buildPropertyReport({ site: site(p.latitude, p.longitude, layers), parcel: p, revision: 1, context: noActivity, landUse: lu, now: new Date(at) });
   const a = r.assessment!;
-  assert.equal(a.review.length, 0, JSON.stringify(a.review.map((x) => x.id)));
-  assert.match(a.conclusion.en, /no mapped constraint requiring review was identified among the checks that responded\. This is not a clearance\./);
-  assert.match(a.clear.find((x) => x.id === "compatibility")!.value.en, /under the mapped district rules \(conditions may still apply\)/);
+  assert.deepEqual(a.review.map((x) => x.id), ["compatibility"]);
+  assert.match(a.review[0]!.value.en, /^Pending — governing regulation not verified \(preliminary reading under Reglamento Conjunto .*: Shop: Permitted \/ as-of-right\)$/);
+  assert.ok(!a.clear.some((x) => x.id === "compatibility"));
+  assert.equal(r.regulation!.applicability, "not_verified");
+  assert.equal(r.regulation!.publication_date, "2023-06-16", "publication date kept apart from applicability");
+  assert.doesNotMatch(a.conclusion.en, /\b(approved|compliant|rejected)\b/i);
+  assert.equal(F(r, "permitted_uses").scope, "parcel", "evaluated on the verified parcel's zoning");
 });

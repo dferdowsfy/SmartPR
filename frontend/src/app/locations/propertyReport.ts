@@ -67,7 +67,22 @@ export const STATUS_TEXT: Record<FindingStatus, Bi> = {
   checking: { en: "Checking…", es: "Verificando…" },
 };
 export type ReportTone = "ok" | "info" | "attention" | "hazard" | "unknown";
-export type ReportScope = "parcel" | "point" | "municipality";
+/**
+ * Evaluation scope actually used by a finding (evidence-based):
+ *   parcel         the check used the verified CRIM parcel geometry
+ *   point          the check used the selected point only (incl. fallbacks)
+ *   municipality   a municipality-wide record
+ *   not_evaluated  no answer was obtained (not run, failed, pending)
+ */
+export type ReportScope = "parcel" | "point" | "municipality" | "not_evaluated";
+/** Retrieval status of a finding's source (separate from scope). */
+export type RetrievalStatus = "answered" | "no_response" | "not_performed" | "pending";
+export const RETRIEVAL_TEXT: Record<RetrievalStatus, Bi> = {
+  answered: { en: "Source answered", es: "La fuente respondió" },
+  no_response: { en: "Source did not respond", es: "La fuente no respondió" },
+  not_performed: { en: "Check not performed", es: "Verificación no realizada" },
+  pending: { en: "Pending", es: "Pendiente" },
+};
 export type ReportGroup = "land" | "flood" | "environment";
 /**
  * What kind of constraint a finding is:
@@ -151,6 +166,10 @@ export interface ReportFinding {
   raw?: Record<string, string | null> | null;
   /** Structured facts for the reviewer assessment (e.g. conservation district codes). */
   meta?: Record<string, string[]>;
+  /** Source retrieval status (v3), separate from scope and from the finding's evaluation state. */
+  retrieval?: RetrievalStatus;
+  /** Scope the check would have used, when it was not evaluated. */
+  attempted_scope?: Exclude<ReportScope, "not_evaluated"> | null;
 }
 
 /** Parcel coverage as reported (from coverage.ts; numbers unrounded). */
@@ -197,8 +216,8 @@ export interface PropertyReportContext {
   locationRequirements: Array<{ title: string; reason: string | null }>;
 }
 
-export const REPORT_SCHEMA = "smartpr.property-report/v2" as const;
-export const REPORT_SCHEMAS_READABLE = ["smartpr.property-report/v1", REPORT_SCHEMA] as const;
+export const REPORT_SCHEMA = "smartpr.property-report/v3" as const;
+export const REPORT_SCHEMAS_READABLE = ["smartpr.property-report/v1", "smartpr.property-report/v2", REPORT_SCHEMA] as const;
 
 export interface PropertyReport {
   schema: (typeof REPORT_SCHEMAS_READABLE)[number];
@@ -216,7 +235,13 @@ export interface PropertyReport {
     coordinate_source: IntakeSite["coordinate_source"];
     precision: "parcel" | "point" | "address";
     near_boundary: boolean;
-    catastro: { value: string | null; state: ReportFindingState; source: ReportSource | null };
+    catastro: { value: string | null; state: ReportFindingState; source: ReportSource | null; /** What to show when there is no value — never an environmental disclaimer. */ text?: Bi };
+    /**
+     * Location validation (v3). parcel = "verified" only when a CRIM parcel
+     * boundary geometry was identified at the pin (an id alone is not enough).
+     * point_confirmed is the user's confirmation of the pin — never a parcel verification.
+     */
+    location?: { parcel: "verified" | "not_identified" | "unavailable" | "loading" | "not_looked_up"; roadway: boolean; point_confirmed: boolean; preliminary: boolean; notices: Bi[] };
     boundary: { state: ReportFindingState; geometry: unknown | null; area_m2: number | null; source: ReportSource | null };
     /** Approximate area: a number with units, or "Not available" with the reason — never a status label as the value. */
     area?: { m2: number | null; cuerdas: number | null; text: Bi; note: Bi };
@@ -254,6 +279,8 @@ export interface PropertyReport {
   summary?: { mapped: Bi[]; may_affect: Bi[]; unverified: Bi[]; next: Bi[] };
   /** Versions behind this report (schema, coverage method, rule set). */
   versions?: { schema: string; coverage_method: string; rules: string };
+  /** The regulation the use rules come from: publication date ≠ confirmed applicability (v3). */
+  regulation?: { name: string; version: string | null; publication_date: string | null; url: string | null; applicability: "not_verified" | "verified"; note: Bi };
   /** Discrepancies between sources, each compared at the same spatial scope. */
   discrepancies?: Bi[];
   /** Reviewer reading of the findings (reviewerAssessment.ts): conclusion, status groups, ranked actions, still needed. */
@@ -435,6 +462,8 @@ export function buildPropertyReport(input: {
   context: PropertyReportContext;
   /** Land-use analysis for the proposed activity (see landUse.ts). */
   landUse?: LandUseAnalysis | null;
+  /** The user confirmed the selected point as their property (never a parcel verification). */
+  pointConfirmed?: boolean;
   now?: Date;
 }): PropertyReport {
   const { site, context } = input;
@@ -459,6 +488,15 @@ export function buildPropertyReport(input: {
   const zParcel = parcel?.zoning;
   const zPoint = layer("zoning");
   const zPin = zPoint?.status === "resolved" && current ? zPoint : null;
+  // ---- Location validation (evidence-based) ---------------------------------
+  const parcelVerified = !!parcel?.boundary.value;
+  const parcelStatus: NonNullable<PropertyReport["property"]["location"]>["parcel"] = parcelVerified ? "verified"
+    : input.parcelLoading ? "loading"
+    : !parcel ? "not_looked_up"
+    : parcel.boundary.status === "unavailable" ? "unavailable" : "not_identified";
+  const roadwayAtPin = !!zPin && (/^VIAL$/i.test(zPin.code ?? "") || zPin.tags.includes("road") || /sistema vial/i.test(zPin.name ?? ""));
+  const roadway = !parcelVerified && (roadwayAtPin || parcel?.boundary.reason === "only_right_of_way_polygon_at_point");
+  const pointConfirmed = !!input.pointConfirmed;
   const zCovRaw = zParcel?.status === "sourced" ? (zParcel.coverage ?? (parcel?.areas_reliable?.zoning ? legacyCoverage(zParcel.districts.map((d) => ({ key: d.code, area_m2: d.area_m2, share: d.share })), parcelArea) : null)) : null;
   const districtName = (code: string) => zParcel?.districts.find((d) => d.code === code)?.name ?? null;
   const zCov = zCovRaw ? toReportCoverage(zCovRaw, (k) => bi(districtName(k) ?? k)) : null;
@@ -489,7 +527,8 @@ export function buildPropertyReport(input: {
       looked_up_at: parcel!.retrieved_at,
       key: true,
       coverage: zCov,
-      pin: zPin ? { value: bi(`${zPin.code}${zPin.name ? ` — ${zPin.name}` : ""}`), source: zPin.source.name } : null,
+      // A separate pin answer only when the main value covers the verified parcel.
+      pin: zPin && zParcel.scope === "parcel" && parcelVerified ? { value: bi(`${zPin.code}${zPin.name ? ` — ${zPin.name}` : ""}`), source: zPin.source.name } : null,
       notes,
     });
     // Same scope only: the pin layer vs the parcel geometry at the pin.
@@ -642,23 +681,28 @@ export function buildPropertyReport(input: {
       })(),
       notes: [bi("Municipal-wide record (not a parcel finding). The PT is separate from the island-wide PUT.", "Registro de todo el municipio (no es un hallazgo de la parcela). El PT es distinto del PUT de todo Puerto Rico.")],
     } : {});
-  const lu = input.landUse ?? null;
+  // Use rules are never evaluated on a roadway point (VIAL is not a developable district).
+  const lu = roadway ? null : input.landUse ?? null;
+  const usesScope: ReportScope = parcelVerified && zParcel?.status === "sourced" ? "parcel" : "point";
   const rulesVersion = bi(
     `Rules: ${RC_2023.name}, version ${RC_2023.version} (dated ${RC_2023.dataset_date}), as recorded in SmartPR's knowledge graph. SmartPR has not confirmed whether later amendments apply.${ptE?.status === "verified" ? ` ${site.municipality.name} has an approved Plan Territorial; its own provisions may also apply.` : ""}`,
     `Reglas: ${RC_2023.name}, versión ${RC_2023.version} (fecha ${RC_2023.dataset_date}), según constan en el grafo de conocimiento de SmartPR. SmartPR no ha confirmado si aplican enmiendas posteriores.${ptE?.status === "verified" ? ` ${site.municipality.name} tiene un Plan Territorial aprobado; sus propias disposiciones también pueden aplicar.` : ""}`
   );
   if (lu && lu.activity.use) {
     const c = lu.compatibility;
-    const hasRule = lu.districts.some((d) => d.permissionId && !d.sliver);
+    const reading = bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].en}`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].es}`);
+    // The governing regulation for this site has not been verified: the rule
+    // reading is preliminary and the analysis stays pending (never "permitted").
     add({
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
-      value: bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].en}`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].es}`),
-      detail: bi([...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")),
-      state: hasRule ? "sourced" : "review",
+      value: bi("Pending — governing regulation not verified", "Pendiente — reglamento aplicable no verificado"),
+      detail: bi(`Preliminary reading under ${RC_2023.name} (not confirmed to govern this site${usesScope === "point" ? "; based on the selected point only" : ""}): ${reading.en}. ${[...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")}`.trim(),
+                 `Lectura preliminar según el ${RC_2023.name} (no confirmado como aplicable a este lugar${usesScope === "point" ? "; basada solo en el punto seleccionado" : ""}): ${reading.es}. ${[...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")}`.trim()),
+      state: "review",
       ruleBased: true,
-      tone: c.baseOutcome === "permitted" ? "ok" : c.baseOutcome === "conditional" || c.baseOutcome === "discretionary" ? "attention" : c.baseOutcome === "potentially_prohibited" ? "hazard" : "unknown",
-      scope: "parcel",
+      tone: "attention",
+      scope: usesScope,
       sources: lu.districts.flatMap((d) => d.sources).map((x) => ({ name: x.name, url: x.url, dataset_date: null, version: x.citation || null })),
       looked_up_at: parcel?.retrieved_at ?? null, key: false,
       notes: [rulesVersion],
@@ -668,8 +712,10 @@ export function buildPropertyReport(input: {
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
       value: null,
-      detail: bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
-      state: "not_evaluated", tone: "unknown", scope: "parcel", sources: [RC_2023], looked_up_at: null, key: false,
+      detail: roadway
+        ? bi("Not evaluated: the selected point is mapped as a roadway (VIAL / Sistema vial), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como vía (VIAL / Sistema vial), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
+        : bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
+      state: "not_evaluated", tone: "unknown", scope: "not_evaluated", sources: [RC_2023], looked_up_at: null, key: false,
       notes: [rulesVersion],
     });
   }
@@ -721,14 +767,14 @@ export function buildPropertyReport(input: {
       : fParcel?.status === "unavailable" ? bi(`Unable to verify across the parcel: ${reasonText(fParcel.reason).en}.`, `No se pudo verificar en la parcela: ${reasonText(fParcel.reason).es}.`) : null,
     state: parcelZones.length || fm ? "sourced" : fParcel ? (fParcel.status === "none_mapped" ? "none_mapped" : layerState(fz, current, layersLoading)) : layerState(fz, current, layersLoading),
     tone: floodValue ? (sfha ? "hazard" : "ok") : "unknown",
-    scope: parcelZones.length ? "parcel" : "point",
+    scope: parcelZones.length ? (fParcel!.scope === "parcel" && parcelVerified ? "parcel" : "point") : "point",
     sources: [
       ...(fz ? [{ ...sourceOf(fz), dataset_date: fm?.effectiveDate ?? fz.source.dataset_date ?? null, version: fm?.firmPanel ? `FIRM panel ${fm.firmPanel}` : fz.source.version ?? null }] : []),
     ],
     looked_up_at: parcelZones.length ? parcel!.retrieved_at : at(fz),
     key: true,
     coverage: fCov,
-    pin: parcelZones.length && fm ? { value: bi(`Zone ${fm.zone}`, `Zona ${fm.zone}`), source: fz ? fz.source.name : null } : null,
+    pin: parcelZones.length && fm && fParcel!.scope === "parcel" && parcelVerified ? { value: bi(`Zone ${fm.zone}`, `Zona ${fm.zone}`), source: fz ? fz.source.name : null } : null,
     notes: floodNotes,
   });
   const floodwayKnown = parcelZones.length > 0 || fm;
@@ -741,7 +787,7 @@ export function buildPropertyReport(input: {
     detail: floodway ? bi("A regulatory floodway is mapped on this site.", "Hay un cauce mayor reglamentario mapeado en este lugar.") : floodwayKnown ? NONE_MAPPED_NOTE : null,
     state: floodwayKnown ? (floodway ? "sourced" : "none_mapped") : layerState(fz, current, layersLoading),
     tone: floodway ? "hazard" : floodwayKnown ? "ok" : "unknown",
-    scope: parcelZones.length ? "parcel" : "point",
+    scope: parcelZones.length ? (fParcel!.scope === "parcel" && parcelVerified ? "parcel" : "point") : "point",
     sources: fz ? [sourceOf(fz)] : [],
     looked_up_at: parcelZones.length ? parcel!.retrieved_at : at(fz),
     key: false,
@@ -795,11 +841,20 @@ export function buildPropertyReport(input: {
   const presenceExtra = (e: ExtraFinding | undefined, id: string, title: Bi, tone: ReportTone) =>
     extraFinding(e, id, "environment", title, bi("Not checked for this parcel.", "No se verificó para esta parcela."), undefined, tone, false, e && e.scope === "parcel" && e.status !== "unable" ? { notes: [presenceNote] } : {});
   // Parcel check when it ran; else the pin layer (which reports its own outage); else "not checked".
-  if (ex.historic_zone || (!layer("historic_zone") && !pointUsable("historic_zone"))) presenceExtra(ex.historic_zone, "historic_zone", bi("Historic zone", "Zona histórica"), "attention");
+  // A failed parcel-wide check falls back to the pin layer when that answered — labelled point-only.
+  const fallbackNote = (e: ExtraFinding | undefined) => bi(`Parcel-wide check failed (${reasonText(e?.reason).en}); this result is from the selected point only.`, `La verificación de toda la parcela falló (${reasonText(e?.reason).es}); este resultado es solo del punto seleccionado.`);
+  const pinFallback = (e: ExtraFinding | undefined, id: SiteLayerId) => e?.status === "unable" && pointUsable(id);
+  if (pinFallback(ex.historic_zone, "historic_zone")) {
+    env("historic_zone", bi("Historic zone", "Zona histórica"), "attention", (r) => bi(r.name ?? "Inside a historic zone", r.name ?? "Dentro de una zona histórica"), bi("None mapped at the pin", "Nada mapeado en el pin"));
+    findings[findings.length - 1]!.notes = [fallbackNote(ex.historic_zone)];
+  } else if (ex.historic_zone || (!layer("historic_zone") && !pointUsable("historic_zone"))) presenceExtra(ex.historic_zone, "historic_zone", bi("Historic zone", "Zona histórica"), "attention");
   else env("historic_zone", bi("Historic zone", "Zona histórica"), "attention", (r) => bi(r.name ?? "Inside a historic zone", r.name ?? "Dentro de una zona histórica"), bi("None mapped at the pin", "Nada mapeado en el pin"));
   presenceExtra(ex.historic_site, "historic_site", bi("Historic sites (JP)", "Sitios históricos (JP)"), "attention");
   presenceExtra(ex.archaeology, "archaeology", bi("Archaeological sensitivity", "Sensibilidad arqueológica"), "attention");
-  if (ex.protected_area || (!layer("protected_area") && !pointUsable("protected_area"))) presenceExtra(ex.protected_area, "protected_area", bi("Protected natural area", "Área natural protegida"), "hazard");
+  if (pinFallback(ex.protected_area, "protected_area")) {
+    env("protected_area", bi("Protected natural area", "Área natural protegida"), "hazard", (r) => bi(r.name ?? "Inside a protected area", r.name ?? "Dentro de un área protegida"), bi("None mapped at the pin", "Nada mapeado en el pin"));
+    findings[findings.length - 1]!.notes = [fallbackNote(ex.protected_area)];
+  } else if (ex.protected_area || (!layer("protected_area") && !pointUsable("protected_area"))) presenceExtra(ex.protected_area, "protected_area", bi("Protected natural area", "Área natural protegida"), "hazard");
   else env("protected_area", bi("Protected natural area", "Área natural protegida"), "hazard", (r) => bi(r.name ?? "Inside a protected area", r.name ?? "Dentro de un área protegida"), bi("None mapped at the pin", "Nada mapeado en el pin"));
   presenceExtra(ex.natural_reserve, "natural_reserve", bi("Natural reserve (JP)", "Reserva natural (JP)"), "hazard");
   presenceExtra(ex.wetlands, "wetlands", bi("Wetlands & waters (mapped)", "Humedales y cuerpos de agua (mapeados)"), "attention");
@@ -897,6 +952,11 @@ export function buildPropertyReport(input: {
     const main = fams.filter((f) => f !== "road");
     zf.pill = main.length ? bi(main.map((f) => FAMILY_TEXT[f]!.en).join(" + ").replace(/^./, (c) => c.toUpperCase()), main.map((f) => FAMILY_TEXT[f]!.es).join(" + ").replace(/^./, (c) => c.toUpperCase())) : bi(`Zoning ${ds.map((d) => d.code).join(", ")}`, `Calificación ${ds.map((d) => d.code).join(", ")}`);
   }
+  if (zf && zf.state === "sourced" && roadway) {
+    zf.plain = bi(`Mapped as a roadway (${zPin?.code ?? "VIAL"}${zPin?.name ? ` — ${zPin.name}` : ""}) at the selected point. This is not a developable zoning district, and no permitted uses are inferred from it.`, `Mapeado como vía (${zPin?.code ?? "VIAL"}${zPin?.name ? ` — ${zPin.name}` : ""}) en el punto seleccionado. No es un distrito de calificación desarrollable y no se infieren usos permitidos de él.`);
+    zf.pill = bi("Roadway at the pin (VIAL)", "Vía en el pin (VIAL)");
+    zf.tone = "attention";
+  }
   const ff = findings.find((f) => f.id === "flood_zone");
   if (ff && ff.state === "sourced") {
     const zones = parcelZones.length ? parcelZones.map((z) => ({ zone: z.zone, sub: z.subtype ?? "" })) : fm ? [{ zone: fm.zone, sub: "" }] : [];
@@ -911,9 +971,16 @@ export function buildPropertyReport(input: {
         : /^A/.test(top.zone) ? [`High flood risk: inside FEMA's 1%-annual-chance flood area (Zone ${top.zone})${onPart.en}.`, `Alto riesgo de inundación: dentro del área de 1% de probabilidad anual de FEMA (Zona ${top.zone})${onPart.es}.`, `High flood risk${onPart.en}`, `Alto riesgo de inundación${onPart.es}`]
         : /^D/.test(top.zone) ? [`Flood risk not determined by FEMA (Zone D).`, `Riesgo de inundación no determinado por FEMA (Zona D).`, "Flood risk undetermined", "Riesgo de inundación indeterminado"]
         : lvl === 1 ? [`Moderate flood risk: FEMA's 0.2%-annual-chance area (shaded Zone X).`, `Riesgo moderado de inundación: área de 0.2% de probabilidad anual de FEMA (Zona X sombreada).`, "Moderate flood risk", "Riesgo moderado de inundación"]
-        : [`Low flood risk: outside FEMA's mapped high-risk flood areas (Zone X). Low risk is not no risk.`, `Bajo riesgo de inundación: fuera de las áreas de alto riesgo mapeadas por FEMA (Zona X). Bajo riesgo no es riesgo cero.`, "Low flood risk", "Bajo riesgo de inundación"];
+        : (() => {
+            const sub = (parcelZones.find((z) => z.zone === top.zone)?.subtype ?? (typeof fz?.attributes.ZONE_SUBTY === "string" ? fz.attributes.ZONE_SUBTY : "")) || "";
+            const small = new Set(["of", "to", "due", "with", "the", "and", "in", "or"]);
+            const desc = sub ? sub.toLowerCase().split(/\s+/).map((w, i) => (i > 0 && small.has(w) ? w : w.charAt(0).toUpperCase() + w.slice(1))).join(" ") : null;
+            return [desc ? `FEMA Zone ${top.zone} — ${desc} (FEMA NFHL zone subtype). Outside FEMA's mapped 1%-annual-chance flood areas; this does not mean no flood risk.` : `FEMA Zone ${top.zone}. FEMA returned no zone description. Outside FEMA's mapped 1%-annual-chance flood areas; this does not mean no flood risk.`,
+                    desc ? `Zona ${top.zone} de FEMA — ${desc} (subtipo de zona del NFHL de FEMA). Fuera de las áreas de 1% de probabilidad anual mapeadas por FEMA; no significa ausencia de riesgo.` : `Zona ${top.zone} de FEMA. FEMA no devolvió descripción de la zona. Fuera de las áreas de 1% de probabilidad anual mapeadas por FEMA; no significa ausencia de riesgo.`,
+                    `FEMA Zone ${top.zone}`, `Zona ${top.zone} de FEMA`];
+          })();
       ff.plain = bi(en, es);
-      ff.pill = bi(pe, ps);
+      ff.pill = /^(A|V)/.test(top.zone) ? bi(`FEMA Zone ${top.zone} — ${pe}`, `Zona ${top.zone} de FEMA — ${ps}`) : bi(pe, ps);
     }
   }
   const tf = findings.find((f) => f.id === "terrain");
@@ -1062,8 +1129,16 @@ export function buildPropertyReport(input: {
   }
   missing.push(...discrepancies);
 
+  // ---- Evidence-based scope + retrieval status (never "parcel" without parcel geometry) ----
+  for (const f of findings) {
+    const answeredF = f.state === "sourced" || f.state === "none_mapped" || (f.state === "review" && f.id === "permitted_uses");
+    f.retrieval = f.state === "sourced" || f.state === "none_mapped" || f.state === "review" ? "answered" : f.state === "unavailable" || f.state === "stale" ? "no_response" : f.state === "loading" ? "pending" : "not_performed";
+    if (f.scope === "parcel" && !parcelVerified) f.scope = "point";
+    if (!answeredF && f.scope !== "not_evaluated") { f.attempted_scope = f.scope; f.scope = "not_evaluated"; }
+  }
+
   // ---- Lead summary ------------------------------------------------------------
-  const scopeWord = (f: ReportFinding): Bi => f.scope === "parcel" ? bi("across the parcel", "en toda la parcela") : f.scope === "point" ? bi("at the pin", "en el pin") : bi("municipality-wide", "en todo el municipio");
+  const scopeWord = (f: ReportFinding): Bi => f.scope === "parcel" ? bi("across the verified parcel", "en toda la parcela verificada") : f.scope === "point" ? bi("at the selected point only", "solo en el punto seleccionado") : f.scope === "municipality" ? bi("municipality-wide", "en todo el municipio") : bi("not evaluated", "no evaluado");
   const mapped: Bi[] = [];
   if (area.m2) mapped.push(bi(`Parcel ${catastroValue ?? ""}: ${area.text.en}, from the mapped CRIM boundary (not a survey).`.replace("Parcel :", "Parcel:"), `Parcela ${catastroValue ?? ""}: ${area.text.es}, del límite mapeado del CRIM (no es una mensura).`.replace("Parcela :", "Parcela:")));
   for (const f of findings) {
@@ -1098,6 +1173,13 @@ export function buildPropertyReport(input: {
   if (discrepancies.length) next.push(bi("Ask the responsible agency about the discrepancies listed above.", "Consulte a la agencia responsable sobre las discrepancias listadas arriba."));
   if (findings.some((f) => f.ambiguities?.length)) next.push(bi("Confirm the ambiguous official records listed above with the Junta de Planificación.", "Confirme con la Junta de Planificación los registros oficiales ambiguos listados arriba."));
 
+  // ---- Location notices -------------------------------------------------------
+  const locationNotices: Bi[] = [];
+  if (parcelStatus === "not_identified") locationNotices.push(bi("No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.", "No se identificó una parcela catastral. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela."));
+  if (parcelStatus === "unavailable") locationNotices.push(bi(`The CRIM parcel source did not respond (${reasonText(boundary?.reason).en}). Findings describe the selected point only; parcel-wide checks have not been performed.`, `La fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es}). Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela.`));
+  if (roadway) locationNotices.push(bi("This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements.", "Este punto puede estar sobre una vía y no en su propiedad. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
+  if (pointConfirmed && !parcelVerified) locationNotices.push(bi("You confirmed this point as your property. That confirms the location you intend, not a parcel boundary: parcel-wide checks remain not performed.", "Usted confirmó este punto como su propiedad. Eso confirma la ubicación que indica, no un límite de parcela: las verificaciones de toda la parcela siguen sin realizarse."));
+
   const all = [...findings.flatMap((f) => f.sources), ...steps.flatMap((s) => s.sources), ...(catSource ? [catSource] : [])];
   const sources = all.filter((s, i) => all.findIndex((o) => o.name === s.name && o.dataset_date === s.dataset_date) === i);
 
@@ -1121,7 +1203,16 @@ export function buildPropertyReport(input: {
       coordinate_source: site.coordinate_source,
       precision: boundary?.value ? "parcel" : site.coordinate_source === "GEOCODED_ADDRESS" ? "address" : "point",
       near_boundary: site.near_boundary,
-      catastro: { value: catastroValue, state: catastroValue ? "sourced" : parcelState(boundary?.status), source: catSource },
+      catastro: {
+        value: catastroValue, state: catastroValue ? "sourced" : parcelState(boundary?.status), source: catSource,
+        text: catastroValue
+          ? bi(parcelVerified ? catastroValue : `${catastroValue} (parcel id at the point; no parcel boundary identified)`, parcelVerified ? catastroValue : `${catastroValue} (id de parcela en el punto; sin límite de parcela identificado)`)
+          : parcelStatus === "not_identified" ? bi("No cadastral parcel identified at the selected point", "No se identificó parcela catastral en el punto seleccionado")
+          : parcelStatus === "unavailable" ? bi(`Not available — the CRIM parcel source did not respond (${reasonText(boundary?.reason).en})`, `No disponible — la fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es})`)
+          : parcelStatus === "loading" ? bi("Checking…", "Verificando…")
+          : bi("Not looked up", "No consultado"),
+      },
+      location: { parcel: parcelStatus, roadway, point_confirmed: pointConfirmed, preliminary: !parcelVerified, notices: locationNotices },
       boundary: {
         state: parcelState(boundary?.status),
         geometry: boundary?.value?.geometry ?? null,
@@ -1137,8 +1228,8 @@ export function buildPropertyReport(input: {
           crs: "NAD83 / Puerto Rico & Virgin Is. (EPSG:32161)",
           units: "metres",
           projection: "Lambert Conformal Conic (2SP), GRS80 ellipsoid",
-          note: bi("Computed from the WGS84 pin (NAD83 and WGS84 differ by about 1 m here). Not a survey coordinate.", "Calculado del pin WGS84 (NAD83 y WGS84 difieren cerca de 1 m aquí). No es una coordenada de mensura."),
-          datum_note: bi("Input datum WGS84 (pin); output NAD83, metres; no datum transformation applied.", "Datum de entrada WGS84 (pin); salida NAD83, metros; no se aplicó transformación de datum."),
+          note: bi("Projected from the WGS84 pin with the NAD83 / Puerto Rico & Virgin Is. projection formulas. Not a survey coordinate.", "Proyectado desde el pin WGS84 con las fórmulas de la proyección NAD83 / Puerto Rico e Islas Vírgenes. No es una coordenada de mensura."),
+          datum_note: bi("No WGS84→NAD83 datum transformation was applied; the resulting positional difference has not been quantified.", "No se aplicó transformación de datum WGS84→NAD83; la diferencia de posición resultante no se ha cuantificado."),
         },
         municipality_fips: site.municipality.fips,
         barrio_geoid: site.barrio?.geoid ?? null,
@@ -1152,7 +1243,13 @@ export function buildPropertyReport(input: {
     complexity: lu?.activity.use ? lu.complexity : null,
     next_steps: { activity, missing, unresolved, steps, location_requirements: context.locationRequirements },
     summary: { mapped, may_affect: mayAffect, unverified, next },
-    versions: { schema: REPORT_SCHEMA, coverage_method: COVERAGE_METHOD, rules: `${RC_2023.name} ${RC_2023.version} (SmartPR knowledge graph)` },
+    versions: {
+      schema: REPORT_SCHEMA,
+      coverage_method: findings.some((f) => f.coverage && f.coverage.parts.length && f.scope === "parcel") ? COVERAGE_METHOD : "Parcel calculations not performed: no verified parcel geometry was used, so no polygons were clipped, dissolved or measured.",
+      rules: `${RC_2023.name} ${RC_2023.version} (SmartPR knowledge graph; applicability to this site not verified)`,
+    },
+    regulation: { name: RC_2023.name, version: RC_2023.version, publication_date: RC_2023.dataset_date, url: RC_2023.url, applicability: "not_verified",
+      note: bi("The publication date is not a confirmation that this regulation governs the site. SmartPR has not verified the governing regulation (e.g. a municipal Plan Territorial regulation or later amendments), so permitted-use analysis stays pending.", "La fecha de publicación no confirma que este reglamento rija el lugar. SmartPR no ha verificado el reglamento aplicable (p. ej., un reglamento de Plan Territorial municipal o enmiendas posteriores), así que el análisis de usos sigue pendiente.") },
     discrepancies,
     sources,
     disclaimer: bi("Reference information from official map sources. This is not a survey, permit decision, or approval.", "Información de referencia de fuentes cartográficas oficiales. No es una mensura, decisión de permiso ni aprobación."),
@@ -1204,9 +1301,10 @@ export function assessmentOf(r: PropertyReport): ReviewerAssessment {
 }
 
 export const SCOPE_TEXT = {
-  parcel: bi("Checked across parcel", "Verificado en toda la parcela"),
-  point: bi("At selected point", "En el punto seleccionado"),
+  parcel: bi("Checked across verified parcel", "Verificado en toda la parcela verificada"),
+  point: bi("At selected point only", "Solo en el punto seleccionado"),
   municipality: bi("Municipality-wide record", "Registro de todo el municipio"),
+  not_evaluated: bi("Not evaluated", "No evaluado"),
 } as const;
 
 /** Plain-text summary for "Copy summary": site summary → key findings → next steps → still needed → detailed findings. */
@@ -1216,17 +1314,21 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
   const area = reportArea(r);
   const a = assessmentOf(r);
   const nad = r.property.technical.nad83_state_plane;
-  const group = (title: string, xs: typeof a.review) => (xs.length ? [title, ...xs.map((x) => `• ${t(x.label)}: ${t(x.value)}`)] : []);
+  const meta = (x: (typeof a.review)[number]) => { const m = [x.scope ? t(SCOPE_TEXT[x.scope]).toLowerCase() : null, x.dataset ? `${x.dataset.name}${x.dataset.date ? `, ${x.dataset.date}` : ""}` : null].filter(Boolean); return m.length ? ` (${m.join("; ")})` : ""; };
+  const group = (title: string, xs: typeof a.review) => (xs.length ? [title, ...xs.map((x) => `• ${t(x.label)}: ${t(x.value)}${meta(x)}`)] : []);
+  const loc = r.property.location;
   const lines = [
     `${L("Property & Site Report", "Informe de propiedad y lugar")} — ${r.property.title}`,
     `${r.property.address.primary}, ${r.property.address.secondary}`,
-    `${L("Coordinates", "Coordenadas")}: ${r.property.latitude.toFixed(6)}, ${r.property.longitude.toFixed(6)} · ${L("Catastro", "Catastro")}: ${r.property.catastro.value ?? t(findingStateText(r.property.catastro.state))} · ${L("Approximate area", "Área aproximada")}: ${t(area.text)} (${t(area.note)})`,
+    ...(loc?.preliminary && loc.parcel !== "loading" ? [L("PRELIMINARY — SELECTED POINT ONLY", "PRELIMINAR — SOLO EL PUNTO SELECCIONADO")] : []),
+    ...(loc?.notices ?? []).map((n) => `! ${t(n)}`),
+    `${L("Coordinates", "Coordenadas")}: ${r.property.latitude.toFixed(6)}, ${r.property.longitude.toFixed(6)} · ${L("Catastro", "Catastro")}: ${r.property.catastro.text ? t(r.property.catastro.text) : r.property.catastro.value ?? t(findingStateText(r.property.catastro.state))} · ${L("Approximate area", "Área aproximada")}: ${t(area.text)} (${t(area.note)})`,
     "",
     t(a.conclusion),
     "",
     L("KEY REGULATORY FINDINGS", "HALLAZGOS REGULATORIOS CLAVE"),
     ...group(L("Review required:", "Requiere revisión:"), a.review),
-    ...group(L("Clear (checked, no mapped constraint):", "Despejado (verificado, sin restricción mapeada):"), a.clear),
+    ...group(L("No mapped intersection identified (checked; not a clearance):", "No se identificó intersección mapeada (verificado; no es una autorización):"), a.clear),
     ...group(L("Unable to verify:", "No se pudo verificar:"), a.unable),
     "",
     L("RECOMMENDED NEXT STEPS", "PRÓXIMOS PASOS RECOMENDADOS"),
@@ -1236,7 +1338,9 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     L("DETAILED SOURCE FINDINGS", "HALLAZGOS DETALLADOS POR FUENTE"),
     ...r.findings.map((f) => {
       const val = f.value && (f.state === "sourced" || f.state === "none_mapped") ? t(f.value) : t(findingStateText(f.state));
-      return `• ${t(f.title)}: ${val} — ${t(SCOPE_TEXT[f.scope])}; ${t(BASIS_TEXT[basisOf(f)])}${f.pin ? `; ${L("at the pin", "en el pin")}: ${t(f.pin.value)}` : ""}`;
+      const src = f.sources[0];
+      const scopeLabel = r.schema !== REPORT_SCHEMA ? L(`${f.scope} (as saved; not re-verified)`, `${f.scope} (según se guardó; no reverificado)`) : t((SCOPE_TEXT as Record<string, Bi>)[f.scope] ?? SCOPE_TEXT.not_evaluated);
+      return `• ${t(f.title)}: ${val} — ${scopeLabel}; ${t(BASIS_TEXT[basisOf(f)])}${f.retrieval ? `; ${t(RETRIEVAL_TEXT[f.retrieval])}` : ""}${f.pin ? `; ${L("at the pin", "en el pin")}: ${t(f.pin.value)}` : ""}${src ? ` [${src.name}${src.dataset_date ? `, ${L("dataset date", "fecha de datos")} ${src.dataset_date}` : ""}${src.url ? ` ${src.url}` : ""}${f.looked_up_at ? `, ${L("looked up", "consultado")} ${f.looked_up_at}` : ""}]` : ""}`;
     }),
     ...(review ? [
       "",
@@ -1249,6 +1353,8 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     L("TECHNICAL", "TÉCNICO"),
     `${nad.crs ?? "NAD83 / Puerto Rico & Virgin Is. (EPSG:32161)"}: X ${nad.x.toLocaleString("en-US")} m, Y ${nad.y.toLocaleString("en-US")} m (${L("units", "unidades")}: ${nad.units ?? "metres"}). ${t(nad.note)}`,
     ...(r.versions ? [`${L("Area method", "Método de áreas")}: ${r.versions.coverage_method}`, `${L("Rules", "Reglas")}: ${r.versions.rules}`] : []),
+    ...(r.regulation ? [`${L("Regulation for use rules", "Reglamento para reglas de uso")}: ${r.regulation.name}${r.regulation.publication_date ? ` (${L("publication date", "fecha de publicación")} ${r.regulation.publication_date})` : ""} — ${L("applicability to this site", "aplicabilidad a este lugar")}: ${r.regulation.applicability === "verified" ? L("verified", "verificada") : L("not verified", "no verificada")}. ${t(r.regulation.note)}`] : []),
+    ...(r.schema !== REPORT_SCHEMA ? [L(`Saved with an earlier report format (${r.schema}); shown as saved, not re-evaluated.`, `Guardado con un formato anterior (${r.schema}); se muestra tal como se guardó, sin reevaluar.`)] : []),
     `${L("Sources", "Fuentes")}: ${r.sources.map((s) => `${s.name}${s.dataset_date ? ` (${L("data", "datos")} ${s.dataset_date})` : ""}`).join("; ")}`,
     `${L("Report", "Informe")} ${r.fingerprint} · ${r.schema} · ${L("location revision", "revisión de ubicación")} ${r.location_revision} · ${L("generated", "generado")} ${r.generated_at}`,
     t(r.disclaimer),
@@ -1282,7 +1388,8 @@ export function regulatoryFlags(findings: ReportFinding[], lu: LandUseAnalysis |
   ];
   if (lu?.activity.use) {
     const o = lu.compatibility.outcome;
-    out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: COMPATIBILITY_TEXT[o], tone: o === "permitted" ? "ok" : o === "conditional" ? "attention" : o === "potentially_prohibited" ? "hazard" : o === "insufficient" ? "unknown" : "attention", status: o === "insufficient" ? "unable_to_verify" : o === "professional_review" ? "requires_professional_review" : "verified" });
+    // Governing regulation not verified → pending, with the preliminary reading named.
+    out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: bi(`Pending — regulation not verified (preliminary: ${COMPATIBILITY_TEXT[o].en})`, `Pendiente — reglamento no verificado (preliminar: ${COMPATIBILITY_TEXT[o].es})`), tone: "attention", status: "requires_professional_review" });
   } else {
     out.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"), value: STATUS_TEXT.not_evaluated, tone: "unknown", status: "not_evaluated" });
   }

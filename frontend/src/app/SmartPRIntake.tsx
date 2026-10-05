@@ -1676,6 +1676,9 @@ export default function SmartPRIntake() {
   // Proposed activity for the Property & Site Report (null = use the intake
   // description the user already gave — never asked twice).
   const [propertyActivity, setPropertyActivity] = useState<ActivityInput | null>(null);
+  // The user's confirmation of the selected point, tied to its exact coordinates
+  // (a moved pin is no longer confirmed). Never a parcel verification.
+  const [pointConfirmation, setPointConfirmation] = useState<{ latitude: number; longitude: number; at: string } | null>(null);
   const reportOpenerRef = useRef<HTMLElement | null>(null);
   const [locationEditRequest, setLocationEditRequest] = useState(0);
   const [reportSave, setReportSave] = useState<{ saving: boolean; saved: { version: number; created_at: string; fingerprint: string } | null; error: string | null }>({ saving: false, saved: null, error: null });
@@ -2041,6 +2044,9 @@ export default function SmartPRIntake() {
     }
     if (typeof st.intakeDescription === 'string') setIntakeDescription(st.intakeDescription);
     if (st.locationState) setLocState(restoreLocationState(st.locationState));
+    if (st.pointConfirmation && typeof st.pointConfirmation.latitude === 'number' && typeof st.pointConfirmation.longitude === 'number') {
+      setPointConfirmation({ latitude: st.pointConfirmation.latitude, longitude: st.pointConfirmation.longitude, at: String(st.pointConfirmation.at ?? '') });
+    }
     if (st.propertyActivity && typeof st.propertyActivity.text === 'string') {
       setPropertyActivity({ text: String(st.propertyActivity.text).slice(0, 400), construction: typeof st.propertyActivity.construction === 'string' ? st.propertyActivity.construction : null, use: typeof st.propertyActivity.use === 'string' ? st.propertyActivity.use : null });
     }
@@ -3707,6 +3713,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               locationState: locStateRef.current,
               parcelFindings: parcelState.data,
               propertyActivity,
+              pointConfirmation,
             },
           }),
         })];
@@ -3826,7 +3833,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     me, businessId, profile, discoveryAnswers, requirements, potentialDecisions, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives,
     sampleFormDrafts, preparedSampleApplications, govFormDrafts,
     preparedGovApplications, canonicalOverride, currentStep, readinessScore, scenario,
-    intakeSite, locState, parcelState.data, propertyActivity,
+    intakeSite, locState, parcelState.data, propertyActivity, pointConfirmation,
   ]);
 
   // Typing and voice enter the same canonical state. Keep the existing intake
@@ -6419,6 +6426,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     parcelLoading: parcelState.loading || parcelState.revision !== locState.revision,
     revision: locState.revision,
     landUse,
+    pointConfirmed: !!(pointConfirmation && intakeSite && Math.abs(pointConfirmation.latitude - intakeSite.latitude) < 1e-7 && Math.abs(pointConfirmation.longitude - intakeSite.longitude) < 1e-7),
     context: {
       activity: scenario?.business.proposedActivity?.value ?? scenario?.operations.activity?.value ?? null,
       businessType: profile.business_type || null,
@@ -6450,6 +6458,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : !siteBusinessId || !intakeSite?.location_id
       ? { kind: 'pending_location' }
       : { kind: 'ready', saving: reportSave.saving, saved: reportSaved, error: reportSave.error, onSave: () => void saveReportToPassport() };
+  const confirmSelectedPoint = () => {
+    if (intakeSite) setPointConfirmation({ latitude: intakeSite.latitude, longitude: intakeSite.longitude, at: new Date().toISOString() });
+  };
   const openPropertyReport = (opener: HTMLElement | null) => { reportOpenerRef.current = opener; setReportOpen(true); };
   const propertyReportDrawer = (
     <PropertyReportDrawer
@@ -6463,6 +6474,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       reviewTarget={siteBusinessId && intakeSite?.location_id ? { businessId: siteBusinessId, locationId: intakeSite.location_id } : null}
       activity={activityInput}
       onActivityChange={setPropertyActivity}
+      onConfirmPoint={confirmSelectedPoint}
     />
   );
 
@@ -7239,6 +7251,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     onRetryLayers={retrySiteSources}
                     report={propertyReport}
                     onOpenReport={openPropertyReport}
+                    onConfirmPoint={confirmSelectedPoint}
                     proposal={locationProposal}
                     onProposalCancel={onProposalCancel}
                     editRequest={locationEditRequest}
