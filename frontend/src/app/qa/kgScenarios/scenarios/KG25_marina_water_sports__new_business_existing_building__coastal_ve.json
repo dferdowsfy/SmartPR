@@ -1,0 +1,116 @@
+{
+  "id": "KG25",
+  "title": "Marina / water sports operator from a leased kiosk — Fajardo, coastal zone + VE",
+  "matrix": {
+    "businessType": "marina_water_sports",
+    "projectType": "new_business_existing_building",
+    "locationContext": "coastal_ve"
+  },
+  "description": "We are starting a water sports company in Fajardo renting kayaks and jet skis and offering snorkel tours from a small leased kiosk at the marina. No construction.",
+  "profile": {
+    "business_type": "Tour Operator",
+    "municipality": "Fajardo",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 5,
+    "industry": "Hospitality & Tourism",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "leased kiosk"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased kiosk"
+    }
+  },
+  "site": {
+    "municipality": "Fajardo",
+    "geo": "coastal_ve"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_TOURISM_REGISTRATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Tour operator in a tourism municipio: Compania de Turismo tour-operator endorsement. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]"
+      },
+      {
+        "key": "gap:drna_vessel_and_concession",
+        "confidence": "needs-expert-review",
+        "rationale": "Renting jet skis/kayaks needs DRNA vessel registration and the Navigation and Aquatic Safety Law (Ley 430-2000) rental-operator permit; operating from marine waters may need a DRNA concession. No KB documents cover these."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction in the description: RULE_0643-0646 need project_type new_construction/renovation, structural_work or construction_approvals_required."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin is in the SFHA but there is no construction/site work: RULE_0706 any_of requires a construction-type project fact."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "In the coastal zone but no construction-type work: RULE_0708 any_of requires construction / exterior / site work."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      }
+    ],
+    "ordering": []
+  }
+}

@@ -59,3 +59,45 @@ test("confirmed items are merged once into the computed checklist", () => {
     "potential_tourism",
   ]);
 });
+
+test("REG-LIVE-COASTAL-SOURCE-001: advisory citations are carried onto the requirement (plumbing)", () => {
+  const defs: PotentialDef[] = [
+    {
+      flag: "coastal",
+      flagLabel: "Coastal Municipality",
+      document: "Coastal / Environmental Zone Review",
+      agency: "DRNA",
+      why: "A coastal review may be required.",
+      followUp: "Will the business operate near the coast?",
+      citation: "Coastal Zone Management Act § 307(c)(3)(A), 16 U.S.C. § 1456(c)(3)(A)",
+      citation_url: "https://www.ecfr.gov/current/title-15/subtitle-B/chapter-IX/subchapter-B/part-930/subpart-D/section-930.57",
+    },
+  ];
+  const requirements = confirmedPotentialRequirements(defs, { coastal: "applies" });
+  assert.equal(requirements.length, 1);
+  assert.equal(
+    requirements[0].citation,
+    "Coastal Zone Management Act § 307(c)(3)(A), 16 U.S.C. § 1456(c)(3)(A)"
+  );
+  assert.equal(
+    requirements[0].citation_url,
+    "https://www.ecfr.gov/current/title-15/subtitle-B/chapter-IX/subchapter-B/part-930/subpart-D/section-930.57"
+  );
+});
+
+test("REG-LIVE-COASTAL-SOURCE-001: PR coastal flag advisory carries an authoritative citation (data)", async () => {
+  const { ACTIVE_JURISDICTION } = await import("./jurisdictions/index.ts");
+  const coastal = ACTIVE_JURISDICTION.flagAdvisories.byFlag["coastal"];
+  assert.ok(coastal, "PR pack must define a coastal flag advisory");
+  assert.ok(
+    (coastal.citation ?? "").length > 20,
+    "coastal advisory must carry a substantive citation for the card SOURCE row"
+  );
+  assert.ok(
+    /16 U\.S\.C\.|L\.P\.R\.A\.|Ley/i.test(coastal.citation ?? ""),
+    "coastal citation must reference an actual statute"
+  );
+  // The citation is verbatim from the KB's DOC_CZM_COASTAL_REVIEW (regulation confidence).
+  const requirements = confirmedPotentialRequirements([coastal], { coastal: "applies" });
+  assert.equal(requirements[0].citation, coastal.citation);
+});

@@ -1,0 +1,121 @@
+{
+  "id": "KG20",
+  "title": "General contractor run from a home office — Carolina, residential district (zone X)",
+  "matrix": {
+    "businessType": "construction_contractor",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_residential_x"
+  },
+  "description": "I am a general contractor working from my home office in Carolina. Clients never visit; I do residential remodeling at their properties.",
+  "profile": {
+    "business_type": "General Contractor",
+    "municipality": "Carolina",
+    "location_type": "Home-Based",
+    "number_of_employees": 2,
+    "industry": "Construction",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_HOME_BASED": true,
+    "Q_OFFERS_CONSTRUCTION_SERVICES": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_COMMERCIAL_VEHICLES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {},
+  "site": {
+    "municipality": "Carolina",
+    "geo": "urban_residential_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_CONTRACTOR_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "General contractor: DACO contractor registration (Ley 146-1995). (KB: RULE_0123, RULE_0232, RULE_0237, RULE_0642)"
+      },
+      {
+        "anyOf": [
+          "DOC_HOME_DECLARATION",
+          "DOC_DOMICILIARY_USE_PERMIT"
+        ],
+        "confidence": "verified-in-code",
+        "rationale": "Q_HOME_BASED: home-office declaration or domiciliary-use permit (expectation widened after first run: the engine models it as DOC_DOMICILIARY_USE_PERMIT)."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy. (KB: RULE_0020)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "The contractor's own premises is a home office with no works; remodeling done at clients' properties is the service sold, not this business's project, so no construction permit belongs on its checklist (RULE_0644 fires on project_type=renovation read from 'remodeling').",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "A home office is not a change of use: RULE_0710 needs a confirmed change of use."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "Home-based office with no client visits is normally a domiciliary-use declaration, not a commercial Permiso Unico (excluded_when_home_based).",
+        "applicabilityIn": [
+          "required"
+        ]
+      }
+    ],
+    "ordering": []
+  }
+}

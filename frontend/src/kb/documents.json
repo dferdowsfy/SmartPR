@@ -1235,5 +1235,19 @@
     "citation": "Reglamento Conjunto 2023 (Reg. 9473), Capítulo de Consultas de Ubicación y Variaciones; Ley 161-2009, Art. 2.5 (23 L.P.R.A. § 9012d); Ley 550-2004 (Plan de Uso de Terrenos)",
     "citation_url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
     "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_PHARMACY_PERMIT",
+    "name": "Pharmacy Operating License (Licencia de Farmacia)",
+    "agency": "Departamento de Salud (Secretario de Salud)",
+    "category": "Regulatory",
+    "agency_url": "https://www.salud.pr.gov/",
+    "agency_canonical": "Departamento de Salud",
+    "download_url": null,
+    "download_kind": null,
+    "download_note": null,
+    "citation": "Ley Núm. 247-2004 (Ley de Farmacia de Puerto Rico), Art. 5.05(b) — la obtención de la licencia de farmacia requiere cumplir las normas y procedimientos que por reglamento el Secretario de Salud determine; la farmacia debe contar con los servicios de por lo menos un (1) farmacéutico mientras esté abierta al público y designar al farmacéutico regente",
+    "citation_url": "https://www.salud.pr.gov/CMS/DOWNLOAD/6279",
+    "citation_confidence": "statute"
   }
 ]

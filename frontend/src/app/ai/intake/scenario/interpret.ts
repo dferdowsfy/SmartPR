@@ -112,7 +112,53 @@ const RENOVATION_RE =
  * so an "explicit" renovation needs renovation language in the text itself.
  */
 export function renovationStated(text: string): boolean {
-  return findAll(text, RENOVATION_RE).some((hit) => !negatedAt(text, hit.index));
+  const hits = findAll(text, RENOVATION_RE);
+  if (hits.some((hit) => projectWorkAt(text, hit))) return true;
+  // A conversion to a new use with physical work stated (same test as readProjectScope).
+  const conversion = hits.some((hit) => conversionToUseAt(text, hit) && !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index));
+  return conversion && findAll(text, PHYSICAL_WORK_RE).some((hit) => !negatedAt(text, hit.index));
+}
+
+// Physical work on the building or site, stated alongside a conversion.
+const BUILT_ELEMENT = "(?:bath\\s?rooms?|restrooms?|kitchens?|walls?|ramps?|rooms?|parking(?:\\s+(?:lot|area))?|driveways?|loading\\s+docks?|mezzanines?|windows?|doors?|terraces?|decks?|additions?|stairs?|elevators?)";
+const PHYSICAL_WORK_RE = new RegExp(
+  "\\b(?:electrical|plumbing|mechanical|hvac|structural|exterior|fa[cç]ade|roof(?:ing)?|partitions?|layout|build[\\s-]?outs?|demoli\\w*)\\b" +
+    `|\\b(?:add\\w*|build\\w*|construct\\w*|install\\w*|creat\\w*|pav\\w*)\\s+(?:a\\s+|an\\s+|the\\s+|new\\s+|two\\s+|\\w+\\s+){0,3}${BUILT_ELEMENT}\\b` +
+    `|\\bnew\\s+(?:\\w+\\s+)?${BUILT_ELEMENT}\\b`,
+  "i"
+);
+
+/**
+ * "converting an empty warehouse into a recycling facility" states a NEW USE
+ * (change of use), not construction work. A conversion verb whose object is
+ * "into <use>" is read by readProposedUse/readChangeOfUse; it only implies
+ * renovation when physical work is stated separately (walls, plumbing, …).
+ */
+const CONVERSION_WORD_RE = /^(?:convert\w*|conversion)$/i;
+function conversionToUseAt(text: string, hit: Hit): boolean {
+  if (!CONVERSION_WORD_RE.test(hit.text)) return false;
+  const into = find(text, CONVERT_INTO, hit.index);
+  return !!into && into.index === hit.index;
+}
+
+// Work the business SELLS, not work on its own premises: a contractor's
+// "I do residential remodeling at their properties", "we build new homes for
+// our clients", "renovation services for homeowners". The clause attributes
+// the work to someone else's property or frames it as a service offered.
+const SERVICE_FRAME_RE =
+  /\b(?:at|on|in)\s+(?:their|clients?'?|customers?'?|homeowners?'?)\s+(?:propert\w*|homes?|houses?|buildings?|sites?|premises|spaces?|businesses)\b|\bfor\s+(?:our\s+|my\s+)?(?:clients?|customers?|homeowners?|property\s+owners?|other\s+businesses)\b|\b(?:services?|contractor|contracting|jobs?)\b|\b(?:clients?|customers?)'\s|\bpara\s+(?:mis\s+|nuestros\s+)?clientes\b|\bservicios?\b/i;
+// Words that tie the work to the applicant's own site ("our building",
+// "the space we lease") override the service frame.
+const OWN_SITE_RE =
+  /\b(?:our|my)\s+(?:own\s+)?(?:building|space|unit|suite|store|shop|premises|property|warehouse|facility|location|office|restaurant|house|home)\b|\bthe\s+(?:building|space|unit|suite|premises|property|site|location)\b|\bwe\s+(?:lease|rent|own|bought|purchased)\b|\b(?:I|we)\s+(?:leased|rented|bought|purchased)\b/i;
+function serviceDescriptionAt(text: string, index: number): boolean {
+  const clause = clauseAt(text, index, 400);
+  return SERVICE_FRAME_RE.test(clause) && !OWN_SITE_RE.test(clause);
+}
+
+/** A mention of construction-type work that describes THIS project: not negated, not a service the business sells, not a bare conversion to a new use. */
+function projectWorkAt(text: string, hit: Hit): boolean {
+  return !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index) && !conversionToUseAt(text, hit);
 }
 
 // Ownership language: the speaker says they rent/lease or own the property
@@ -472,20 +518,21 @@ const NEW_CONSTRUCTION_RE =
 
 /** True when the text states new construction in the speaker's own words, not negated. */
 export function newConstructionStated(text: string): boolean {
-  return findAll(text, NEW_CONSTRUCTION_RE).some((hit) => !negatedAt(text, hit.index));
+  return findAll(text, NEW_CONSTRUCTION_RE).some((hit) => !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index));
 }
 
 function readProjectScope(text: string, ctx: ScenarioContext): void {
   const types: string[] = [];
-  const reno = find(text, RENOVATION_RE);
-  if (reno && !negatedAt(text, reno.index)) {
+  // First renovation mention that is work on THIS project (see projectWorkAt).
+  const reno = findAll(text, RENOVATION_RE).find((hit) => projectWorkAt(text, hit)) ?? null;
+  if (reno) {
     ctx.project.renovation = said(true, text, reno, 0.95);
     types.push("renovation");
   }
   const build = find(text, /\bnew\s+construction\b|\b(?:build|construct)\w*\s+(?:a\s+)?new\s+(?:building|facility|structure|warehouse|plant)|\bground[\s-]up\b/i);
-  if (build && !negatedAt(text, build.index)) types.push("new_construction");
+  if (build && !negatedAt(text, build.index) && !serviceDescriptionAt(text, build.index)) types.push("new_construction");
   const expand = find(text, /\bexpan\w*\s+(?:the\s+|our\s+)?(?:building|facility|warehouse|footprint|structure)\b|\b(?:building\s+)?addition\s+to\s+the\s+(?:building|structure)\b/i);
-  if (expand && !negatedAt(text, expand.index)) {
+  if (expand && !negatedAt(text, expand.index) && !serviceDescriptionAt(text, expand.index)) {
     types.push("expansion");
     ctx.project.footprintChange = said(true, text, expand, 0.9);
   }
@@ -510,11 +557,26 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
   ctx.project.siteCirculationChanges = flag(text, /\b(?:parking|loading\s+(?:dock|zone|area)s?|driveway|site\s+circulation|access\s+road|curb\s+cut)\b/i);
   if (!ctx.project.footprintChange) ctx.project.footprintChange = flag(text, /\bfootprint\b/i);
 
+  // A conversion to a new use is a change of use; it is ALSO renovation when
+  // the text states physical work on the building ("converting the warehouse
+  // into a daycare with new walls and plumbing").
+  if (!reno) {
+    const p = ctx.project;
+    const work = [p.electricalWork, p.plumbingWork, p.mechanicalWork, p.structuralWork, p.exteriorWork, p.layoutChanges, p.officeBuildout]
+      .some((f) => f?.value === true) || (p.demolition !== undefined && p.demolition.value !== "none") ||
+      findAll(text, PHYSICAL_WORK_RE).some((hit) => !negatedAt(text, hit.index));
+    const conversion = findAll(text, RENOVATION_RE).find((hit) => conversionToUseAt(text, hit) && !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index));
+    if (work && conversion) {
+      ctx.project.renovation = said(true, text, conversion, 0.9);
+      types.unshift("renovation");
+    }
+  }
+
   if (ctx.project.possibleChangeOfUse?.value === true && ctx.project.possibleChangeOfUse.source === "explicit") {
     types.push("change_of_use");
   }
   if (types.length) {
-    const evidence = reno ? clauseAt(text, reno.index) : ctx.project.demolition?.evidenceText ?? "";
+    const evidence = reno ? clauseAt(text, reno.index) : ctx.project.renovation?.evidenceText ?? ctx.project.demolition?.evidenceText ?? "";
     ctx.project.type = fact([...new Set(types)], "explicit", 0.92, evidence);
   }
   for (const key of Object.keys(ctx.project) as (keyof ScenarioContext["project"])[]) {

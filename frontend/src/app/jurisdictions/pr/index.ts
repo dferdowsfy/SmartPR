@@ -227,6 +227,13 @@ export const puertoRicoPack: JurisdictionPack = {
           "This municipality lies in a coastal zone. Businesses operating near the maritime-terrestrial zone may require an environmental or coastal review depending on location and activities.",
         followUp:
           "Will this business operate, build, store, or discharge anything near the coast, beach, or maritime-terrestrial zone?",
+        // Legal basis for the card's SOURCE row (2026-10-04 QA REG-LIVE-COASTAL-SOURCE-001:
+        // the card rendered with an empty SOURCE in 3 live audits). Verbatim from the
+        // KB's DOC_CZM_COASTAL_REVIEW (citation_confidence: regulation).
+        citation:
+          "Coastal Zone Management Act § 307(c)(3)(A), 16 U.S.C. § 1456(c)(3)(A); 15 CFR 930.57(a); Programa de Manejo de la Zona Costanera de Puerto Rico (Junta de Planificación)",
+        citation_url:
+          "https://www.ecfr.gov/current/title-15/subtitle-B/chapter-IX/subchapter-B/part-930/subpart-D/section-930.57",
       },
       tourism: {
         flag: "tourism",

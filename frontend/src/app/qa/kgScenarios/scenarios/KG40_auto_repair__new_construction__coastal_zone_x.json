@@ -1,0 +1,145 @@
+{
+  "id": "KG40",
+  "title": "Auto body & paint shop, new construction — Ponce (autonomous), coastal zone (zone X)",
+  "matrix": {
+    "businessType": "auto_repair",
+    "projectType": "new_construction",
+    "locationContext": "coastal_zone_x"
+  },
+  "description": "We will build a new auto body and paint shop on a commercial lot we own in Ponce. It is new construction with a paint booth.",
+  "profile": {
+    "business_type": "Body Shop",
+    "municipality": "Ponce",
+    "location_type": "Industrial Space",
+    "number_of_employees": 8,
+    "industry": "Automotive",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_OWNS_PROPERTY": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "property_tenure": {
+      "value": "owned",
+      "confidence": 0.9,
+      "evidence": "lot we own"
+    }
+  },
+  "site": {
+    "municipality": "Ponce",
+    "geo": "coastal_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0708: construction-type work at a pin in the coastal zone (location.czm) -> coastal-zone review (the rule itself flags EXPERT VALIDATION NEEDED). (KB: RULE_0708)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "Ponce is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Ponce's current delegation level.",
+        "agencyMatches": "munic"
+      },
+      {
+        "key": "DOC_AIR_EMISSION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "A spray paint booth is an air-emission source: DRNA air permit / registration (Reglamento para el Control de la Contaminacion Atmosferica) and 40 CFR 63 subpart HHHHHH."
+      },
+      {
+        "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
+        "confidence": "needs-expert-review",
+        "rationale": "Paint/solvent waste -> EPA hazardous-waste generator ID (RCRA 40 CFR 262)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids = [DOC_OGPE_CONSTRUCTION_PERMIT] (use permit after construction)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  }
+}

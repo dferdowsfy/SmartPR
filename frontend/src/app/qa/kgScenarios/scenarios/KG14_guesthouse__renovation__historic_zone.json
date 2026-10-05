@@ -1,0 +1,145 @@
+{
+  "id": "KG14",
+  "title": "Guest house: renovation of a historic house incl. facade — Ponce historic zone (zone X)",
+  "matrix": {
+    "businessType": "guesthouse",
+    "projectType": "renovation",
+    "locationContext": "historic_zone"
+  },
+  "description": "We bought a historic house in the historic district of Ponce and will renovate it as an 8-room guest house, including restoring the facade and new bathrooms.",
+  "profile": {
+    "business_type": "Guest House",
+    "municipality": "Ponce",
+    "location_type": "Commercial Space",
+    "number_of_employees": 4,
+    "industry": "Hospitality & Tourism",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_GUESTS_OVERNIGHT": true,
+    "Q_OWNS_PROPERTY": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "renovation",
+      "confidence": 0.9,
+      "evidence": "will renovate"
+    },
+    "renovation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "will renovate"
+    },
+    "exterior_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "restoring the facade"
+    },
+    "plumbing_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new bathrooms"
+    },
+    "property_tenure": {
+      "value": "owned",
+      "confidence": 0.9,
+      "evidence": "We bought a historic house"
+    }
+  },
+  "site": {
+    "municipality": "Ponce",
+    "geo": "historic_zone"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
+      },
+      {
+        "key": "DOC_TOURISM_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0145 / RULE_0263: guest house in a tourism municipio -> Compania de Turismo registration. (KB: RULE_0145, RULE_0263)"
+      },
+      {
+        "key": "gap:historic_zone_review",
+        "confidence": "needs-expert-review",
+        "rationale": "Exterior work in a JP historic zone needs ICP (Instituto de Cultura Puertorriquena) endorsement / historic-zone review (Reglamento de Planificacion 5; Ley 89-1955). The historic_zone layer is resolved at the pin but no KB rule or document consumes location.historic_zone."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids = [DOC_OGPE_CONSTRUCTION_PERMIT] (use permit after construction)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  }
+}

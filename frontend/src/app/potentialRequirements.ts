@@ -26,6 +26,10 @@ export interface PotentialRequirement {
   reason: string;
   category: string;
   source_rule: string;
+  /** Authoritative legal basis for the card's SOURCE row (optional; the row
+   * renders "—" when absent rather than an invented citation). */
+  citation?: string;
+  citation_url?: string;
 }
 
 export const POTENTIAL_BY_FLAG: Record<string, PotentialDef> =
@@ -56,6 +60,8 @@ export function confirmedPotentialRequirements(
       reason: definition.why,
       category: "Potentially Required",
       source_rule: `flag:${definition.flag}`,
+      citation: definition.citation,
+      citation_url: definition.citation_url,
     }));
 }
 

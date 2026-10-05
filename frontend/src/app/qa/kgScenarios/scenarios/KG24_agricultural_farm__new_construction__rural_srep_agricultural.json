@@ -1,0 +1,136 @@
+{
+  "id": "KG24",
+  "title": "Farm: new agricultural barn on own farmland — Lares (inland), SREP agricultural",
+  "matrix": {
+    "businessType": "agricultural_farm",
+    "projectType": "new_construction",
+    "locationContext": "rural_srep_agricultural"
+  },
+  "description": "We farm plantains and coffee on our land in Lares and will build a new barn for equipment and drying. It is new construction on agricultural land.",
+  "profile": {
+    "business_type": "Farm",
+    "municipality": "Lares",
+    "location_type": "Agricultural Land",
+    "number_of_employees": 4,
+    "industry": "Agriculture",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_AGRICULTURE_PRODUCTION": true,
+    "Q_OWNS_PROPERTY": true,
+    "Q_PESTICIDES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "existing_use": {
+      "value": "agricultural",
+      "confidence": 0.9,
+      "evidence": "agricultural land"
+    },
+    "property_tenure": {
+      "value": "owned",
+      "confidence": 0.9,
+      "evidence": "our land"
+    }
+  },
+  "site": {
+    "municipality": "Lares",
+    "geo": "rural_srep_agricultural"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: project_type new_construction / renovation -> OGPe construction permit (Ley 161-2009). (KB: RULE_0643)"
+      },
+      {
+        "key": "DOC_AGRICULTURE_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "Farm: Departamento de Agricultura bona fide farmer registration. (KB: RULE_0041, RULE_0218)"
+      },
+      {
+        "key": "DOC_PESTICIDE_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Q_PESTICIDES: restricted-use pesticide applicator certification. (KB: RULE_0040)"
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "Lares is not an autonomous permits municipality: OGPe issues the construction permit.",
+        "agencyMatches": "ogpe"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin in FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA answered 'outside'): RULE_0708 needs location.czm. A coastal-flagged municipio alone must not trigger it."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "needs-expert-review",
+        "rationale": "An agricultural barn for a bona fide farm on SREP agricultural land is a ministerial use compatible with the district (RC-2023 agricultural districts); a consulta de ubicacion should not be required. RULE_0709 fires on any construction on SREP land."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  }
+}

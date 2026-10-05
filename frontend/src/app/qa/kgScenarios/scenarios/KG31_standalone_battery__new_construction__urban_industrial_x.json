@@ -1,0 +1,117 @@
+{
+  "id": "KG31",
+  "title": "Standalone 50 MW BESS providing storage services to LUMA — Guayama, industrial zone X (E03 variant)",
+  "matrix": {
+    "businessType": "standalone_battery",
+    "projectType": "new_construction",
+    "locationContext": "urban_industrial_x"
+  },
+  "description": "We plan a 50 MW / 200 MWh standalone battery storage plant in Guayama that will provide storage services to LUMA, connected at 115 kV. It is new construction on an industrial lot.",
+  "profile": {
+    "business_type": "Battery Storage Installer",
+    "municipality": "Guayama",
+    "location_type": "Industrial Space",
+    "number_of_employees": 0,
+    "industry": "Energy & Utilities",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_RENEWABLE_INSTALL": true,
+    "Q_SOLAR_BATTERY": true
+  },
+  "projectIntent": "project_only",
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "storage",
+      "confidence": 0.9,
+      "evidence": "standalone battery storage plant"
+    },
+    "storage_capacity_kw": {
+      "value": "50 MW",
+      "confidence": 0.9,
+      "evidence": "50 MW / 200 MWh"
+    },
+    "storage_energy_mwh": {
+      "value": "200 MWh",
+      "confidence": 0.9,
+      "evidence": "200 MWh"
+    },
+    "energy_facility_type": {
+      "value": "standalone_plant",
+      "confidence": 0.9,
+      "evidence": "standalone battery storage plant"
+    },
+    "power_offtaker": {
+      "value": "luma_prepa",
+      "confidence": 0.9,
+      "evidence": "provide storage services to LUMA"
+    },
+    "proposed_energy_services": {
+      "value": "storage_service",
+      "confidence": 0.9,
+      "evidence": "provide storage services to LUMA"
+    },
+    "interconnection_voltage": {
+      "value": "transmission",
+      "confidence": 0.9,
+      "evidence": "connected at 115 kV"
+    },
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new construction"
+    }
+  },
+  "site": {
+    "municipality": "Guayama",
+    "geo": "urban_industrial_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+        "confidence": "verified-in-code",
+        "rationale": "utilityScale.golden E03: transmission-level storage -> interconnection studies."
+      },
+      {
+        "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Battery storage -> BESS fire review (NFPA 855)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "Standalone storage has no generation to net-meter."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_NET_METERING renders, the legacy net-metering card must be suppressed.",
+        "cardOnly": true
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid wording: projectContext drops microgrid claims (MICROGRID_STATED_RE); energy.test.ts 'not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the coastal zone even though Guayama is a coastal municipio."
+      }
+    ],
+    "ordering": []
+  }
+}

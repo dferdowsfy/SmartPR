@@ -357,3 +357,61 @@ test("no change of use: Permiso Único stays verify_existing for an existing bus
   assert.ok(construction, "the renovation still needs its construction permit");
   assert.equal(construction.applicability, "required");
 });
+
+// ---------------------------------------------------------------------------
+// REG-ELECTIVE-STATUS-001 (2026-10-04, validated golden G20): an elective
+// status determination (is_conditional basis, e.g. the IRS 501(c) and
+// Hacienda Sec. 1101.01 exemptions a nonprofit MAY seek) is "conditional",
+// never "needs_more_information", even when its heuristic rule names a
+// missing fact. The named fact stays on the card so the UI can still ask.
+// A non-elective heuristic basis with a missing fact keeps the NMI posture.
+// ---------------------------------------------------------------------------
+test("REG-ELECTIVE-STATUS-001: elective nonprofit tax exemptions stay conditional, missing fact still named", () => {
+  const answers = { Q_NONPROFIT_STATUS: true, Q_EMPLOYEES_HIRED: true, Q_PHYSICAL_LOCATION: true };
+  const generated = runRulesEngine(KB, {
+    municipalityName: "San Juan",
+    businessTypeName: "Nonprofit Organization",
+    answers,
+  }).requirements;
+  const classified = classifyEngineRequirements(generated, {
+    kb: KB,
+    entityType: "nonprofit_nonstock_corporation",
+    businessStatus: "new",
+    answers,
+    rawAnswers: answers,
+  });
+  for (const [doc, fact] of [
+    ["DOC_IRS_TAX_EXEMPT_DETERMINATION", "federal_tax_exemption_claim"],
+    ["DOC_HACIENDA_PR_TAX_EXEMPTION", "pr_tax_exemption_claim"],
+  ] as const) {
+    const card = classified.find((r) => r.document_id === doc);
+    assert.ok(card, `${doc} should surface for a nonprofit`);
+    assert.equal(card.applicability, "conditional", `${doc} is sought, not imposed`);
+    assert.equal(card.mandatory, false);
+    assert.ok(card.missingFacts.includes(fact), `${doc} must still name ${fact}: ${JSON.stringify(card.missingFacts)}`);
+  }
+});
+
+test("REG-ELECTIVE-STATUS-001: a non-elective heuristic sibling with a missing fact still forces needs_more_information", () => {
+  const rules = KB.rules.map((r) =>
+    r.id === "RULE_0684" || r.id === "RULE_0685" ? { ...r, is_conditional: false } : r
+  );
+  const kb: KnowledgeBase = { ...KB, rules };
+  const answers = { Q_NONPROFIT_STATUS: true, Q_PHYSICAL_LOCATION: true };
+  const generated = runRulesEngine(kb, {
+    municipalityName: "San Juan",
+    businessTypeName: "Nonprofit Organization",
+    answers,
+  }).requirements;
+  const classified = classifyEngineRequirements(generated, {
+    kb,
+    entityType: "nonprofit_nonstock_corporation",
+    businessStatus: "new",
+    answers,
+    rawAnswers: answers,
+  });
+  const irs = classified.find((r) => r.document_id === "DOC_IRS_TAX_EXEMPT_DETERMINATION");
+  assert.equal(irs?.applicability, "needs_more_information", "without the elective marker the NMI ground-truth principle applies");
+  const pr = classified.find((r) => r.document_id === "DOC_HACIENDA_PR_TAX_EXEMPTION");
+  assert.equal(pr?.applicability, "conditional", "the still-elective Hacienda rules are unaffected");
+});
