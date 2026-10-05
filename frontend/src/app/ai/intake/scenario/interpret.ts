@@ -513,12 +513,22 @@ function flag(text: string, re: RegExp): ScenarioFact<boolean> | undefined {
 // New-construction language: a new building/structure is being built. An
 // equipment install on an existing building ("install rooftop solar on our
 // warehouse") is not new construction.
+// REG-NEWBUILD-LANG-001 (KG47, 2026-10-05): owners describe a new building
+// in plain words — "we are building a small veterinary clinic on a lot we
+// own", "it is a new one-story building" — without the phrase "new
+// construction". A construction verb + article + (up to three modifiers) +
+// a physical-structure noun, or "is / will be a new ... building", states
+// new construction; "moving into a new building" (no build verb, no "is")
+// does not.
+const NEW_BUILD_PLAIN_RE =
+  /\b(?:build|construct)\w*\s+(?:a|an)\s+(?:(?!(?:for|of|to|with|in|our|their|my|the|and|at|on|from)\b)[\w-]+\s+){0,3}?(?:building|facility|structure|warehouse|plant|clinic|store|shop|restaurant|office|hotel|bakery|school|daycare|gym|church|factory)\b|\b(?:it\s+is|it's|will\s+be|is\s+going\s+to\s+be)\s+(?:a\s+)?(?:brand[\s-]+)?new\s+(?:[\w-]+\s+){0,2}?(?:building|structure)\b/i;
+
 const NEW_CONSTRUCTION_RE =
   /\bnew\s+construction\b|\b(?:build|construct)\w*\s+(?:a\s+|an\s+)?new\s+(?:building|facility|structure|warehouse|plant|store|restaurant|office)|\bground[\s-]up\b|\bnueva\s+construcci[oó]n\b|\b(?:construir|edificar)\s+(?:un|una)\s+(?:\w+\s+)?nuev[oa]\b/i;
 
 /** True when the text states new construction in the speaker's own words, not negated. */
 export function newConstructionStated(text: string): boolean {
-  return findAll(text, NEW_CONSTRUCTION_RE).some((hit) => !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index));
+  return [...findAll(text, NEW_CONSTRUCTION_RE), ...findAll(text, NEW_BUILD_PLAIN_RE)].some((hit) => !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index));
 }
 
 function readProjectScope(text: string, ctx: ScenarioContext): void {
@@ -530,7 +540,8 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
     types.push("renovation");
   }
   const build = find(text, /\bnew\s+construction\b|\b(?:build|construct)\w*\s+(?:a\s+)?new\s+(?:building|facility|structure|warehouse|plant)|\bground[\s-]up\b/i);
-  if (build && !negatedAt(text, build.index) && !serviceDescriptionAt(text, build.index)) types.push("new_construction");
+  const plainBuild = build ? null : findAll(text, NEW_BUILD_PLAIN_RE).find((hit) => !negatedAt(text, hit.index) && !serviceDescriptionAt(text, hit.index)) ?? null;
+  if ((build && !negatedAt(text, build.index) && !serviceDescriptionAt(text, build.index)) || plainBuild) types.push("new_construction");
   const expand = find(text, /\bexpan\w*\s+(?:the\s+|our\s+)?(?:building|facility|warehouse|footprint|structure)\b|\b(?:building\s+)?addition\s+to\s+the\s+(?:building|structure)\b/i);
   if (expand && !negatedAt(text, expand.index) && !serviceDescriptionAt(text, expand.index)) {
     types.push("expansion");

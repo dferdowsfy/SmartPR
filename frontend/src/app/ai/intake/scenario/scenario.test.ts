@@ -501,3 +501,19 @@ describe("project scope: renovation is work on THIS project (KG19, KG20)", () =>
     }
   });
 });
+
+describe("REG-NEWBUILD-LANG-001: plain-language new buildings (KG47)", () => {
+  it("reads a construction verb + structure noun, or 'it is a new ... building', as new construction", () => {
+    assert.equal(newConstructionStated("We are building a small veterinary clinic on a lot we own."), true);
+    assert.equal(newConstructionStated("It is a new one-story building."), true);
+    assert.equal(newConstructionStated("We will construct a two-story medical office building."), true);
+  });
+  it("does not read moving into a building, brands, teams or apps as new construction", () => {
+    assert.equal(newConstructionStated("We are moving into a new building downtown."), false);
+    assert.equal(newConstructionStated("Our office is in a new building."), false);
+    assert.equal(newConstructionStated("We are building a brand for our clinic."), false);
+    assert.equal(newConstructionStated("We are building an app for our gym."), false);
+    assert.equal(newConstructionStated("We are building a team of five."), false);
+    assert.equal(newConstructionStated("We are not building a new store, just leasing."), false);
+  });
+});

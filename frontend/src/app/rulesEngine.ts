@@ -452,6 +452,16 @@ export interface GeneratedRequirement {
    */
   formation_unresolved?: boolean;
   /**
+   * REG-OFFLOT-PIN-001: set when every basis of this requirement is a
+   * site-map fact (`location.*`) read at a pin that is NOT on a lot (on a
+   * road, in a water body, or between parcels). The map answered for the
+   * road / the water, not for the user's property, so the requirement is
+   * kept (a dropped flood or coastal review is worse than an extra one) but
+   * never presented as confirmed: the classifier renders it as needs more
+   * information until the pin is moved onto the property.
+   */
+  site_unconfirmed?: boolean;
+  /**
    * Where each triggering fact came from (fact key, value, source, scope).
    * Survives document deduplication — every requirement can say exactly
    * which fact triggered it and where that fact was established.
@@ -599,7 +609,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     : null;
 
   // documentId -> first matching rule (keep the strongest/earliest reason).
-  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean; provenances: TriggerFactProvenance[] }>();
+  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean; siteUnconfirmed: boolean; provenances: TriggerFactProvenance[] }>();
   const rulesMatched: EngineDebug["rulesMatched"] = [];
   const rulesSuppressed: EngineDebug["rulesSuppressed"] = [];
   const triggered: EngineDebug["questionsTriggered"] = [];
@@ -645,7 +655,20 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     return null;
   };
 
+  // REG-OFFLOT-PIN-001: the pin is on a road, in water, or between lots
+  // (layers.ts withholds zoning / land class / parcel and emits
+  // location.placement.off_lot). Site hazard facts read at that point
+  // describe the road or the water body, not the property.
+  const pinOffLot = projectFactMatches(input.projectFacts?.["location.placement.off_lot"], "true");
   const add = (rule: KBRule, reason: string, formationUnresolved = false, provenance?: TriggerFactProvenance) => {
+    const siteUnconfirmed =
+      pinOffLot &&
+      rule.rule_type === "project_fact" &&
+      typeof rule.fact_key === "string" &&
+      rule.fact_key.startsWith("location.") &&
+      !rule.fact_key.startsWith("location.placement") &&
+      rule.fact_key !== "location.municipality" &&
+      !rule.fact_key.startsWith("location.municipality.");
     rulesMatched.push({
       rule_id: rule.id,
       rule_type: rule.rule_type,
@@ -654,7 +677,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     });
     const existing = matched.get(rule.requires_document_id);
     if (!existing) {
-      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved, provenances: provenance ? [provenance] : [] });
+      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved, siteUnconfirmed, provenances: provenance ? [provenance] : [] });
     } else {
       // Every matched basis keeps its provenance: the requirement names all
       // the facts that triggered it. Deduplicated on the full triggering
@@ -664,6 +687,10 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       if (provenance && !existing.provenances.some((p) => sameTriggerProvenance(p, provenance))) {
         existing.provenances.push(provenance);
       }
+      // A basis that does not depend on the off-lot pin confirms the
+      // requirement on its own (e.g. a construction permit fired by the
+      // project type, not by the map).
+      if (existing.siteUnconfirmed && !siteUnconfirmed) existing.siteUnconfirmed = false;
       if (existing.formationUnresolved && !formationUnresolved) {
         // A confirmed basis outweighs an unresolved formation basis: the
         // requirement is genuinely triggered (e.g. an EIN for hiring), so the
@@ -877,7 +904,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     }
   }
 
-  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved, provenances }]) => {
+  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved, siteUnconfirmed, provenances }]) => {
     const d = docById.get(docId);
     const delegated = !rule.agency && d?.municipal_delegation ? municipalPermitsRouting(municipality) : null;
     return {
@@ -900,6 +927,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       matched_rules: rulesMatched.filter(match => match.document_id === docId).map(({ rule_id, reason }) => ({ rule_id, reason })),
       ...(provenances.length > 0 ? { triggerFactProvenance: provenances } : {}),
       ...(formationUnresolved ? { formation_unresolved: true } : {}),
+      ...(siteUnconfirmed ? { site_unconfirmed: true } : {}),
       ...(rule.compliance_mode ? { compliance_mode: rule.compliance_mode } : {}),
       ...(rule.verification ? { verification: rule.verification } : {}),
       ...(rule.missing_fact_keys?.length ? { missing_fact_keys: rule.missing_fact_keys } : {}),

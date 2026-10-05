@@ -1,10 +1,10 @@
 {
   "summary": {
-    "scenarios": 46,
-    "pass": 40,
-    "fail": 6,
-    "expectations": 699,
-    "verified": 637,
+    "scenarios": 48,
+    "pass": 43,
+    "fail": 5,
+    "expectations": 721,
+    "verified": 659,
     "lint": []
   },
   "results": [
@@ -3928,7 +3928,7 @@
         "projectType": "renovation",
         "locationContext": "water_pin"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -4030,25 +4030,25 @@
           "agency": "Department of the Treasury (Hacienda)"
         },
         {
-          "key": "DOC_JP_FLOOD_REG13",
-          "group": "required_now",
-          "applicability": "required",
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
           "position": 14,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 15,
           "agency": "OGPe / Junta de Planificación"
         },
         {
           "key": "DOC_CZM_COASTAL_REVIEW",
-          "group": "required_now",
-          "applicability": "likely_required",
-          "position": 15,
-          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
-        },
-        {
-          "key": "DOC_ALCOHOL_SALES_PROJECTION",
           "group": "conditional",
           "applicability": "needs_more_information",
           "position": 16,
-          "agency": "Department of the Treasury (Hacienda)"
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
         },
         {
           "key": "DOC_PERMISO_UNICO",
@@ -4084,18 +4084,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin",
-      "findingsClassified": [
-        {
-          "kind": "unexpected",
-          "key": "DOC_JP_FLOOD_REG13",
-          "message": "unexpected DOC_JP_FLOOD_REG13 (required_now, required)",
-          "confidence": "needs-expert-review",
-          "rationale": "A pin in the harbor is not the business's lot: flood facts from an off-lot water pin should prompt the user to move the pin rather than produce a REQUIRED Reg. 13 card (layers.ts keeps flood/coastal facts for off-lot pins).",
-          "cause": "likely-engine-bug",
-          "note": "Off-lot water pin: layers.ts withholds zoning but keeps flood/coastal facts, so RULE_0706 makes Reg. 13 REQUIRED for a pin in the harbor (policy call for the expert: ask to move the pin instead).",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG36",
@@ -5374,6 +5363,228 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG46 kg-scenario: catering / new_business_existing_building / urban_industrial_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG47",
+      "title": "Veterinary clinic, new building on the owner's lot — Arroyo, pin dropped on the street inside FEMA AE + coastal zone",
+      "matrix": {
+        "businessType": "veterinary_clinic",
+        "projectType": "new_construction",
+        "locationContext": "road_pin_flood_ae_coastal"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 11,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 14,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG47 kg-scenario: veterinary_clinic / new_construction / road_pin_flood_ae_coastal",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG48",
+      "title": "Dental office in an existing leased medical suite — Ponce, zone X",
+      "matrix": {
+        "businessType": "dental_office",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG48 kg-scenario: dental_office / new_business_existing_building / urban_zone_x",
       "findingsClassified": []
     }
   ]

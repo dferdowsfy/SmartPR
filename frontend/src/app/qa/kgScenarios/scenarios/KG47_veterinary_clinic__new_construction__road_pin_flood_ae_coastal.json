@@ -1,0 +1,128 @@
+{
+  "id": "KG47",
+  "title": "Veterinary clinic, new building on the owner's lot — Arroyo, pin dropped on the street inside FEMA AE + coastal zone",
+  "matrix": {
+    "businessType": "veterinary_clinic",
+    "projectType": "new_construction",
+    "locationContext": "road_pin_flood_ae_coastal"
+  },
+  "description": "We are building a small veterinary clinic on a lot we own in Arroyo pueblo. It is a new one-story building. Two veterinarians and three staff.",
+  "profile": {
+    "business_type": "Veterinary Clinic",
+    "municipality": "Arroyo",
+    "location_type": "Clinic",
+    "number_of_employees": 5,
+    "industry": "Healthcare",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_PROFESSIONAL_LICENSES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "building a small veterinary clinic"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new one-story building"
+    },
+    "property_tenure": {
+      "value": "owned",
+      "confidence": 0.9,
+      "evidence": "a lot we own"
+    }
+  },
+  "site": {
+    "municipality": "Arroyo",
+    "geo": "road_pin_flood_ae_coastal"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Business-type rule: the licensed professional (veterinarian / dentist) must hold the Junta Examinadora license."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643: project_type new_construction -> OGPe construction permit (Ley 161-2009). This basis is the project, not the map, so the off-lot pin must not weaken it.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0706 (FEMA SFHA + new construction) fires, but the AE fact was read at a street pin (CRIM TIPO V / JP VIAL). REG-OFFLOT-PIN-001 keeps the Reg. 13 card so the flood review is never silently dropped, and asks the user to move the pin onto the lot before it is confirmed.",
+        "applicabilityIn": [
+          "needs_more_information"
+        ]
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Not REQUIRED while the pin is on the street: the FEMA polygon describes the road, not the property (REG-OFFLOT-PIN-001).",
+        "applicabilityIn": [
+          "required",
+          "likely_required"
+        ]
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Same: the coastal-zone fact was read at the street pin, so the coastal review cannot be REQUIRED until the pin is on the lot (REG-OFFLOT-PIN-001).",
+        "applicabilityIn": [
+          "required",
+          "likely_required"
+        ]
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Pin on a road: zoning/land-class facts are withheld (layers.ts LOT_SCOPED_LAYERS), so no zoning-driven consulta can fire."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol stated."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO depends on DOC_OGPE_CONSTRUCTION_PERMIT (use permit after construction)."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-05 by the scenario loop to cover a street pin inside a flood + coastal zone (real Arroyo case), a new business type (veterinary clinic) and Arroyo as a municipality."
+}

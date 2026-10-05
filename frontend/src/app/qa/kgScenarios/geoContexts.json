@@ -4,10 +4,27 @@
     "urban_zone_x": {
       "label": "Urban town center, FEMA zone X",
       "description": "Commercial lot in an urban center: zone X (minimal hazard), outside the coastal zone, commercial zoning on urban land (SU), numbered CRIM parcel.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "100-020-030-01", "cali": "C-L", "descrip": "Comercial Liviano", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024", "resolucion": "JP-PT-00-0" },
-      "crim": { "NUM_CATASTRO": "100-020-030-01", "OLDPID": "100-020-030-01", "TIPO": "P" },
+      "jp": {
+        "num_catast": "100-020-030-01",
+        "cali": "C-L",
+        "descrip": "Comercial Liviano",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024",
+        "resolucion": "JP-PT-00-0"
+      },
+      "crim": {
+        "NUM_CATASTRO": "100-020-030-01",
+        "OLDPID": "100-020-030-01",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -15,10 +32,25 @@
     "urban_industrial_x": {
       "label": "Urban industrial district, FEMA zone X",
       "description": "Industrial-zoned urban lot, zone X, inland.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "200-010-020-05", "cali": "I-L", "descrip": "Industrial Liviano", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "200-010-020-05", "TIPO": "P" },
+      "jp": {
+        "num_catast": "200-010-020-05",
+        "cali": "I-L",
+        "descrip": "Industrial Liviano",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "200-010-020-05",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -26,10 +58,25 @@
     "urban_residential_x": {
       "label": "Urban residential district, FEMA zone X",
       "description": "Residential-zoned urban lot (R-I), zone X, inland. A non-residential use here is a change of use against the zoning.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "300-040-050-11", "cali": "R-I", "descrip": "Residencial Intermedio", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "300-040-050-11", "TIPO": "P" },
+      "jp": {
+        "num_catast": "300-040-050-11",
+        "cali": "R-I",
+        "descrip": "Residencial Intermedio",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "300-040-050-11",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -37,10 +84,29 @@
     "flood_ae": {
       "label": "FEMA SFHA zone AE (not floodway)",
       "description": "Commercial urban lot inside the 1% annual-chance floodplain (AE), outside the floodway, inland.",
-      "fema": { "FLD_ZONE": "AE", "ZONE_SUBTY": null, "SFHA_TF": "T", "STATIC_BFE": 4.2, "LEN_UNIT": "Meters", "DFIRM_ID": "72000C" },
-      "advisory": { "FLD_ZONE": "AE" },
-      "jp": { "num_catast": "038-000-020-01", "cali": "C-I", "descrip": "Comercial Intermedio", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "038-000-020-01", "TIPO": "P" },
+      "fema": {
+        "FLD_ZONE": "AE",
+        "ZONE_SUBTY": null,
+        "SFHA_TF": "T",
+        "STATIC_BFE": 4.2,
+        "LEN_UNIT": "Meters",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "AE"
+      },
+      "jp": {
+        "num_catast": "038-000-020-01",
+        "cali": "C-I",
+        "descrip": "Comercial Intermedio",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "038-000-020-01",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -48,10 +114,27 @@
     "floodway": {
       "label": "FEMA AE floodway (cauce mayor)",
       "description": "Lot in the regulatory floodway (AE, ZONE_SUBTY FLOODWAY), commercial zoning on urban land, inland.",
-      "fema": { "FLD_ZONE": "AE", "ZONE_SUBTY": "FLOODWAY", "SFHA_TF": "T", "DFIRM_ID": "72000C" },
-      "advisory": { "FLD_ZONE": "AE" },
-      "jp": { "num_catast": "090-000-010-02", "cali": "C-L", "descrip": "Comercial Liviano", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "01-MAR-2012" },
-      "crim": { "NUM_CATASTRO": "090-000-010-02", "TIPO": "P" },
+      "fema": {
+        "FLD_ZONE": "AE",
+        "ZONE_SUBTY": "FLOODWAY",
+        "SFHA_TF": "T",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "AE"
+      },
+      "jp": {
+        "num_catast": "090-000-010-02",
+        "cali": "C-L",
+        "descrip": "Comercial Liviano",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "01-MAR-2012"
+      },
+      "crim": {
+        "NUM_CATASTRO": "090-000-010-02",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -59,10 +142,28 @@
     "advisory_ao_only": {
       "label": "Advisory (ABFE) AO only; effective FIRM zone X",
       "description": "Effective FEMA FIRM says zone X; only the post-María advisory map shows AO. The effective map controls Reg. 13 triggers today.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
-      "advisory": { "FLD_ZONE": "AO", "Depth_m": 0.3 },
-      "jp": { "num_catast": "120-030-040-07", "cali": "C-L", "descrip": "Comercial Liviano", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "120-030-040-07", "TIPO": "P" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "AO",
+        "Depth_m": 0.3
+      },
+      "jp": {
+        "num_catast": "120-030-040-07",
+        "cali": "C-L",
+        "descrip": "Comercial Liviano",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "120-030-040-07",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -70,10 +171,25 @@
     "coastal_zone_x": {
       "label": "Coastal zone (CZMA), FEMA zone X",
       "description": "Inside the official coastal zone, but on high ground (zone X); tourism-commercial zoning on urban land.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "060-010-020-03", "cali": "C-T", "descrip": "Comercial Turístico", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "060-010-020-03", "TIPO": "P" },
+      "jp": {
+        "num_catast": "060-010-020-03",
+        "cali": "C-T",
+        "descrip": "Comercial Turístico",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "060-010-020-03",
+        "TIPO": "P"
+      },
       "coastal": "inside",
       "historic": null,
       "protected": null
@@ -81,10 +197,29 @@
     "coastal_ve": {
       "label": "Coastal zone + FEMA VE (coastal high hazard)",
       "description": "Beachfront lot: VE (SFHA, wave action) inside the coastal zone; tourism zoning on urban land.",
-      "fema": { "FLD_ZONE": "VE", "ZONE_SUBTY": null, "SFHA_TF": "T", "STATIC_BFE": 3.4, "LEN_UNIT": "Meters", "DFIRM_ID": "72000C" },
-      "advisory": { "FLD_ZONE": "VE" },
-      "jp": { "num_catast": "061-020-030-04", "cali": "C-T", "descrip": "Comercial Turístico", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "061-020-030-04", "TIPO": "P" },
+      "fema": {
+        "FLD_ZONE": "VE",
+        "ZONE_SUBTY": null,
+        "SFHA_TF": "T",
+        "STATIC_BFE": 3.4,
+        "LEN_UNIT": "Meters",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "VE"
+      },
+      "jp": {
+        "num_catast": "061-020-030-04",
+        "cali": "C-T",
+        "descrip": "Comercial Turístico",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "061-020-030-04",
+        "TIPO": "P"
+      },
       "coastal": "inside",
       "historic": null,
       "protected": null
@@ -92,10 +227,25 @@
     "historic_zone": {
       "label": "JP historic zone, FEMA zone X",
       "description": "Lot inside a JP-designated historic zone (Zona Histórica), zone X, outside the coastal zone, commercial/mixed zoning.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "040-050-060-09", "cali": "CUT", "descrip": "Centro Urbano Tradicional", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "040-050-060-09", "TIPO": "P" },
+      "jp": {
+        "num_catast": "040-050-060-09",
+        "cali": "CUT",
+        "descrip": "Centro Urbano Tradicional",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "040-050-060-09",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": "Zona Histórica de Ponce",
       "protected": null
@@ -103,10 +253,25 @@
     "historic_zone_coastal": {
       "label": "JP historic zone inside the coastal zone (Viejo San Juan), FEMA zone X",
       "description": "Lot inside a JP-designated historic zone (Zona Histórica de San Juan) and inside the official coastal zone, on high ground (zone X), traditional urban center zoning.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "040-050-060-09", "cali": "CUT", "descrip": "Centro Urbano Tradicional", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "040-050-060-09", "TIPO": "P" },
+      "jp": {
+        "num_catast": "040-050-060-09",
+        "cali": "CUT",
+        "descrip": "Centro Urbano Tradicional",
+        "clasi": "SU",
+        "descrip1": "Suelo Urbano",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "040-050-060-09",
+        "TIPO": "P"
+      },
       "coastal": "inside",
       "historic": "Zona Histórica de San Juan",
       "protected": null
@@ -114,10 +279,25 @@
     "rural_srep_agricultural": {
       "label": "Rural SREP-A (specially protected agricultural land), zone X",
       "description": "Rural lot on Suelo Rústico Especialmente Protegido - Agrícola with agricultural zoning (A-P), zone X, inland.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "419-000-006-03", "cali": "A-P", "descrip": "Agrícola Productivo", "clasi": "SREP-A", "descrip1": "Suelo Rústico Especialmente Protegido - Agrícola", "vigencia": "03/19/2008" },
-      "crim": { "NUM_CATASTRO": "419-000-006-03", "TIPO": "P" },
+      "jp": {
+        "num_catast": "419-000-006-03",
+        "cali": "A-P",
+        "descrip": "Agrícola Productivo",
+        "clasi": "SREP-A",
+        "descrip1": "Suelo Rústico Especialmente Protegido - Agrícola",
+        "vigencia": "03/19/2008"
+      },
+      "crim": {
+        "NUM_CATASTRO": "419-000-006-03",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -125,10 +305,25 @@
     "rural_src": {
       "label": "Rural common land (SRC), rural general zoning, zone X",
       "description": "Rural lot on Suelo Rústico Común with rural general zoning (R-G), zone X, inland — rustic but NOT specially protected.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": "500-000-007-01", "cali": "R-G", "descrip": "Rural General", "clasi": "SRC", "descrip1": "Suelo Rústico Común", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "500-000-007-01", "TIPO": "P" },
+      "jp": {
+        "num_catast": "500-000-007-01",
+        "cali": "R-G",
+        "descrip": "Rural General",
+        "clasi": "SRC",
+        "descrip1": "Suelo Rústico Común",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "500-000-007-01",
+        "TIPO": "P"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -136,10 +331,25 @@
     "road_pin_residential": {
       "label": "Pin on a road (JP VIAL, CRIM TIPO V) next to a residential district",
       "description": "The user dropped the pin on the street. JP returns 'Sistema vial' and CRIM a right-of-way polygon without number: zoning/land class/parcel describe the road, never the property, and must not trigger zoning rules. FEMA X.",
-      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "fema": {
+        "FLD_ZONE": "X",
+        "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD",
+        "SFHA_TF": "F",
+        "DFIRM_ID": "72000C"
+      },
       "advisory": null,
-      "jp": { "num_catast": null, "cali": "VIAL", "descrip": "Sistema vial", "clasi": "VIAL", "descrip1": "Sistema vial" },
-      "crim": { "NUM_CATASTRO": null, "OLDPID": null, "TIPO": "V" },
+      "jp": {
+        "num_catast": null,
+        "cali": "VIAL",
+        "descrip": "Sistema vial",
+        "clasi": "VIAL",
+        "descrip1": "Sistema vial"
+      },
+      "crim": {
+        "NUM_CATASTRO": null,
+        "OLDPID": null,
+        "TIPO": "V"
+      },
       "coastal": "outside",
       "historic": null,
       "protected": null
@@ -147,10 +357,27 @@
     "water_pin": {
       "label": "Pin in a water body (JP AGUA, CRIM TIPO A)",
       "description": "Pin in a lagoon/bay: JP 'Cuerpo de agua', CRIM water polygon without number. Not a lot: no zoning/land-class/conservation rules may fire. Coastal zone inside, FEMA AE.",
-      "fema": { "FLD_ZONE": "AE", "ZONE_SUBTY": null, "SFHA_TF": "T", "DFIRM_ID": "72000C" },
-      "advisory": { "FLD_ZONE": "AE" },
-      "jp": { "num_catast": null, "cali": "AGUA", "descrip": "Cuerpo de agua", "clasi": "AGUA", "descrip1": "Cuerpo de agua" },
-      "crim": { "NUM_CATASTRO": null, "OLDPID": null, "TIPO": "A" },
+      "fema": {
+        "FLD_ZONE": "AE",
+        "ZONE_SUBTY": null,
+        "SFHA_TF": "T",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "AE"
+      },
+      "jp": {
+        "num_catast": null,
+        "cali": "AGUA",
+        "descrip": "Cuerpo de agua",
+        "clasi": "AGUA",
+        "descrip1": "Cuerpo de agua"
+      },
+      "crim": {
+        "NUM_CATASTRO": null,
+        "OLDPID": null,
+        "TIPO": "A"
+      },
       "coastal": "inside",
       "historic": null,
       "protected": null
@@ -158,10 +385,27 @@
     "conservation_coastal": {
       "label": "Conservation district (C-R) on SREP-E land, coastal zone, FEMA AE",
       "description": "Coastal lot zoned Conservación de Recursos on Suelo Rústico Especialmente Protegido - Ecológico, in AE, inside the coastal zone (mirrors the recorded Toa Baja AE point).",
-      "fema": { "FLD_ZONE": "AE", "ZONE_SUBTY": null, "SFHA_TF": "T", "DFIRM_ID": "72000C" },
-      "advisory": { "FLD_ZONE": "AE" },
-      "jp": { "num_catast": "038-000-010-13", "cali": "C-R", "descrip": "Conservación de Recursos", "clasi": "SREP-E", "descrip1": "Suelo Rústico Especialmente Protegido-Ecológico", "vigencia": "27-DIC-2024" },
-      "crim": { "NUM_CATASTRO": "038-000-010-13", "TIPO": "P" },
+      "fema": {
+        "FLD_ZONE": "AE",
+        "ZONE_SUBTY": null,
+        "SFHA_TF": "T",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "AE"
+      },
+      "jp": {
+        "num_catast": "038-000-010-13",
+        "cali": "C-R",
+        "descrip": "Conservación de Recursos",
+        "clasi": "SREP-E",
+        "descrip1": "Suelo Rústico Especialmente Protegido-Ecológico",
+        "vigencia": "27-DIC-2024"
+      },
+      "crim": {
+        "NUM_CATASTRO": "038-000-010-13",
+        "TIPO": "P"
+      },
       "coastal": "inside",
       "historic": null,
       "protected": null
@@ -176,6 +420,34 @@
       "coastal": "unknown",
       "historic": "unknown",
       "protected": "unknown"
+    },
+    "road_pin_flood_ae_coastal": {
+      "label": "Pin on a street (JP VIAL, CRIM TIPO V) inside FEMA AE and the coastal zone",
+      "description": "Mirrors the real Arroyo pueblo case (siteCases arroyo_road_pin, 17.964, -66.06): the pin is on the street, JP returns 'Sistema vial' and CRIM a right-of-way polygon without number, and the point is inside FEMA AE and the CZMA coastal zone. Zoning/land class/parcel are withheld (they describe the road); flood and coastal facts are kept but describe the street, not the property, so map-driven reviews must ask the user to move the pin rather than be presented as REQUIRED (REG-OFFLOT-PIN-001).",
+      "fema": {
+        "FLD_ZONE": "AE",
+        "ZONE_SUBTY": null,
+        "SFHA_TF": "T",
+        "DFIRM_ID": "72000C"
+      },
+      "advisory": {
+        "FLD_ZONE": "A"
+      },
+      "jp": {
+        "num_catast": null,
+        "cali": "VIAL",
+        "descrip": "Sistema vial",
+        "clasi": "VIAL",
+        "descrip1": "Sistema vial"
+      },
+      "crim": {
+        "NUM_CATASTRO": null,
+        "OLDPID": null,
+        "TIPO": "V"
+      },
+      "coastal": "inside",
+      "historic": null,
+      "protected": null
     }
   }
 }
