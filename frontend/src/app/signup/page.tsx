@@ -205,7 +205,7 @@ function SignupForm() {
               </button>
             )}
 
-            <label className={styles.terms}><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>{t("I agree to the")} <Link href="/privacy">{t("Privacy Policy")}</Link>.</span></label>
+            <label className={styles.terms}><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>{t("I agree to the")} <Link href="/terms">{t("Terms of Service")}</Link> {t("and")} <Link href="/privacy">{t("Privacy Policy")}</Link>.</span></label>
             {error && <div className={styles.error} role="alert">{error}</div>}
             <button className={styles.submitButton} disabled={!valid || busy} type="submit">{busy ? t("Creating account…") : t("Create Account")}</button>
             <p className={styles.existing}>{t("Already have an account?")} <Link href={`/auth/login?next=${encodeURIComponent(nextPath)}${inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""}`}>{t("Log in")}</Link></p>
@@ -213,6 +213,7 @@ function SignupForm() {
         </div>
         <Link className={styles.back} href={GUEST_INTAKE}>{isSpanish ? "Continuar sin cuenta" : "Continue without an account"}</Link>
         <Link className={styles.back} href="/">{t("← Back to smartpr.com")}</Link>
+        <Link className={styles.back} href="/terms">{t("Terms of Service")}</Link>
         <Link className={styles.back} href="/privacy">{t("Privacy Policy")}</Link>
       </section>
     </main>

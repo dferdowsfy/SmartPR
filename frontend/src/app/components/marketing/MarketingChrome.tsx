@@ -42,11 +42,13 @@ const copy = {
       { label: "Trust center", href: TRUST_URL, external: true },
       { label: "Pricing", href: "/pricing" },
       { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
     ],
     proFooter: [
       { label: "Home", href: "/" },
       { label: "About", href: "/about" },
       { label: "Trust center", href: TRUST_URL, external: true },
+      { label: "Terms", href: "/terms" },
     ],
   },
   ES: {
@@ -70,11 +72,13 @@ const copy = {
       { label: "Centro de confianza", href: TRUST_URL, external: true },
       { label: "Planes", href: "/pricing" },
       { label: "Privacidad", href: "/privacy" },
+      { label: "Términos", href: "/terms" },
     ],
     proFooter: [
       { label: "Inicio", href: "/es" },
       { label: "Nosotros", href: "/es/nosotros" },
       { label: "Centro de confianza", href: TRUST_URL, external: true },
+      { label: "Términos", href: "/terms" },
     ],
   },
 } as const;
