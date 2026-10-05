@@ -69,3 +69,80 @@ export function trimFixture(fx: SiteFixture, marginDeg?: number): SiteFixture {
   for (const p of copy.posts) p.response = trimBody(p.response, b);
   return copy;
 }
+
+/**
+ * After trim clips CRIM rings, parcel-polygon GET/POST URLs (geometry / WKT)
+ * no longer match what resolveParcelFindings will request on replay. Re-run the
+ * pipeline against the trimmed fixture, serving bodies by endpoint fingerprint
+ * (path + outFields + returnGeometry, ignoring geometry), and record under the
+ * exact URLs the app will ask for.
+ */
+export async function alignTrimmedUrls(
+  fx: SiteFixture,
+  run: (net: { fetchImpl: import("../layerService.ts").FetchLike; postJson: import("../parcelService.ts").PostJson; decodePng: (b: ArrayBuffer) => Promise<{ width: number; height: number; channels: number; data: Uint8Array }> }) => Promise<unknown>,
+): Promise<SiteFixture> {
+  const gets: Record<string, import("./pipeline.ts").RecordedGet> = { ...fx.gets };
+  const posts: SiteFixture["posts"] = fx.posts.map((p) => ({ ...p }));
+
+  const fingerprint = (u: string) => {
+    const url = new URL(u);
+    return [
+      url.pathname,
+      url.searchParams.get("geometryType") ?? "",
+      url.searchParams.get("returnGeometry") ?? "",
+      url.searchParams.get("outFields") ?? "",
+      url.searchParams.get("geometryPrecision") ?? "",
+      url.searchParams.get("maxAllowableOffset") ?? "",
+      url.searchParams.has("geometry") && (url.searchParams.get("geometry") ?? "").includes(",") && !(url.searchParams.get("geometry") ?? "").includes("{") ? "point" : url.searchParams.has("geometry") ? "shape" : "none",
+    ].join("|");
+  };
+  const byFp = new Map<string, import("./pipeline.ts").RecordedGet>();
+  for (const [u, g] of Object.entries(fx.gets)) byFp.set(fingerprint(u), g);
+
+  const fetchImpl: import("../layerService.ts").FetchLike = async (url) => {
+    const hit = gets[url] ?? byFp.get(fingerprint(url));
+    if (!hit) return { ok: false, status: 599, json: async () => null };
+    gets[url] = hit;
+    if (hit.throw) {
+      const e = new Error(hit.throw.message);
+      e.name = hit.throw.name;
+      throw e;
+    }
+    return {
+      ok: hit.ok,
+      status: hit.status,
+      json: async () => {
+        if (hit.badJson) throw new SyntaxError("bad json");
+        return hit.body ?? null;
+      },
+      arrayBuffer: async () => new Uint8Array(hit.rgba ?? [0, 0, 0, 0]).buffer,
+    };
+  };
+
+  const postJson: import("../parcelService.ts").PostJson = async (url, body) => {
+    const query = (body as { query?: string })?.query ?? "";
+    let hit = posts.find((p) => p.url === url && p.query === query);
+    if (!hit) {
+      // Soils parcel SQL embeds WKT of the (now trimmed) ring — match on the
+      // SELECT head so the recorded answer stays attached to the new query.
+      const head = query.replace(/'POLYGON\([^']*\)'/, "'POLYGON(...)'").replace(/'MULTIPOLYGON\([^']*\)'/, "'MULTIPOLYGON(...)'");
+      hit = posts.find((p) => p.url === url && p.query.replace(/'POLYGON\([^']*\)'/, "'POLYGON(...)'").replace(/'MULTIPOLYGON\([^']*\)'/, "'MULTIPOLYGON(...)'") === head);
+    }
+    if (!hit) {
+      posts.push({ url, query, response: "not_recorded" });
+      return "not_recorded";
+    }
+    if (hit.query !== query) posts.push({ url, query, response: hit.response });
+    return hit.response;
+  };
+
+  const decodePng = async (buf: ArrayBuffer) => {
+    const px = new Uint8Array(buf);
+    const data = new Uint8Array(256 * 256 * 4);
+    for (let i = 0; i < data.length; i += 4) data.set(px.subarray(0, 4), i);
+    return { width: 256, height: 256, channels: 4, data };
+  };
+
+  await run({ fetchImpl, postJson, decodePng });
+  return { ...fx, gets, posts };
+}
