@@ -202,8 +202,14 @@ test("fallback: the first non-empty provider wins; empty and failing ones pass t
   assert.deepEqual(calls, ["a", "b", "c"]);
 });
 
-test("fallback: nothing found is [] (not an error); every provider down is an error", async () => {
-  assert.deepEqual(await fallbackGeocoder([stub("a", async () => []), stub("b", async () => { throw new GeocodingError("provider_http_503", 503); })]).search("x"), []);
+test("fallback: nothing found is [] (not an error); any provider error with no results is an error", async () => {
+  // All empty, no errors → genuine "nothing found".
+  assert.deepEqual(await fallbackGeocoder([stub("a", async () => []), stub("b", async () => [])]).search("x"), []);
+  // Partial outage (one empty, one error) must NOT look like "address not found".
+  await assert.rejects(
+    fallbackGeocoder([stub("a", async () => []), stub("b", async () => { throw new GeocodingError("provider_http_503", 503); })]).search("x"),
+    /provider_http_503/
+  );
   await assert.rejects(
     fallbackGeocoder([stub("a", async () => { throw new GeocodingError("provider_timeout"); }), stub("b", async () => { throw new GeocodingError("provider_http_503", 503); })]).search("x"),
     /provider_timeout/

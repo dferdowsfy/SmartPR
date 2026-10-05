@@ -232,11 +232,14 @@ export const LAYER_SOURCES = {
     id: "jp-mipr-zona-costanera",
     name: "Junta de Planificación (MIPR) — Zona Costanera (PMZC)",
     publisher: "Junta de Planificación de Puerto Rico / DRNA",
-    url: "https://sige.pr.gov/server/rest/services/MIPR/Reglamentario_va2/MapServer/31",
+    // 2026-10-05: sige.pr.gov MIPR/Reglamentario_va2/31 returns HTTP 502; the
+    // sigejp equivalent of that path is "service not found". The live copy is
+    // MIPR/Reglamentario (no _va2) layer 31 on sigejp.
+    url: "https://sigejp.pr.gov/server/rest/services/MIPR/Reglamentario/MapServer/31",
     layer: "Zona Costanera",
     dataset_date: null,
-    reliability: "low",
-    verified: "2026-09-30",
+    reliability: "medium",
+    verified: "2026-10-05",
   },
   jp_linea_costa: {
     id: "jp-linea-costa-1km",
@@ -795,11 +798,15 @@ export function slopePercent(e: { east: number; west: number; north: number; sou
  */
 export function parseTerrain(
   landslide: { rgba: readonly number[] } | string,
-  elevation: { centerM: number | null; slopePct: number | null } | null,
+  elevation: { centerM: number | null; slopePct: number | null; reason?: string | null } | null,
   retrieved_at: string
 ): SiteLayerResult {
   const src = LAYER_SOURCES.usgs_landslide;
-  const elev = { ELEVATION_M: elevation?.centerM ?? null, SLOPE_PCT: elevation?.slopePct ?? null };
+  const elev = {
+    ELEVATION_M: elevation?.centerM ?? null,
+    SLOPE_PCT: elevation?.slopePct ?? null,
+    ...(elevation?.reason ? { ELEVATION_REASON: elevation.reason } : {}),
+  };
   if (typeof landslide === "string") return { ...unknownLayer("terrain", src, landslide, retrieved_at), attributes: elev };
   const cls = landslideClassFromRgba(landslide.rgba);
   if (!cls) return { ...unknownLayer("terrain", src, `landslide_legend_mismatch_${landslide.rgba.join("_")}`, retrieved_at), attributes: elev, retrieval: "live" };

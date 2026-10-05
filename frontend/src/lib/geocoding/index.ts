@@ -33,6 +33,7 @@
 // ============================================================================
 
 import { PUERTO_RICO_BOUNDS, validateCoordinates } from "../../app/locations/geo.ts";
+import { queryDataset, sourceEndpoints } from "../../app/locations/layerService.ts";
 import { interiorPoint } from "../../app/locations/snap.ts";
 
 /** A normalized geocoder result. Coordinates are WGS84. */
@@ -313,10 +314,8 @@ export function normalizeCatastroQuery(q: string): string | null {
   return m ? `${m[1]}-${m[2]}-${m[3]}-${m[4]}` : null;
 }
 
-export const CRIM_PARCEL_ENDPOINTS = [
-  "https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0",
-  "https://sigejp.pr.gov/server/rest/services/crim/crim_parcelas/MapServer/0",
-] as const;
+/** Shared CRIM parcel endpoints (same list as LAYER_SOURCES.crim_parcels / layers + snap). */
+export const CRIM_PARCEL_ENDPOINTS: readonly string[] = sourceEndpoints("crim_parcels");
 
 /** A point guaranteed inside the parcel (not the centroid, which can fall outside an L-shaped lot). */
 function ringCentre(rings: Array<Array<[number, number]>>): [number, number] | null {
@@ -325,41 +324,53 @@ function ringCentre(rings: Array<Array<[number, number]>>): [number, number] | n
 
 export function crimCatastroProvider(config: { endpoints?: readonly string[]; timeoutMs?: number; fetchImpl?: FetchLike } = {}): GeocodingProvider {
   const doFetch: FetchLike = config.fetchImpl ?? ((input, init) => fetch(input, init));
-  const endpoints = config.endpoints ?? CRIM_PARCEL_ENDPOINTS;
+  const endpoints = config.endpoints ?? sourceEndpoints("crim_parcels");
   return {
     id: "crim_catastro",
     async search(query) {
       const num = normalizeCatastroQuery(query);
       if (!num) return [];
-      let lastErr: GeocodingError | null = null;
-      for (const ep of endpoints) {
-        const u = `${ep}/query?${new URLSearchParams({ where: `NUM_CATASTRO='${num}'`, outFields: "NUM_CATASTRO,TIPO", returnGeometry: "true", outSR: "4326", geometryPrecision: "7", f: "json" }).toString()}`;
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), config.timeoutMs ?? 6000);
-        try {
-          const res = await doFetch(u, { signal: controller.signal, cache: "no-store" });
-          if (!res.ok) { lastErr = new GeocodingError(`provider_http_${res.status}`, res.status); continue; }
-          const body = (await res.json()) as { error?: unknown; features?: Array<{ geometry?: { rings?: Array<Array<[number, number]>> } }> };
-          if (body.error || !Array.isArray(body.features)) { lastErr = new GeocodingError("provider_error"); continue; }
-          const f = body.features.find((x) => Array.isArray(x.geometry?.rings));
-          const c = f?.geometry?.rings ? ringCentre(f.geometry.rings) : null;
-          if (!c) return [];
-          const coords = validateCoordinates(c[1], c[0]);
-          if (!coords.ok) return [];
-          return [{
-            latitude: coords.latitude, longitude: coords.longitude,
-            formatted_address: `Catastro ${num}`, address_line_1: null, city: null, municipality: null,
-            state_or_region: "PR", postal_code: null, country_code: "PR",
-            place_source: "crim_catastro", place_source_id: num,
-          }];
-        } catch (err) {
-          lastErr = new GeocodingError((err as Error).name === "AbortError" ? "provider_timeout" : "provider_unreachable");
-        } finally {
-          clearTimeout(timer);
+      // Same shared client as layers / parcel (UA, circuit breaker, timeouts).
+      const { result } = await queryDataset(
+        doFetch as Parameters<typeof queryDataset>[0],
+        endpoints,
+        (ep) =>
+          `${ep}/query?${new URLSearchParams({
+            where: `NUM_CATASTRO='${num}'`,
+            outFields: "NUM_CATASTRO,TIPO",
+            returnGeometry: "true",
+            outSR: "4326",
+            geometryPrecision: "7",
+            f: "json",
+          }).toString()}`,
+        {
+          timeoutMs: config.timeoutMs ?? 6000,
+          retries: 0,
+          retryDelayMs: 0,
+          retryOnTimeout: false,
         }
+      );
+      if (typeof result === "string") {
+        if (result.startsWith("timeout_")) throw new GeocodingError("provider_timeout");
+        if (result.startsWith("http_")) {
+          const code = Number(result.slice(5));
+          throw new GeocodingError(`provider_http_${code}`, Number.isFinite(code) ? code : undefined);
+        }
+        throw new GeocodingError("provider_unreachable");
       }
-      if (lastErr) throw lastErr;
-      return [];
+      const body = result as { error?: unknown; features?: Array<{ geometry?: { rings?: Array<Array<[number, number]>> } }> };
+      if (body.error || !Array.isArray(body.features)) throw new GeocodingError("provider_error");
+      const f = body.features.find((x) => Array.isArray(x.geometry?.rings));
+      const c = f?.geometry?.rings ? ringCentre(f.geometry.rings) : null;
+      if (!c) return [];
+      const coords = validateCoordinates(c[1], c[0]);
+      if (!coords.ok) return [];
+      return [{
+        latitude: coords.latitude, longitude: coords.longitude,
+        formatted_address: `Catastro ${num}`, address_line_1: null, city: null, municipality: null,
+        state_or_region: "PR", postal_code: null, country_code: "PR",
+        place_source: "crim_catastro", place_source_id: num,
+      }];
     },
     async reverse() {
       return null;
@@ -374,8 +385,8 @@ export function crimCatastroProvider(config: { endpoints?: readonly string[]; ti
 /**
  * Ask providers in order; the first non-empty answer wins. A provider that
  * errors (down, rate limited, timeout) or finds nothing passes to the next.
- * Throws only when EVERY provider errored, so "nothing found" (an empty
- * list) and "search is down" (an error) stay distinguishable.
+ * Throws when ANY provider errored and none returned results — a partial
+ * outage must not look like "address not found".
  */
 export function fallbackGeocoder(providers: GeocodingProvider[]): GeocodingProvider {
   const run = async <T>(call: (p: GeocodingProvider) => Promise<T>, empty: (v: T) => boolean, none: T): Promise<T> => {
@@ -391,7 +402,8 @@ export function fallbackGeocoder(providers: GeocodingProvider[]): GeocodingProvi
         console.warn(`[geocode] ${p.id} failed: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-    if (errors === providers.length && firstErr) throw firstErr;
+    // Partial outage (some errored, others empty) ≠ "nothing found".
+    if (errors > 0 && firstErr) throw firstErr instanceof GeocodingError ? firstErr : new GeocodingError("provider_partial_outage");
     return none;
   };
   return {

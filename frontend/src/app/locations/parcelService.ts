@@ -7,14 +7,21 @@
 // ============================================================================
 
 import { checkSitePoint, LAYER_SOURCES, USDA_SOILS_SOURCE, type ArcGisQueryResponse, type LayerSourceKey } from "./layers.ts";
-import { queryDataset, sourceEndpoints, type FetchLike } from "./layerService.ts";
+import {
+  PARCEL_DEADLINE_MS,
+  SMARTPR_USER_AGENT,
+  queryDataset,
+  retryOnTimeoutForSource,
+  sourceEndpoints,
+  timeoutForSource,
+  type FetchLike,
+} from "./layerService.ts";
 import {
   applyCoverage, buildSoilsExtra, parseFloodZones, parseParcelBoundary, parsePlanTerritorialExtra, parsePresenceExtra, parsePutExtra, parseSoilsParcel, parseZoningDistricts,
   type ExtraFinding, type ExtraId, type ParcelBoundary, type ParcelFindings,
 } from "./parcel.ts";
 import { computeCoverage, parcelPlanarArea, type CoverageFeature } from "./coverage.ts";
 
-const TIMEOUT_MS = 12000;
 /** The JP / MIPR ArcGIS servers time out when hit with ~10 parallel queries. */
 const JP_CONCURRENCY = 3;
 
@@ -108,10 +115,11 @@ function url(layerUrl: string, params: Record<string, string>): string {
   return `${layerUrl}/query?${new URLSearchParams({ inSR: "4326", spatialRel: "esriSpatialRelIntersects", f: "json", ...params }).toString()}`;
 }
 
-export async function resolveParcelFindings(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; postJson?: PostJson; now?: () => Date; refresh?: boolean } = {}): Promise<ParcelFindings> {
+export async function resolveParcelFindings(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; postJson?: PostJson; now?: () => Date; refresh?: boolean; deadlineMs?: number } = {}): Promise<ParcelFindings> {
   const fetchImpl: FetchLike = opts.fetchImpl ?? ((u, init) => fetch(u, { ...init, cache: "no-store" }) as ReturnType<FetchLike>);
   const postJson = opts.postJson ?? defaultPostJson;
   const now = opts.now ?? (() => new Date());
+  const deadlineAt = Date.now() + (opts.deadlineMs ?? PARCEL_DEADLINE_MS);
   const key = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
   const hit = cache.get(key);
   if (hit && !opts.refresh && now().getTime() - hit.at < FRESH_MS) return hit.value;
@@ -122,11 +130,20 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
     const b = parseParcelBoundary(check.reason, longitude, latitude);
     return { latitude, longitude, retrieved_at: at, boundary: b, zoning: parseZoningDistricts(check.reason, "point"), flood: parseFloodZones(check.reason, "point") };
   }
-  // Same provider path as the point layers: primary, then same-schema
-  // fallbacks, with retries and the shared circuit breaker.
+  // Same provider path AND the same per-source timeout / retry rule as the
+  // point layers (LAYER_TIMEOUTS_MS / LAYER_QUERIES). An overall deadline
+  // caps the whole resolve so CRIM + fallbacks cannot pile up past the route.
   const q = async (src: LayerSourceKey, params: Record<string, string>): Promise<ArcGisQueryResponse | string> =>
-    (await queryDataset(fetchImpl, sourceEndpoints(src), (ep) => url(ep, params), { timeoutMs: TIMEOUT_MS, retries: 1, retryDelayMs: 250, retryOnTimeout: true })).result;
+    (await queryDataset(fetchImpl, sourceEndpoints(src), (ep) => url(ep, params), {
+      timeoutMs: timeoutForSource(src),
+      retries: 1,
+      retryDelayMs: 250,
+      retryOnTimeout: retryOnTimeoutForSource(src),
+      deadlineAt,
+    })).result;
 
+  // CRIM is needed for the boundary, but it no longer uses a 12 s + timeout-retry
+  // alone-first path (that stacked to ~48 s). Same 6 s / no-timeout-retry as layers.
   const parcelResp = await q("crim_parcels", { geometry: point, geometryType: "esriGeometryPoint", outFields: "NUM_CATASTRO,TIPO", returnGeometry: "true", outSR: "4326", geometryPrecision: "7" });
   const boundary = parseParcelBoundary(parcelResp, longitude, latitude);
   const scope: "parcel" | "point" = boundary.value ? "parcel" : "point";
@@ -157,8 +174,8 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
     presence("jp_areas_protegidas"),
     presence("jp_reservas_naturales"),
     presence("mipr_humedales"),
-    postJson(USDA_SOILS_SOURCE.url, { format: "JSON+COLUMNNAME", query: soilsPinSql(latitude, longitude) }, TIMEOUT_MS),
-    boundary.value ? postJson(USDA_SOILS_SOURCE.url, { format: "JSON+COLUMNNAME", query: soilsParcelSql(wktPolygon(boundary.value.geometry)) }, TIMEOUT_MS) : Promise.resolve(null),
+    postJson(USDA_SOILS_SOURCE.url, { format: "JSON+COLUMNNAME", query: soilsPinSql(latitude, longitude) }, 8000),
+    boundary.value ? postJson(USDA_SOILS_SOURCE.url, { format: "JSON+COLUMNNAME", query: soilsParcelSql(wktPolygon(boundary.value.geometry)) }, 8000) : Promise.resolve(null),
   ]);
   const ref = (k: LayerSourceKey): ExtraFinding["source"] => ({ name: LAYER_SOURCES[k].name, url: LAYER_SOURCES[k].url, layer: LAYER_SOURCES[k].layer, dataset_date: LAYER_SOURCES[k].dataset_date });
   const g = boundary.value?.geometry ?? null;
@@ -268,15 +285,22 @@ FROM mupolygon P JOIN mapunit M ON M.mukey = P.mukey LEFT JOIN muaggatt A ON A.m
 WHERE P.mupolygongeo.STIntersects(${aoi}) = 1`;
 }
 
-/** POST JSON (USDA SDA is POST-only); a string on failure, never throws. */
+/** POST JSON (USDA SDA is POST-only); a string on failure, never throws. Empty body = empty_response (unknown), not "{}". */
 const defaultPostJson: PostJson = async (url, body, timeoutMs) => {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal, cache: "no-store" });
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json", "User-Agent": SMARTPR_USER_AGENT },
+      body: JSON.stringify(body),
+      signal: ctrl.signal,
+      cache: "no-store",
+    });
     if (!res.ok) return `http_${res.status}`;
     const text = await res.text();
-    return text.trim() ? JSON.parse(text) : {};
+    if (!text.trim()) return "empty_response";
+    return JSON.parse(text);
   } catch (err) {
     return (err as Error)?.name === "AbortError" ? `timeout_${timeoutMs}ms` : `network_error: ${(err as Error)?.message ?? "error"}`;
   } finally {
