@@ -15,7 +15,8 @@ export const SERVER_NAME = "smartpr-chatgpt";
 const INSTRUCTIONS =
   "SmartPR gives preliminary Puerto Rico business permit/registration requirements from SmartPR's deterministic rules engine — never answer requirements from model knowledge. " +
   "Call assess_scenario with the facts the user stated (leave unknowns out; never guess). Ask the returned clarifying questions, then call refine_scenario with the previous scenario plus answers. " +
-  "The widget lets the user drop a map pin; the pin sets the municipality. Use create_portal_handoff only when the user wants to continue, unlock the full assessment, or use their SmartPR plan. Results are a free preview, not legal advice.";
+  "The widget lets the user drop a map pin; the pin sets the municipality. When scenario.site is present, ALWAYS pass site {latitude, longitude} (or the full prior scenario including site) on every later assess_scenario/refine_scenario call — never replace a pin with municipality text alone. " +
+  "Use create_portal_handoff only when the user wants to continue, unlock the full assessment, or use their SmartPR plan. Results are a free preview, not legal advice.";
 
 const scenarioProps = {
   business_type: { type: "string", description: "Business activity as the user described it, e.g. 'furniture manufacturing', 'restaurant'." },
@@ -39,7 +40,22 @@ const resultSchema = {
   type: "object",
   properties: {
     status: { type: "string", enum: ["complete", "partial", "unsupported"] },
-    scenario: { type: "object" }, assumptions: { type: "array" }, unresolved_facts: { type: "array" },
+    scenario: {
+      type: "object",
+      description: "Normalized scenario. When site is set, keep latitude/longitude on every later tool call.",
+      properties: {
+        site: {
+          type: ["object", "null"],
+          properties: {
+            latitude: { type: "number" }, longitude: { type: "number" },
+            municipality: { type: "string" }, barrio: { type: ["string", "null"] },
+            fips: { type: "string" }, near_boundary: { type: "boolean" },
+            boundary_distance_m: { type: "number" }, designations: { type: "array", items: { type: "string" } },
+            source: { type: "string" },
+          },
+        },
+      },
+    }, assumptions: { type: "array" }, unresolved_facts: { type: "array" },
     clarifying_questions: { type: "array" }, requirements: { type: "array" }, gated: { type: "object" },
     counts: { type: "object" }, coverage_limits: { type: "array" }, versions: { type: "object" }, message: { type: "string" },
     map_focus: { type: "object", description: "Where the widget map should open (lat/lng/zoom).", properties: { latitude: { type: "number" }, longitude: { type: "number" }, zoom: { type: "number" } } },

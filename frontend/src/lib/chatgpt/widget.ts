@@ -9,14 +9,15 @@
 
 import { PR_MUNICIPIO_SHAPES, PR_MAP_SOURCE } from "./prMapShapes";
 
-// Canonical URI is v4 (vector map, empty CSP). ChatGPT may still request older
-// template_pointer URIs (v1–v3) from a cached connector; serve the same HTML
-// for every alias so a bump does not 404 until the user reconnects.
-export const WIDGET_URI = "ui://smartpr/requirements-v4.html";
+// Canonical URI is v5 (confirmed-location layout + sticky pin). ChatGPT may
+// still request older template_pointer URIs (v1–v4) from a cached connector;
+// serve the same HTML for every alias so a bump does not 404 until reconnect.
+export const WIDGET_URI = "ui://smartpr/requirements-v5.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
   "ui://smartpr/requirements-v3.html",
+  "ui://smartpr/requirements-v4.html",
   WIDGET_URI,
 ] as const;
 /** Map zoom range. z7 fits the whole island in a phone-width iframe; outlines
@@ -62,11 +63,24 @@ label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}select,inpu
 .siteinfo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px}.siteinfo .btn{padding:6px 12px;touch-action:manipulation}
 .muni-map{margin:6px 0 10px}.muni-or{color:var(--mut);font-size:12px;margin:8px 0 4px;font-weight:500}
 .foot{color:var(--mut);font-size:11px;margin-top:12px}.sk{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200%;animation:s 1.2s infinite;border-radius:8px;height:14px;margin:10px 0}@keyframes s{to{background-position:-200% 0}}
+
+.loc-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin:0 0 12px}@media(max-width:640px){.loc-grid{grid-template-columns:1fr}}
+.loc-panel h2{font-size:16px;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.pill-ok{display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600}
+.loc-name{font-size:15px;font-weight:600;margin:6px 0 2px}.loc-zip{color:var(--mut);font-size:12px;margin:0 0 8px}
+.loc-meta{display:grid;gap:8px;margin:0;padding:0}.loc-meta>div{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;align-items:baseline}@media(max-width:640px){.loc-meta>div{grid-template-columns:1fr}}
+.loc-meta dt{margin:0;font-size:12px;color:var(--mut);font-weight:500}.loc-meta dd{margin:0;font-size:13px;font-weight:500;overflow-wrap:anywhere}
+.risk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.risk-chip{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--teal2)}
+.map .callout{position:absolute;z-index:3;transform:translate(-50%,calc(-100% - 34px));background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--ink);box-shadow:0 2px 8px rgba(15,23,42,.12);pointer-events:none;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.map .callout:after{content:"";position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-top-color:#fff;filter:drop-shadow(0 1px 0 var(--line))}
+.map .pin{z-index:2}.map .pin.pend{z-index:2}
+.grp.open>.items{display:block}
+.cta-loc{margin-top:10px}
 `;
 
 const JS = String.raw`
 (function(){
-var root=document.getElementById("root"),pending={},nextId=1,state={result:null,input:null,answers:{},busy:false,error:null,lastAction:null,map:{lat:18.22,lng:-66.45,z:8,pin:null}},lastSizeH=0,mapDraws=[];
+var root=document.getElementById("root"),pending={},nextId=1,state={result:null,input:null,answers:{},busy:false,error:null,lastAction:null,map:{lat:18.22,lng:-66.45,z:8,pin:null,confirmed:null}},lastSizeH=0,mapDraws=[];
 function post(m){window.parent.postMessage(m,"*")}
 function request(method,params,ms){var id=nextId++;post({jsonrpc:"2.0",id:id,method:method,params:params||{}});return new Promise(function(res,rej){pending[id]={res:res,rej:rej};setTimeout(function(){if(pending[id]){delete pending[id];rej(new Error("timeout"))}},ms||20000)})}
 function notify(method,params){post({jsonrpc:"2.0",method:method,params:params||{}})}
@@ -77,8 +91,20 @@ window.addEventListener("message",function(e){if(e.source!==window.parent)return
  if(m.method==="ui/notifications/tool-result"){accept(m.params)}
  if(m.method==="ui/notifications/tool-cancelled"){state.error="The request was cancelled.";render()}
 },{passive:true});
+function unwrap(r){if(!r||typeof r!=="object")return null;var sc=r.structuredContent||r;if(sc&&sc.structuredContent)sc=sc.structuredContent;if(sc&&sc.result&&sc.result.structuredContent)sc=sc.result.structuredContent;if(sc&&sc.result&&sc.result.scenario)sc=sc.result;return sc&&sc.scenario&&sc.versions?sc:null}
+function toConfirmed(site){if(!site||site.latitude==null||site.longitude==null)return null;return{lat:+site.latitude,lng:+site.longitude,municipality:site.municipality||null,barrio:site.barrio||null,near_boundary:!!site.near_boundary,boundary_distance_m:site.boundary_distance_m||0,designations:Array.isArray(site.designations)?site.designations.slice():[],fips:site.fips||null,postal_code:site.postal_code||site.zip||null,catastro:site.catastro||null,source:site.source||null,risk_chips:Array.isArray(site.risk_chips)?site.risk_chips.slice():(Array.isArray(site.classification_chips)?site.classification_chips.slice():[])}}
 function accept(r){if(!r)return;if(r.isError){state.error=txt(r)||"SmartPR could not complete the request.";state.busy=false;render();return}
- var sc=r.structuredContent||r;if(sc&&sc.scenario&&sc.versions){state.result=sc;state.error=null;state.busy=false;state.answers={};var f=sc.map_focus||{latitude:18.22,longitude:-66.45,zoom:8};state.map={lat:f.latitude,lng:f.longitude,z:Math.min(f.zoom,FOCUS_Z),pin:null};clampMap(state.map);render()}}
+ var sc=unwrap(r);if(!sc){return}
+ var prev=(state.map&&state.map.confirmed)||null;var dropped=(sc.dropped_answers||[]).indexOf("site")>=0;var site=sc.scenario&&sc.scenario.site;var confirmed=toConfirmed(site);
+ // Sticky pin: a later assess/refine without site must not erase a confirmed pin
+ // for the same municipality (ChatGPT may re-call assess with municipio text only).
+ if(!confirmed&&!dropped&&prev&&sc.scenario&&sc.scenario.municipality&&fold(String(sc.scenario.municipality))===fold(String(prev.municipality||""))){confirmed=prev;sc.scenario.site={latitude:prev.lat,longitude:prev.lng,municipality:prev.municipality,barrio:prev.barrio,near_boundary:prev.near_boundary,boundary_distance_m:prev.boundary_distance_m,designations:prev.designations,fips:prev.fips,source:prev.source}}
+ if(dropped)confirmed=null;
+ state.result=sc;state.error=null;state.busy=false;state.answers={};
+ var f=sc.map_focus||{latitude:18.22,longitude:-66.45,zoom:8};
+ if(confirmed){f={latitude:confirmed.lat,longitude:confirmed.lng,zoom:Math.max(f.zoom||FOCUS_Z,FOCUS_Z)}}
+ state.map={lat:f.latitude,lng:f.longitude,z:Math.min(f.zoom,FOCUS_Z),pin:null,confirmed:confirmed};clampMap(state.map);render()}
+function scenarioPayload(){var r=state.result;if(!r||!r.scenario)return null;var s=r.scenario,out={};for(var k in s)out[k]=s[k];var c=state.map&&state.map.confirmed;if(c&&(!out.site||out.site.latitude==null)){out.site={latitude:c.lat,longitude:c.lng}}return out}
 function txt(r){try{return(r.content||[]).map(function(c){return c.text||""}).join(" ").slice(0,300)}catch(_){return""}}
 function callTool(name,args){
  return request("tools/call",{name:name,arguments:args},30000).catch(function(e){var o=window.openai;if(o&&o.callTool)return o.callTool(name,args);throw e})}
@@ -91,8 +117,8 @@ function header(){var h=el("div","hdr");var logo=document.createElementNS("http:
  var b=el("div","brand");add(b,el("b",null,"SmartPR"),el("span",null,"Puerto Rico regulatory intelligence"));return add(h,logo,b,el("span","pill","Free preview"))}
 function act(kind){if(state.busy)return;state.lastAction=kind;var r=state.result;
  if(kind==="refine"){var ans={};for(var k in state.answers)if(state.answers[k]!=="")ans[k]=state.answers[k];if(!Object.keys(ans).length)return;
-  state.busy=true;state.error=null;render();callTool("refine_scenario",{scenario:r.scenario,answers:ans}).then(function(res){if(res&&!res.isError){accept(res);var n=state.result;request("ui/update-model-context",{content:[{type:"text",text:"User refined the SmartPR scenario in the widget. "+(n&&n.message||"")}]},5000).catch(function(){})}else{state.busy=false;state.error=txt(res)||"Could not update the preview.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
- else{state.busy=true;state.error=null;render();callTool("create_portal_handoff",{scenario:r.scenario,intent:kind}).then(function(res){state.busy=false;var u=res&&res.structuredContent&&res.structuredContent.url;if(u){openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
+  state.busy=true;state.error=null;render();callTool("refine_scenario",{scenario:scenarioPayload()||r.scenario,answers:ans}).then(function(res){if(res&&!res.isError){accept(res);var n=state.result;request("ui/update-model-context",{content:[{type:"text",text:"User refined the SmartPR scenario in the widget. "+(n&&n.message||"")}]},5000).catch(function(){})}else{state.busy=false;state.error=txt(res)||"Could not update the preview.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
+ else{state.busy=true;state.error=null;render();callTool("create_portal_handoff",{scenario:scenarioPayload()||r.scenario,intent:kind}).then(function(res){state.busy=false;var u=res&&res.structuredContent&&res.structuredContent.url;if(u){openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
 var SHAPES=__MAP_SHAPES__,TS=256,ZMIN=__ZMIN__,ZMAX=__ZMAX__,FOCUS_Z=11,BX={s:17.55,n:18.9,w:-68.4,e:-64.85},MUNIS=null,SVGNS="http://www.w3.org/2000/svg";
 function wsz(z){return TS*Math.pow(2,z)}
 function px(lng,z){return (lng+180)/360*wsz(z)}
@@ -104,24 +130,26 @@ function fold(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/
 function decodeRing(str){var pts=[],i=0,lat=0,lng=0,n=str.length;while(i<n){var r=0,sh=0,b;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32&&i<n);lat+=(r&1)?~(r>>1):(r>>1);r=0;sh=0;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32&&i<n);lng+=(r&1)?~(r>>1):(r>>1);pts.push(px(lng/1e4,0),py(lat/1e4,0))}return pts}
 function munis(){if(MUNIS)return MUNIS;MUNIS=[];for(var k=0;k<SHAPES.length;k++){var sh=SHAPES[k],rings=sh[3].split(" ").map(decodeRing),bb=[1e9,1e9,-1e9,-1e9];rings.forEach(function(r){for(var i=0;i<r.length;i+=2){if(r[i]<bb[0])bb[0]=r[i];if(r[i]>bb[2])bb[2]=r[i];if(r[i+1]<bb[1])bb[1]=r[i+1];if(r[i+1]>bb[3])bb[3]=r[i+1]}});MUNIS.push({n:sh[0],f:fold(sh[0]),lx:px(sh[1],0),ly:py(sh[2],0),rings:rings,bb:bb})}return MUNIS}
 function pinSvg(color){var d=document.createElementNS("http://www.w3.org/2000/svg","svg");d.setAttribute("viewBox","0 0 24 24");d.setAttribute("width","28");d.setAttribute("height","28");d.innerHTML='<path fill="'+color+'" stroke="#fff" stroke-width="1.2" d="M12 1.5a7 7 0 0 0-7 7c0 5.2 7 14 7 14s7-8.8 7-14a7 7 0 0 0-7-7z"/><circle cx="12" cy="8.5" r="2.6" fill="#fff"/>';return d}
-function mapCard(r,opts){opts=opts||{};var m=state.map;if(!m){state.map={lat:18.22,lng:-66.45,z:8,pin:null};m=state.map}var site=r&&r.scenario&&r.scenario.site;
- var c=el("div","card mapc"+(opts.embed?" muni-map":""));var h=el("h2",null,opts.embed?"Drop a pin on the site":"Where is the site?");if(site)add(h,el("span","badge","Pinned"));add(c,h);
- add(c,el("p","sub",site?"The pin sets the municipality from official Census boundaries. Move it if needed.":"Tap the map to drop a pin on the property. The pin sets the municipality; zoning, flood-zone and parcel checks for it are in SmartPR."));
- var box=el("div","map"),pin=el("div","pin"),pend=el("div","pin pend");pin.appendChild(pinSvg("#0f766e"));pend.appendChild(pinSvg("#f59e0b"));
+function mapCard(r,opts){opts=opts||{};var m=state.map;if(!m){state.map={lat:18.22,lng:-66.45,z:8,pin:null,confirmed:null};m=state.map}
+ var site=r&&r.scenario&&r.scenario.site;var confirmed=m.confirmed||toConfirmed(site);var siteLatLng=confirmed?{lat:confirmed.lat,lng:confirmed.lng}:(site&&site.latitude!=null?{lat:+site.latitude,lng:+site.longitude}:null);
+ var label=confirmed?((confirmed.barrio?confirmed.barrio+", ":"")+(confirmed.municipality||"")): (site?((site.barrio?site.barrio+", ":"")+site.municipality):"");
+ var c=el("div","card mapc"+(opts.embed?" muni-map":""));var h=el("h2",null,opts.embed?"Drop a pin on the site":(confirmed?"Project location":"Where is the site?"));if(confirmed)add(h,el("span","badge","Pinned"));add(c,h);
+ add(c,el("p","sub",confirmed?"Pin sets the municipality from official Census boundaries. Move it if needed.":"Tap the map to drop a pin on the property. The pin sets the municipality; zoning, flood-zone and parcel checks for it are in SmartPR."));
+ var box=el("div","map"),pin=el("div","pin"),pend=el("div","pin pend"),callout=el("div","callout");pin.appendChild(pinSvg("#0f766e"));pend.appendChild(pinSvg("#f59e0b"));if(label)callout.textContent=label;
  box.style.height=box.style.minHeight=(window.matchMedia&&window.matchMedia("(max-width:640px)").matches?"220px":"240px");
  var zc=el("div","zc"),zi=el("button",null,"+"),zo=el("button",null,"\u2212");zi.setAttribute("aria-label","Zoom in");zo.setAttribute("aria-label","Zoom out");zi.type=zo.type="button";add(zc,zi,zo);
  var att=el("div","attr","Boundaries: __MAP_SOURCE__");
  var svg=document.createElementNS(SVGNS,"svg");svg.setAttribute("class","vm");svg.setAttribute("aria-hidden","true");var gP=document.createElementNS(SVGNS,"g"),gL=document.createElementNS(SVGNS,"g");svg.appendChild(gP);svg.appendChild(gL);
- var siteF=site?fold(site.municipality):"",ML=munis(),paths=[],labels=[];
+ var siteF=confirmed?fold(confirmed.municipality):(site?fold(site.municipality):""),ML=munis(),paths=[],labels=[];
  ML.forEach(function(mu){var p=document.createElementNS(SVGNS,"path");p.setAttribute("class","m"+(siteF&&mu.f===siteF?" on":""));gP.appendChild(p);paths.push(p);var t=document.createElementNS(SVGNS,"text");t.textContent=mu.n;gL.appendChild(t);labels.push(t)});
- add(box,svg,site?pin:null,pend,zc,att);if(!site&&!m.pin)add(box,el("div","tip","Tap to drop a pin"));
+ add(box,svg,siteLatLng?pin:null,pend,label&&siteLatLng?callout:null,zc,att);if(!siteLatLng&&!m.pin)add(box,el("div","tip","Tap to drop a pin"));
  function draw(){var W=box.clientWidth||box.offsetWidth||320,H=box.clientHeight||box.offsetHeight||220;if(W<40){W=320}if(!m.fit&&box.clientWidth){m.fit=1;if(m.z<=8&&W<540)m.z=7}var cx=px(m.lng,m.z),cy=py(m.lat,m.z),x0=cx-W/2,y0=cy-H/2,k=Math.pow(2,m.z),showL=m.z>=10;
   svg.setAttribute("viewBox","0 0 "+W+" "+H);svg.setAttribute("width",W);svg.setAttribute("height",H);
   for(var a=0;a<ML.length;a++){var mu=ML[a],b=mu.bb,vis=!(b[2]*k<x0-2||b[0]*k>x0+W+2||b[3]*k<y0-2||b[1]*k>y0+H+2),d="";
    if(vis){for(var q=0;q<mu.rings.length;q++){var r=mu.rings[q];if(r.length<6)continue;d+="M";for(var i=0;i<r.length;i+=2){d+=(i?"L":"")+(Math.round((r[i]*k-x0)*10)/10)+" "+(Math.round((r[i+1]*k-y0)*10)/10)}d+="Z"}}
    paths[a].setAttribute("d",d||"M0 0");var t=labels[a],lx=mu.lx*k-x0,ly=mu.ly*k-y0;if(showL&&lx>-40&&lx<W+40&&ly>-10&&ly<H+10){t.setAttribute("x",Math.round(lx));t.setAttribute("y",Math.round(ly));t.style.display=""}else t.style.display="none"}
-  function place(node,p){if(!p){node.style.display="none";return}node.style.display="block";node.style.left=(px(p.lng,m.z)-x0)+"px";node.style.top=(py(p.lat,m.z)-y0)+"px"}
-  place(pin,site?{lat:site.latitude,lng:site.longitude}:null);place(pend,m.pin)}
+  function place(node,p){if(!node)return;if(!p||p.lat==null||p.lng==null||!isFinite(p.lat)||!isFinite(p.lng)){node.style.display="none";return}node.style.display="block";node.style.left=(px(p.lng,m.z)-x0)+"px";node.style.top=(py(p.lat,m.z)-y0)+"px"}
+  place(pin,siteLatLng);place(pend,m.pin);place(callout,siteLatLng&&label?siteLatLng:null)}
  mapDraws.push(draw);
  function zoom(d){m.z+=d;clampMap(m);draw()}
  var raf=0;function drawSoon(){if(raf)return;var rq=window.requestAnimationFrame||function(f){return setTimeout(f,16)};raf=rq(function(){raf=0;draw()})}
@@ -137,14 +165,18 @@ function mapCard(r,opts){opts=opts||{};var m=state.map;if(!m){state.map={lat:18.
  add(c,box);
  var info=el("div","siteinfo");
  if(m.pin){add(info,el("span",null,"New pin at "+m.pin.lat.toFixed(5)+", "+m.pin.lng.toFixed(5)));var ub=el("button","btn p",state.busy?"Checking\u2026":"Use this location");ub.type="button";ub.disabled=state.busy;ub.onclick=function(){pinSite(m.pin)};var cb=el("button","btn o","Cancel");cb.type="button";cb.onclick=function(){m.pin=null;render()};add(info,ub,cb)}
- else if(site){add(info,el("b",null,"\ud83d\udccd "+(site.barrio?site.barrio+", ":"")+site.municipality),el("span","hint",site.latitude.toFixed(5)+", "+site.longitude.toFixed(5)));var xb=el("button","btn o","Remove pin");xb.type="button";xb.disabled=state.busy;xb.onclick=function(){pinSite(null)};add(info,xb)}
+ else if(confirmed||site){add(info,el("b",null,"\ud83d\udccd "+(label||"Pinned site")),el("span","hint",(siteLatLng.lat).toFixed(5)+", "+(siteLatLng.lng).toFixed(5)));var xb=el("button","btn o","Remove pin");xb.type="button";xb.disabled=state.busy;xb.onclick=function(){pinSite(null)};add(info,xb)}
  add(c,info);
- if(site&&site.near_boundary)add(c,el("div","note warn","This pin is about "+site.boundary_distance_m+" m from a municipal boundary \u2014 confirm the municipality."));
+ if(confirmed&&confirmed.near_boundary)add(c,el("div","note warn","This pin is about "+confirmed.boundary_distance_m+" m from a municipal boundary \u2014 confirm the municipality."));
+ else if(site&&site.near_boundary)add(c,el("div","note warn","This pin is about "+site.boundary_distance_m+" m from a municipal boundary \u2014 confirm the municipality."));
  setTimeout(function(){draw();reportSize()},0);setTimeout(function(){draw();reportSize()},120);return c}
-function pinSite(p){var r=state.result;if(!r||state.busy)return;state.busy=true;state.error=null;state.lastAction="pin";render();
- callTool("refine_scenario",{scenario:r.scenario,site:p?{latitude:p.lat,longitude:p.lng}:null}).then(function(res){
-  if(res&&!res.isError){var dropped=((res.structuredContent||{}).dropped_answers||[]).indexOf("site")>=0;accept(res);if(dropped){state.error="That point is outside Puerto Rico. Drop the pin on the property in Puerto Rico.";render()}
-   var n=state.result,st=n&&n.scenario.site;request("ui/update-model-context",{content:[{type:"text",text:st?"User pinned the site on the SmartPR map: "+(st.barrio?st.barrio+", ":"")+st.municipality+" ("+st.latitude+", "+st.longitude+"). "+(n.message||""):"User removed the SmartPR map pin. "+(n&&n.message||"")}]},5000).catch(function(){})}
+function pinSite(p){var r=state.result;if(!r||state.busy)return;state.busy=true;state.error=null;state.lastAction="pin";
+ if(!p&&state.map)state.map.confirmed=null;render();
+ callTool("refine_scenario",{scenario:scenarioPayload()||r.scenario,site:p?{latitude:p.lat,longitude:p.lng}:null}).then(function(res){
+  if(res&&!res.isError){var sc=unwrap(res)||{};var dropped=(sc.dropped_answers||[]).indexOf("site")>=0;accept(res);if(dropped){if(state.map)state.map.confirmed=null;state.error="That point is outside Puerto Rico. Drop the pin on the property in Puerto Rico.";render()}
+   var n=state.result,st=(state.map&&state.map.confirmed)||(n&&n.scenario&&n.scenario.site);
+   var lat=st&&(st.lat!=null?st.lat:st.latitude),lng=st&&(st.lng!=null?st.lng:st.longitude);
+   request("ui/update-model-context",{content:[{type:"text",text:st?"User pinned the site on the SmartPR map: "+((st.barrio?st.barrio+", ":"")+(st.municipality||""))+" ("+lat+", "+lng+"). Keep scenario.site {latitude, longitude} on every later assess_scenario/refine_scenario call — do not drop the pin. "+(n&&n.message||""):"User removed the SmartPR map pin. "+(n&&n.message||"")}]},5000).catch(function(){})}
   else{state.busy=false;state.error=txt(res)||"Could not use that location.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
 function render(){mapDraws=[];root.textContent="";var w=el("div","wrap");add(root,w);add(w,header());var r=state.result;
  if(!r){if(state.error){add(w,el("h1",null,"Something went wrong"));var n=el("div","note err",state.error);add(w,n);reportSize();return}
@@ -160,15 +192,44 @@ function render(){mapDraws=[];root.textContent="";var w=el("div","wrap");add(roo
  add(w,chips);
  if(state.error){var e=el("div","note err");add(e,el("span",null,state.error+" "));var rb=el("button","btn o","Retry");rb.type="button";rb.onclick=function(){state.error=null;if(state.lastAction==="pin"){render();return}act(state.lastAction||"refine")};add(e,rb);add(w,e)}
  if(r.status==="unsupported"){add(w,el("div","foot",(r.coverage_limits||[]).join(" ")));reportSize();return}
- // Map first — must be visible in ChatGPT's inline iframe after assess (mobile + desktop).
- add(w,mapCard(r));
+ // Location: map + confirmed panel (portal Project location inspired) when pinned.
+ var confirmed=state.map&&state.map.confirmed;var site=r.scenario&&r.scenario.site;
+ if(confirmed||site){
+  var loc=el("div","loc-grid");add(loc,mapCard(r));
+  var panel=el("div","card loc-panel");add(panel,el("h2",null,"Project location"));
+  var ok=el("span","pill-ok");ok.textContent="Location confirmed";add(panel,ok);
+  var place=(confirmed&&confirmed.barrio?confirmed.barrio+", ":"")+(confirmed&&confirmed.municipality||site&&site.municipality||"");
+  if(!place&&site)place=(site.barrio?site.barrio+", ":"")+site.municipality;
+  add(panel,el("div","loc-name",place||"Pinned site"));
+  var zip=(confirmed&&confirmed.postal_code)||(site&&(site.postal_code||site.zip))||null;
+  if(zip)add(panel,el("div","loc-zip","PR "+zip));
+  var meta=el("dl","loc-meta");
+  function row(dt,dd){if(dd==null||dd==="")return;var d=el("div");add(d,el("dt",null,dt),el("dd",null,dd));add(meta,d)}
+  var muni=(confirmed&&confirmed.municipality)||(site&&site.municipality);row("Municipality",muni);
+  var barrio=(confirmed&&confirmed.barrio)||(site&&site.barrio);if(barrio&&barrio!==muni)row("Barrio",barrio);
+  var cat=(confirmed&&confirmed.catastro)||(site&&site.catastro);row("Catastro",cat);
+  var lat=(confirmed&&confirmed.lat!=null?confirmed.lat:site&&site.latitude),lng=(confirmed&&confirmed.lng!=null?confirmed.lng:site&&site.longitude);
+  if(lat!=null&&lng!=null)row("Coordinates",Number(lat).toFixed(5)+", "+Number(lng).toFixed(5));
+  add(panel,meta);
+  var chips=[];
+  var des=(confirmed&&confirmed.designations)||(site&&site.designations)||[];
+  des.forEach(function(d){if(d)chips.push(String(d))});
+  var extra=(confirmed&&confirmed.risk_chips)||(site&&(site.risk_chips||site.classification_chips))||[];
+  (Array.isArray(extra)?extra:[]).forEach(function(d){if(d&&chips.indexOf(String(d))<0)chips.push(String(d))});
+  // Only show chips the assessment actually returned — never invent FEMA/coastal/etc.
+  if(chips.length){var rc=el("div","risk-chips");chips.forEach(function(t){add(rc,el("span","risk-chip",t.replace(/_/g," ")))});add(panel,rc)}
+  var vr=el("button","btn p full cta-loc","View full property report");vr.type="button";vr.disabled=state.busy;vr.onclick=function(){act("unlock")};add(panel,vr);
+  add(panel,el("div","hint","Unlock opens SmartPR for parcel, zoning, flood-zone and the full site report."));
+  add(loc,panel);add(w,loc);
+ } else { add(w,mapCard(r)); }
  if(r.status==="partial")add(w,el("div","note warn","Preliminary — "+(r.unresolved_facts||[]).length+" detail(s) unresolved. Unknown facts are shown as \"Needs details\", never assumed \"no\"."));
  var g=el("div","grid"),left=el("div","card");add(g,left);var h2=el("h2",null,"Preliminary requirements");add(h2,el("span","badge",r.counts.total+" identified"));add(left,h2);
  var groups=["Business registrations","Construction & site authorization","Operating permits"],idx=0;
  if(!r.requirements.length)add(left,el("p","sub","No requirements were generated for this scenario yet. Answer the questions to refine."));
+ // Show requirement items expanded by default so the free preview surfaces \u22655 items (not only collapsed group headers).
  groups.forEach(function(name){var items=r.requirements.filter(function(q){return q.group===name});if(!items.length)return;idx++;
   var worst=items.some(function(q){return q.applicability==="unresolved"})?"unresolved":items.some(function(q){return q.applicability==="conditional"})?"conditional":"supported";
-  var grp=el("div","grp"),row=el("button","grow");row.type="button";row.setAttribute("aria-expanded","false");var gt=el("div","gt");add(gt,el("b",null,name),el("span",null,items.length+" item(s) · "+GDESC[name]));
+  var grp=el("div","grp open"),row=el("button","grow");row.type="button";row.setAttribute("aria-expanded","true");var gt=el("div","gt");add(gt,el("b",null,name),el("span",null,items.length+" item(s) · "+GDESC[name]));
   add(row,el("span","num",idx),gt,el("span","tag "+worst,TAG[worst]));row.onclick=function(){grp.classList.toggle("open");row.setAttribute("aria-expanded",grp.classList.contains("open"));reportSize()};
   var list=el("div","items");items.forEach(function(q){var it=el("div","it");var t=el("div");add(t,el("b",null,q.name+" "),el("span","tag "+q.applicability,TAG[q.applicability]));add(it,t,el("div","meta",q.agency),el("div",null,q.why));
    var ul=el("ul");(q.next_steps||[]).forEach(function(x){add(ul,el("li",null,x));});(q.citations||[]).forEach(function(c){var li=el("li");if(c.url&&/^https:\/\//.test(c.url)){var a=el("a",null,c.label);a.href=c.url;a.target="_blank";a.rel="noopener";a.onclick=function(ev){ev.preventDefault();openLink(c.url)};add(li,el("span",null,"Source: "),a)}else add(li,el("span",null,"Source: "+c.label));add(ul,li)});add(it,ul);add(list,it)});
@@ -178,8 +239,8 @@ function render(){mapDraws=[];root.textContent="";var w=el("div","wrap");add(roo
  var needsMuni=!s.municipality||qs.some(function(q){return q.id==="municipality"});
  add(right,el("p","sub",qs.length?qs.length+" detail(s) need clarification.":"No open questions — change a fact in chat to re-run."));
  // Municipality question: interactive map is the primary control (not a plain text field).
- if(needsMuni&&!s.site){var ml=el("label",null,"Which municipality will the business operate in?");add(right,ml);add(right,mapCard(r,{embed:true}));add(right,el("div","muni-or","Or type a municipality name"));var mi=el("input");mi.id="q_municipality";mi.placeholder="e.g. Guaynabo";mi.value=state.answers.municipality||"";mi.onchange=mi.oninput=function(){state.answers.municipality=mi.value};add(right,mi)}
- qs.forEach(function(q){if(q.id==="municipality"&&needsMuni&&!s.site)return;var id="q_"+q.id;var l=el("label",null,q.question);l.htmlFor=id;add(right,l);var inp;
+ if(needsMuni&&!s.site&&!(state.map&&state.map.confirmed)){var ml=el("label",null,"Which municipality will the business operate in?");add(right,ml);add(right,mapCard(r,{embed:true}));add(right,el("div","muni-or","Or type a municipality name"));var mi=el("input");mi.id="q_municipality";mi.placeholder="e.g. Guaynabo";mi.value=state.answers.municipality||"";mi.onchange=mi.oninput=function(){state.answers.municipality=mi.value};add(right,mi)}
+ qs.forEach(function(q){if(q.id==="municipality"&&needsMuni&&!s.site&&!(state.map&&state.map.confirmed))return;var id="q_"+q.id;var l=el("label",null,q.question);l.htmlFor=id;add(right,l);var inp;
   if(q.options&&q.options.length){inp=el("select");inp.id=id;var ph=el("option",null,"Select…");ph.value="";add(inp,ph);q.options.forEach(function(o){var op=el("option",null,o.label);op.value=o.value;add(inp,op)})}else{inp=el("input");inp.id=id;inp.placeholder="Type your answer"}
   inp.value=state.answers[q.id]||"";inp.onchange=function(){state.answers[q.id]=inp.value};add(right,inp)});
  if(qs.length){var ub=el("button","btn o full",state.busy?"Updating…":"Update preview");ub.type="button";ub.disabled=state.busy;ub.onclick=function(){act("refine")};add(right,ub)}

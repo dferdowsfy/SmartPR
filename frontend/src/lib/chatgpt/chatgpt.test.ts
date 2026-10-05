@@ -26,7 +26,8 @@ test("assess: generic manufacturing → partial, activity unresolved, real engin
   assert.equal(a.scenario.business_type, null);
   assert.ok(a.scenario.business_type_candidates.length > 1);
   assert.deepEqual(a.clarifying_questions.slice(0, 3).map((q) => q.id), ["activity", "business_status", "structural"]);
-  assert.ok(a.requirements.length > 0 && a.requirements.length <= FREE_PREVIEW_LIMIT);
+  assert.ok(a.requirements.length >= 5, `free preview must surface ≥5 requirements when engine has them (got ${a.requirements.length})`);
+  assert.ok(a.requirements.length <= FREE_PREVIEW_LIMIT);
   assert.ok(a.requirements.some((r) => r.name.includes("Patente")), "municipal patente from Guaynabo");
   for (const r of a.requirements) {
     assert.ok(["supported", "conditional", "unresolved"].includes(r.applicability));
@@ -88,7 +89,7 @@ test("MCP: initialize, tools/list, resources, tools/call", () => {
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v4.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v5.html");
   const listed = (rpc("resources/list").body as Body).result.resources.map((r: any) => r.uri);
   assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
@@ -166,7 +167,7 @@ test("Unlock / Use my plan / Continue: server-built handoff URL carries intent +
   // Widget opens exactly the URL the server returned — no hard-coded host.
   const html = widgetHtml();
   assert.ok(!/localhost|127\.0\.0\.1|ngrok|getsmartpr\.com/.test(html), "widget never hard-codes a portal host");
-  assert.match(html, /callTool\("create_portal_handoff",\{scenario:r\.scenario,intent:kind\}\)/);
+  assert.match(html, /callTool\("create_portal_handoff",\{scenario:scenarioPayload\(\)\|\|r\.scenario,intent:kind\}\)/);
   assert.match(html, /var u=res&&res\.structuredContent&&res\.structuredContent\.url;if\(u\)\{openLink\(u\)/);
   for (const k of ["unlock", "use_plan", "continue"]) assert.ok(html.includes(`act("${k}")`), `button wired: ${k}`);
 });
@@ -255,7 +256,7 @@ test("widget map: CSP-safe vector map — empty CSP allowlists, no tiles/images,
   assert.ok(!html.includes("__MAP_SHAPES__") && !html.includes("__ZMAX__"), "map data injected");
   assert.ok(html.includes(JSON.stringify(PR_MUNICIPIO_SHAPES[0][3]).slice(1, 40)), "municipio geometry inlined");
   assert.ok(html.length < 120_000, `widget stays small (${html.length} bytes)`);
-  assert.match(html, /callTool\("refine_scenario",\{scenario:r\.scenario,site:p\?\{latitude:p\.lat,longitude:p\.lng\}:null\}\)/);
+  assert.match(html, /callTool\("refine_scenario",\{scenario:scenarioPayload\(\)\|\|r\.scenario,site:p\?\{latitude:p\.lat,longitude:p\.lng\}:null\}\)/);
   const site = (TOOLS[1].inputSchema.properties as Record<string, any>).site;
   assert.deepEqual(site.required, ["latitude", "longitude"]);
 });
@@ -281,8 +282,8 @@ test("widget map data: 78 municipios, decodable polyline rings inside Puerto Ric
   }
 });
 
-test("widget map: visible after assess — size-changed, muni question embeds map, URI v4, map_focus in schema", () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v4.html");
+test("widget map: visible after assess — size-changed, muni question embeds map, URI v5, map_focus in schema", () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v5.html");
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
   assert.equal(MAP_MAX_ZOOM, 14);
   const html = widgetHtml();
@@ -307,15 +308,16 @@ test("widget map: visible after assess — size-changed, muni question embeds ma
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
 });
 
-test("widget URI aliases: resources/read serves current HTML + empty CSP for v1–v4; tools advertise v4 only", () => {
+test("widget URI aliases: resources/read serves current HTML + empty CSP for v1–v5; tools advertise v5 only", () => {
   assert.deepEqual([...WIDGET_URI_ALIASES], [
     "ui://smartpr/requirements-v1.html",
     "ui://smartpr/requirements-v2.html",
     "ui://smartpr/requirements-v3.html",
     "ui://smartpr/requirements-v4.html",
+    "ui://smartpr/requirements-v5.html",
   ]);
   assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
-  // tools/list stays on the canonical v4 pointer — do not advertise older URIs there.
+  // tools/list stays on the canonical v5 pointer — do not advertise older URIs there.
   for (const t of TOOLS.slice(0, 2)) {
     const meta = t._meta as Record<string, unknown>;
     assert.equal((meta.ui as { resourceUri: string }).resourceUri, WIDGET_URI);
@@ -335,5 +337,61 @@ test("widget URI aliases: resources/read serves current HTML + empty CSP for v1�
     assert.deepEqual(c._meta["openai/widgetCSP"].resource_domains, []);
   }
   assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" }).body as Body).error?.code, -32602);
-  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v5.html" }).body as Body).error?.code, -32602);
+  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v6.html" }).body as Body).error?.code, -32602);
+});
+
+
+test("free preview surfaces at least 5 requirements for a typical restaurant scenario", () => {
+  const a = assessScenario(normalizeScenario({
+    business_type: "restaurant", municipality: "San Juan", square_feet: 2500, employees: 12, renovation: "interior",
+  }).scenario);
+  assert.ok(a.counts.total >= 5, `engine total ${a.counts.total}`);
+  assert.ok(a.requirements.length >= 5, `visible ${a.requirements.length}`);
+  assert.ok(a.requirements.length <= FREE_PREVIEW_LIMIT);
+  assert.equal(FREE_PREVIEW_LIMIT >= 5, true);
+});
+
+test("widget v5: sticky confirmed pin + portal-style location panel + expanded requirements", () => {
+  const html = widgetHtml();
+  assert.match(html, /state\.map\.confirmed/);
+  assert.match(html, /function toConfirmed\(/);
+  assert.match(html, /function scenarioPayload\(/);
+  assert.match(html, /Location confirmed/);
+  assert.match(html, /View full property report/);
+  assert.match(html, /Project location/);
+  assert.match(html, /map \.callout/);
+  assert.match(html, /grp open/);
+  assert.match(html, /Keep scenario\.site/);
+  // Sticky: same-municipality re-assess without site must not clear the pin.
+  assert.match(html, /Sticky pin/);
+  assert.match(html, /callTool\("refine_scenario",\{scenario:scenarioPayload\(\)/);
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v5.html");
+  assert.ok((WIDGET_URI_ALIASES as readonly string[]).includes("ui://smartpr/requirements-v4.html"));
+  assert.ok(!/arcgisonline|tile\.openstreetmap/i.test(html), "still CSP-safe / no tiles");
+});
+
+test("refine_scenario keeps site lat/lng and place labels after pin", () => {
+  const first = normalizeScenario({ business_type: "coffee shop", municipality: "Orocovis" }).scenario;
+  const site = resolveSite({ latitude: 18.2, longitude: -66.4 })!;
+  assert.equal(site.municipality, "Orocovis");
+  assert.ok(site.barrio);
+  const r = (rpc("tools/call", {
+    name: "refine_scenario",
+    arguments: { scenario: first, site: { latitude: site.latitude, longitude: site.longitude } },
+  }).body as Body).result;
+  const sc = r.structuredContent;
+  assert.equal(sc.scenario.site.municipality, "Orocovis");
+  assert.equal(sc.scenario.site.barrio, site.barrio);
+  assert.equal(sc.scenario.site.latitude, site.latitude);
+  assert.equal(sc.scenario.site.longitude, site.longitude);
+  assert.equal(sc.map_focus.latitude, site.latitude);
+  assert.equal(sc.map_focus.longitude, site.longitude);
+  // Further refine with answers must preserve the pin.
+  const r2 = (rpc("tools/call", {
+    name: "refine_scenario",
+    arguments: { scenario: sc.scenario, answers: { business_status: "new" } },
+  }).body as Body).result;
+  assert.equal(r2.structuredContent.scenario.site.latitude, site.latitude);
+  assert.equal(r2.structuredContent.scenario.site.municipality, "Orocovis");
+  assert.ok(r2.structuredContent.requirements.length >= 5);
 });
