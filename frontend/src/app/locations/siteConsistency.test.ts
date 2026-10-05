@@ -15,7 +15,6 @@ const fixture = (id: string) => fileURLToPath(new URL(`./siteCases/fixtures/${id
 // query unrecorded after upstream 502s/timeouts). Reported as TODO, not
 // failures, until they are recaptured against healthy services.
 const DEGRADED: Record<string, string> = {
-  patillas_mountain: "zoning parcel query not recorded; recapture",
   jayuya_mountain: "zoning parcel query not recorded; recapture",
 };
 
