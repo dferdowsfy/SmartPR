@@ -249,3 +249,27 @@ test("widget map: tile images only, CSP declares the tile origin and the portal 
   const site = (TOOLS[1].inputSchema.properties as Record<string, any>).site;
   assert.deepEqual(site.required, ["latitude", "longitude"]);
 });
+
+test("widget map: visible after assess — size-changed, muni question embeds map, URI v3, map_focus in schema", () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v3.html");
+  const html = widgetHtml();
+  assert.match(html, /ui\/notifications\/size-changed/);
+  assert.match(html, /notifyIntrinsicHeight/);
+  assert.match(html, /Drop a pin on the site/);
+  assert.match(html, /needsMuni/);
+  assert.match(html, /Where is the site\?/);
+  assert.match(html, /min-height/);
+  assert.match(html, /touch-action:none/);
+  // Municipality clarifying question must not be the only control — map is primary.
+  assert.match(html, /Or type a municipality name/);
+  const schema = TOOLS[0].outputSchema as { required: string[]; properties: Record<string, unknown> };
+  assert.ok(schema.required.includes("map_focus"));
+  assert.ok(schema.properties.map_focus);
+  const a = assessScenario(normalizeScenario({ business_type: "Furniture Manufacturing" }).scenario);
+  assert.ok(a.clarifying_questions.some((q) => q.id === "municipality"));
+  assert.match(a.clarifying_questions.find((q) => q.id === "municipality")!.question, /Pin the site on the map/i);
+  assert.equal(a.map_focus.zoom, 8);
+  const withMuni = (rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } }).body as Body).result;
+  assert.ok(withMuni.structuredContent.map_focus);
+  assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
+});

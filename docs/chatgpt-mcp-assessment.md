@@ -11,7 +11,7 @@ No interactive map (that is the later `mockup-location` milestone). Not deployed
 | JSON-RPC handler, tool + resource registry | `frontend/src/lib/chatgpt/mcp.ts` |
 | Engine adapter (same engine as portal intake) | `frontend/src/lib/chatgpt/assessment.ts` |
 | Signed expiring handoff tokens | `frontend/src/lib/chatgpt/handoff.ts` |
-| MCP Apps UI resource `ui://smartpr/requirements-v1.html` | `frontend/src/lib/chatgpt/widget.ts` |
+| MCP Apps UI resource `ui://smartpr/requirements-v3.html` | `frontend/src/lib/chatgpt/widget.ts` |
 | Portal review-before-save landing | `frontend/src/app/chatgpt/handoff/` → `/chatgpt/handoff?t=…` |
 | Tests | `frontend/src/lib/chatgpt/chatgpt.test.ts` (`npm run test:chatgpt`) |
 
@@ -35,6 +35,7 @@ Unknown facts are never a silent "no": unanswered high-signal KB questions surfa
 The endpoint is anonymous and returns at most `FREE_PREVIEW_LIMIT` (8) requirements; the remainder is only counted (`gated.hidden_requirement_count`). Full list, cross-agency sequencing, report download and evidence tracking are not exposed by this server at all — they stay in the authenticated portal. No prices are shown anywhere; "Unlock" routes to the portal (`/pricing`, existing page).
 
 ### Site map pin (widget)
+- Host sizing: the widget reports `ui/notifications/size-changed` (and `window.openai.notifyIntrinsicHeight` when present) after every render so ChatGPT's inline iframe grows to fit the map on mobile and desktop.
 - "Where is the site?" card: a dependency-free raster slippy map (pan, wheel/± zoom, Streets/Satellite) bounded to Puerto Rico. Tiles are plain `<img>` from `https://server.arcgisonline.com` (Esri World_Street_Map / World_Imagery — same service family as the portal's satellite base). That origin is the only entry in the widget CSP (`_meta.ui.csp.resourceDomains` and `openai/widgetCSP.resource_domains`); `connect_domains` stays empty (ChatGPT ignores it anyway — vector MapLibre tiles need fetch and would not load), and `redirect_domains` lists the portal origin used by handoff links.
 - Tap → pending pin → "Use this location" calls `refine_scenario` with `site: {latitude, longitude}` over the MCP Apps bridge (no network from the widget). The server re-resolves every pin from the coordinates with the portal's Census TIGER/Line 2024 municipio/barrio lookup (`locateInPuertoRico`); the pin is authoritative for the municipality, a point outside Puerto Rico is dropped (`dropped_answers: ["site"]`), `site: null` clears it, and a municipality typed later in chat that differs from the pin clears the pin. Near-boundary pins (< 25 m) are flagged. `map_focus` tells the widget where to open (pin z16, municipio downtown z13, island z8).
 - Free preview only adds the municipality/barrio from the pin. Zoning, flood zone, parcel/catastro and the full site analysis stay in the portal: the handoff carries the pin, and the intake restores it as its confirmed site (`guestDraft.intakeSite` → `restoreIntakeSite`), which triggers the portal's layer + parcel lookups.
@@ -75,7 +76,7 @@ curl -s localhost:3000/api/mcp/chatgpt -H 'content-type: application/json' \
 ```
 
 ## MCP Inspector
-`npx @modelcontextprotocol/inspector` → Transport **Streamable HTTP** → URL `http://localhost:3000/api/mcp/chatgpt`. Verify initialize + instructions, the 3 tools and annotations, `resources/read ui://smartpr/requirements-v1.html`, and call each tool with valid and invalid input (unknown tool → -32602; bad answers → `dropped_answers`).
+`npx @modelcontextprotocol/inspector` → Transport **Streamable HTTP** → URL `http://localhost:3000/api/mcp/chatgpt`. Verify initialize + instructions, the 3 tools and annotations, `resources/read ui://smartpr/requirements-v3.html`, and call each tool with valid and invalid input (unknown tool → -32602; bad answers → `dropped_answers`).
 
 ## Connect in ChatGPT (developer mode)
 1. Expose the local server over HTTPS (e.g. `ngrok http 3000` or a Secure MCP Tunnel) or use a preview deployment; handoff links still point at `https://www.getsmartpr.com` (never the tunnel), so production must have the same `CHATGPT_HANDOFF_SECRET` as the local server. To test the handoff page against the local server instead, set `CHATGPT_PORTAL_URL=https://<tunnel-host>` explicitly.
