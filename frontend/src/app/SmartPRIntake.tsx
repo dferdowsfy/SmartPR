@@ -8,6 +8,7 @@ import { isOnlineOnlyLocation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
 import { buildRequirementGuidance, legalBasisFor, sourceRowValue, newPremisesContextLabel, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
+import { shouldApplyNewBusinessEntryReset } from './entryReset';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
@@ -1865,8 +1866,7 @@ export default function SmartPRIntake() {
   // machine remains unchanged.
   useEffect(() => {
     if (!me || formationResetDoneRef.current) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('entry') !== 'new-business' || params.get('business')) return;
+    if (!shouldApplyNewBusinessEntryReset(window.location.search)) return;
     formationResetDoneRef.current = true;
     // This page is a single long-lived component reused across client-side
     // navigations (e.g. from an existing business straight into "New
