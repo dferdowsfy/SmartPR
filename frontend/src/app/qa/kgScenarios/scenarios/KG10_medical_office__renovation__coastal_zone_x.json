@@ -132,7 +132,12 @@
       {
         "key": "DOC_CZM_COASTAL_REVIEW",
         "confidence": "needs-expert-review",
-        "rationale": "Interior-only renovation of a leased suite has no coastal effect: CZMA federal consistency (15 CFR 930.57) applies to federally permitted activities; RULE_0708 fires on any renovation (heuristic, flagged EXPERT VALIDATION NEEDED)."
+        "rationale": "Interior-only renovation of a leased suite states no effect on coastal uses or resources, and CZMA federal consistency (16 U.S.C. 1456(c)(3)(A); 15 CFR 930.57) attaches to federally permitted activities. The coastal review must never be asserted as required here; it may stay as needs more information for a reviewer (REG-INTERIOR-COASTAL-001).",
+        "applicabilityIn": [
+          "required",
+          "likely_required",
+          "verify_existing"
+        ]
       }
     ],
     "ordering": [

@@ -9044,6 +9044,7 @@
   "reviewed_at": "2026-09-30",
   "citation_source": "rule",
   "id": "RULE_0708",
+  "exterior_effect_only": true,
   "fact_key": "location.czm",
   "expected_answer": "true",
   "any_of_facts": [
@@ -9103,6 +9104,11 @@
     "date": "2026-09-30",
     "change": "rule added (geo layers: the pin's exact coordinates drive rules)",
     "reason": "CZMA federal consistency applies to federally licensed/permitted activities in or affecting the coastal zone (15 CFR 930.57). Which local reviews apply to a purely local permit in the zone, and the inland limits beyond the 1 km band, need expert validation; the official MIPR layer (Reglamentario_va2/31) returned 502 on 2026-09-30."
+   },
+   {
+    "date": "2026-10-05",
+    "change": "exterior_effect_only: interior-only renovation (exterior_work explicitly false, no structural, site, expansion or new-construction basis) shows the review as needs more information instead of required",
+    "reason": "REG-INTERIOR-COASTAL-001 (KG10). Federal consistency attaches to federally licensed or permitted activities affecting any land or water use or natural resource of the coastal zone (16 U.S.C. 1456(c)(3)(A); 15 CFR 930.57(a)). Interior work in a leased suite states no such effect, so the heuristic is not asserted; the card is kept so a reviewer can confirm. Still EXPERT VALIDATION NEEDED for local JP coastal policies."
    }
   ]
  },

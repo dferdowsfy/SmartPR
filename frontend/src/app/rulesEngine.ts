@@ -194,6 +194,15 @@ export interface KBRule {
    */
   negated_fact_keys?: string[] | null;
   /**
+   * REG-INTERIOR-COASTAL-001: the requirement is about the project's effect
+   * outside the building (e.g. coastal uses and resources, 16 U.S.C.
+   * § 1456(c)(3)(A)). When the user explicitly says there is no exterior
+   * work and the rule matched only on a non-physical basis (the project is
+   * a "renovation", or permits are needed), the requirement is kept but not
+   * asserted: it is shown as needs more information.
+   */
+  exterior_effect_only?: boolean | null;
+  /**
    * Human-readable statement of WHY this rule exists (the regulatory basis).
    * Every requirement the engine emits must be explainable through this.
    */
@@ -462,6 +471,13 @@ export interface GeneratedRequirement {
    */
   site_unconfirmed?: boolean;
   /**
+   * REG-INTERIOR-COASTAL-001: set when an exterior_effect_only rule matched
+   * only on a non-physical basis while exterior_work is explicitly false
+   * (interior-only work). The classifier keeps the card but renders it as
+   * needs more information, never as confirmed.
+   */
+  interior_only_unconfirmed?: boolean;
+  /**
    * Where each triggering fact came from (fact key, value, source, scope).
    * Survives document deduplication — every requirement can say exactly
    * which fact triggered it and where that fact was established.
@@ -581,6 +597,12 @@ function projectFactMatches(fact: unknown, expected: string | null): boolean {
  * numeric zero. Negative facts actively suppress rules (e.g. site_work=false
  * suppresses the stormwater heuristic) instead of merely not triggering them.
  */
+/**
+ * REG-INTERIOR-COASTAL-001: project bases that say a permit-bearing project
+ * exists without saying anything physical happens outside the building.
+ */
+const NON_PHYSICAL_BASES = new Set(["project_type=renovation", "construction_approvals_required=true"]);
+
 function isNegativeFact(fact: unknown): boolean {
   if (fact === false || fact === "false" || fact === "no" || fact === "No") return true;
   if (typeof fact === "number") return fact === 0;
@@ -609,7 +631,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     : null;
 
   // documentId -> first matching rule (keep the strongest/earliest reason).
-  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean; siteUnconfirmed: boolean; provenances: TriggerFactProvenance[] }>();
+  const matched = new Map<string, { rule: KBRule; reason: string; formationUnresolved: boolean; siteUnconfirmed: boolean; interiorOnly: boolean; provenances: TriggerFactProvenance[] }>();
   const rulesMatched: EngineDebug["rulesMatched"] = [];
   const rulesSuppressed: EngineDebug["rulesSuppressed"] = [];
   const triggered: EngineDebug["questionsTriggered"] = [];
@@ -660,7 +682,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
   // location.placement.off_lot). Site hazard facts read at that point
   // describe the road or the water body, not the property.
   const pinOffLot = projectFactMatches(input.projectFacts?.["location.placement.off_lot"], "true");
-  const add = (rule: KBRule, reason: string, formationUnresolved = false, provenance?: TriggerFactProvenance) => {
+  const add = (rule: KBRule, reason: string, formationUnresolved = false, provenance?: TriggerFactProvenance, interiorOnly = false) => {
     const siteUnconfirmed =
       pinOffLot &&
       rule.rule_type === "project_fact" &&
@@ -677,7 +699,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     });
     const existing = matched.get(rule.requires_document_id);
     if (!existing) {
-      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved, siteUnconfirmed, provenances: provenance ? [provenance] : [] });
+      matched.set(rule.requires_document_id, { rule, reason, formationUnresolved, siteUnconfirmed, interiorOnly, provenances: provenance ? [provenance] : [] });
     } else {
       // Every matched basis keeps its provenance: the requirement names all
       // the facts that triggered it. Deduplicated on the full triggering
@@ -691,6 +713,9 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       // requirement on its own (e.g. a construction permit fired by the
       // project type, not by the map).
       if (existing.siteUnconfirmed && !siteUnconfirmed) existing.siteUnconfirmed = false;
+      // Likewise a basis that does not rest on an interior-only renovation
+      // confirms an exterior-effect requirement on its own.
+      if (existing.interiorOnly && !interiorOnly) existing.interiorOnly = false;
       if (existing.formationUnresolved && !formationUnresolved) {
         // A confirmed basis outweighs an unresolved formation basis: the
         // requirement is genuinely triggered (e.g. an EIN for hiring), so the
@@ -892,7 +917,23 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
               });
               if (!co) break;
             }
-            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`, formationGateUnresolved, prov);
+            // REG-INTERIOR-COASTAL-001: an exterior-effect rule (coastal-zone
+            // review) that matched only because the project is a
+            // "renovation" (or needs permits), while the user explicitly said
+            // there is no exterior work, is kept but not asserted.
+            let interiorOnly = false;
+            if (rule.exterior_effect_only && rule.any_of_facts && rule.any_of_facts.length > 0) {
+              const ext = input.projectFacts?.["exterior_work"];
+              const extNegative =
+                ext !== undefined && isNegativeFact(ext) && isFactAdmissible(input.factMeta?.["exterior_work"], input, "project");
+              const physicalBasis = rule.any_of_facts.some((c) => {
+                if (NON_PHYSICAL_BASES.has(`${c.fact_key}=${c.expected_answer}`)) return false;
+                const v = input.projectFacts?.[c.fact_key];
+                return projectFactMatches(v, c.expected_answer) && isFactAdmissible(input.factMeta?.[c.fact_key], input, "project");
+              });
+              interiorOnly = extNegative && !physicalBasis;
+            }
+            add(rule, `Project fact: ${rule.fact_key} = ${String(fact)}`, formationGateUnresolved, prov, interiorOnly);
             if (!projectFactSeen.has(rule.fact_key)) {
               projectFactSeen.add(rule.fact_key);
               projectFactsTriggered.push({ fact_key: rule.fact_key, value: fact });
@@ -904,7 +945,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
     }
   }
 
-  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved, siteUnconfirmed, provenances }]) => {
+  const requirements: GeneratedRequirement[] = [...matched.entries()].map(([docId, { rule, reason, formationUnresolved, siteUnconfirmed, interiorOnly, provenances }]) => {
     const d = docById.get(docId);
     const delegated = !rule.agency && d?.municipal_delegation ? municipalPermitsRouting(municipality) : null;
     return {
@@ -928,6 +969,7 @@ export function runRulesEngine(kb: KnowledgeBase, input: EngineInput): EngineRes
       ...(provenances.length > 0 ? { triggerFactProvenance: provenances } : {}),
       ...(formationUnresolved ? { formation_unresolved: true } : {}),
       ...(siteUnconfirmed ? { site_unconfirmed: true } : {}),
+      ...(interiorOnly ? { interior_only_unconfirmed: true } : {}),
       ...(rule.compliance_mode ? { compliance_mode: rule.compliance_mode } : {}),
       ...(rule.verification ? { verification: rule.verification } : {}),
       ...(rule.missing_fact_keys?.length ? { missing_fact_keys: rule.missing_fact_keys } : {}),

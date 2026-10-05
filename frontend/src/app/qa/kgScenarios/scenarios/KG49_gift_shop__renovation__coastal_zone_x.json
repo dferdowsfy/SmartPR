@@ -1,0 +1,115 @@
+{
+  "id": "KG49",
+  "title": "Gift shop renovating the storefront facade of a leased unit — Mayagüez, coastal zone (zone X)",
+  "matrix": {
+    "businessType": "gift_shop",
+    "projectType": "renovation",
+    "locationContext": "coastal_zone_x"
+  },
+  "description": "I am opening a gift shop in a leased storefront near the Mayagüez malecón. We will renovate the outside: new facade, a new awning and new windows facing the street. Two employees.",
+  "profile": {
+    "business_type": "Gift Shop",
+    "municipality": "Mayagüez",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 2,
+    "industry": "Retail",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_RETAIL_SALES": true,
+    "Q_PHYSICAL_LOCATION": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "renovation",
+      "confidence": 0.9,
+      "evidence": "renovate the outside"
+    },
+    "renovation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "renovate"
+    },
+    "exterior_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new facade, awning and windows"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased storefront"
+    }
+  },
+  "site": {
+    "municipality": "Mayagüez",
+    "geo": "coastal_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643/0644: renovation project type -> OGPe construction permit (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "applicabilityIn": [
+          "required",
+          "likely_required"
+        ],
+        "confidence": "needs-expert-review",
+        "rationale": "Exterior work at a pin inside the coastal zone: RULE_0708 matches on the exterior_work basis, so the interior-only downgrade (REG-INTERIOR-COASTAL-001) must not apply. RULE_0708 is itself a heuristic (EXPERT VALIDATION NEEDED; 15 CFR 930.57, 16 U.S.C. 1456(c)(3)(A))."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial use on urban tourism-commercial land, no change of use: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol stated."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-05 by the scenario loop: first gift-shop scenario, and the exterior-work companion to KG10 (the coastal review stays required when work is outside)."
+}

@@ -1,10 +1,10 @@
 {
   "summary": {
-    "scenarios": 48,
-    "pass": 43,
-    "fail": 5,
-    "expectations": 721,
-    "verified": 659,
+    "scenarios": 50,
+    "pass": 46,
+    "fail": 4,
+    "expectations": 741,
+    "verified": 678,
     "lint": []
   },
   "results": [
@@ -1140,7 +1140,7 @@
         "projectType": "renovation",
         "locationContext": "coastal_zone_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -1200,25 +1200,25 @@
           "agency": "Department of State"
         },
         {
-          "key": "DOC_CZM_COASTAL_REVIEW",
-          "group": "required_now",
-          "applicability": "likely_required",
-          "position": 8,
-          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
-        },
-        {
           "key": "DOC_HEALTH_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 9,
+          "position": 8,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 10,
+          "position": 9,
           "agency": "Department of Health / DRNA"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
         },
         {
           "key": "DOC_PERMISO_UNICO",
@@ -1247,18 +1247,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG10 kg-scenario: medical_office / renovation / coastal_zone_x",
-      "findingsClassified": [
-        {
-          "kind": "unexpected",
-          "key": "DOC_CZM_COASTAL_REVIEW",
-          "message": "unexpected DOC_CZM_COASTAL_REVIEW (required_now, likely_required)",
-          "confidence": "needs-expert-review",
-          "rationale": "Interior-only renovation of a leased suite has no coastal effect: CZMA federal consistency (15 CFR 930.57) applies to federally permitted activities; RULE_0708 fires on any renovation (heuristic, flagged EXPERT VALIDATION NEEDED).",
-          "cause": "likely-engine-bug",
-          "note": "RULE_0708 fires on any renovation in the coastal zone, including interior-only work with exterior_work=false (rule itself is marked EXPERT VALIDATION NEEDED).",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG11",
@@ -5585,6 +5574,208 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG48 kg-scenario: dental_office / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG49",
+      "title": "Gift shop renovating the storefront facade of a leased unit — Mayagüez, coastal zone (zone X)",
+      "matrix": {
+        "businessType": "gift_shop",
+        "projectType": "renovation",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 7,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_SIGN_PERMIT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 11,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [
+        {
+          "field": "projectContext.exterior_work",
+          "reason": "evidence is not a quote from the description"
+        }
+      ],
+      "testName": "KG49 kg-scenario: gift_shop / renovation / coastal_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG50",
+      "title": "Car wash opening on an existing leased lot, no construction — Carolina, industrial zone X",
+      "matrix": {
+        "businessType": "car_wash",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_industrial_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_WASTEWATER_DISCHARGE_AUTHORIZATION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 7,
+          "agency": "AAA / DRNA"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 9,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [
+        {
+          "field": "projectContext.existing_building",
+          "reason": "evidence is not a quote from the description"
+        }
+      ],
+      "testName": "KG50 kg-scenario: car_wash / new_business_existing_building / urban_industrial_x",
       "findingsClassified": []
     }
   ]

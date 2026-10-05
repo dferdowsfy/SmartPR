@@ -586,6 +586,25 @@ test("rules: floodway, rustic land and the coastal zone", async () => {
   assert.match(czm.trigger_summary!, /^EXPERT VALIDATION NEEDED/);
 });
 
+test("rules: interior-only renovation in the coastal zone keeps the CZM card but does not assert it (REG-INTERIOR-COASTAL-001)", async () => {
+  const [clat, clng] = FX.points.condado;
+  const s = site(clat, clng, await resolveAt("condado"));
+  const interior = evaluate(s, { project_type: "renovation", exterior_work: false, new_walls: true });
+  const czm = interior.find((x) => x.document_id === "DOC_CZM_COASTAL_REVIEW");
+  assert.ok(czm, "the coastal review is never dropped silently");
+  assert.equal(czm!.interior_only_unconfirmed, true);
+  // Any physical basis confirms it on its own.
+  const ext = evaluate(s, { project_type: "renovation", exterior_work: true }).find((x) => x.document_id === "DOC_CZM_COASTAL_REVIEW");
+  assert.ok(ext && !ext.interior_only_unconfirmed);
+  const structural = evaluate(s, { project_type: "renovation", exterior_work: false, structural_work: true }).find((x) => x.document_id === "DOC_CZM_COASTAL_REVIEW");
+  assert.ok(structural && !structural.interior_only_unconfirmed);
+  // Unknown exterior scope is not evidence of interior-only work.
+  const unknown = evaluate(s, { project_type: "renovation" }).find((x) => x.document_id === "DOC_CZM_COASTAL_REVIEW");
+  assert.ok(unknown && !unknown.interior_only_unconfirmed);
+  // Flood review is unaffected: Reg. 13 substantial improvement covers interior work.
+  assert.ok(!interior.find((x) => x.document_id === "DOC_JP_FLOOD_REG13")?.interior_only_unconfirmed);
+});
+
 test("rules: a change of use in a residential / conservation district → consulta de ubicación (expert validation)", async () => {
   const [glat, glng] = FX.points.guayama_rural;
   const s = site(glat, glng, await resolveAt("guayama_rural"));
