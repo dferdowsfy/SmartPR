@@ -77,11 +77,11 @@ export function parcelFactsFor(site: IntakeSite, parcel: ParcelFindings | null):
   const p = parcel && Math.abs(parcel.latitude - site.latitude) < 1e-7 && Math.abs(parcel.longitude - site.longitude) < 1e-7 ? parcel : null;
   const zPoint = by.get("zoning");
   const districts = p?.zoning.status === "sourced"
-    ? p.zoning.districts.map((d) => ({ code: d.code, name: d.name, share: p.areas_reliable?.zoning ? d.share ?? null : null, area_m2: p.areas_reliable?.zoning ? d.area_m2 ?? null : null, overlays: (d.overlays ?? []).map((o) => o.code) }))
+    ? p.zoning.districts.map((d) => ({ code: d.code, name: d.name, share: p.zoning.coverage || p.areas_reliable?.zoning ? d.share ?? null : null, area_m2: p.zoning.coverage || p.areas_reliable?.zoning ? d.area_m2 ?? null : null, overlays: (d.overlays ?? []).map((o) => o.code) }))
     : zPoint?.status === "resolved" && zPoint.code ? [{ code: zPoint.code, name: zPoint.name, share: null, area_m2: null, overlays: [] }] : [];
   const fl = by.get("flood_zone");
   const floodZones = p?.flood.status === "sourced"
-    ? p.flood.zones.map((z) => ({ zone: z.zone, sfha: z.sfha, floodway: z.floodway, share: p.areas_reliable?.flood ? z.share ?? null : null }))
+    ? p.flood.zones.map((z) => ({ zone: z.zone, sfha: z.sfha, floodway: z.floodway, share: p.flood.coverage || p.areas_reliable?.flood ? z.share ?? null : null }))
     : fl?.status === "resolved" && fl.code ? [{ zone: fl.code, sfha: fl.tags.includes("SFHA"), floodway: fl.tags.includes("FLOODWAY"), share: null }] : [];
   const cz = by.get("coastal_zone");
   const ex = p?.extras ?? {};
@@ -100,7 +100,13 @@ export function parcelFactsFor(site: IntakeSite, parcel: ParcelFindings | null):
     archaeology: yn(ex.archaeology),
     historic: either(either(yn(ex.historic_zone), yn(ex.historic_site)), pointYes("historic_zone")),
     landslideHigh: by.get("terrain")?.tags.includes("LANDSLIDE_HIGH") ?? false,
-    soilSlopeMaxPct: (() => { const m = ex.soils?.status === "verified" ? /(\d+)\s*(?:-|–|to)\s*(\d+)\s*(?:%|percent)/i.exec(ex.soils.value ?? "") : null; return m ? Number(m[2]) : null; })(),
+    // Steepest mapped soil on the parcel (every map unit, small ones included), else at the pin.
+    soilSlopeMaxPct: (() => {
+      if (ex.soils?.status !== "verified") return null;
+      const names = [...Object.values(ex.soils.part_info ?? {}).map((x) => x.label), ex.soils.pin?.value ?? "", ex.soils.value ?? ""];
+      const tops = names.map((n) => /(\d+)\s*(?:-|–|to)\s*(\d+)\s*(?:%|percent)/i.exec(n)).filter((m): m is RegExpExecArray => !!m).map((m) => Number(m[2]));
+      return tops.length ? Math.max(...tops) : null;
+    })(),
     landClass: ex.put?.status === "verified" ? ex.put.value : by.get("land_class")?.status === "resolved" ? by.get("land_class")!.code : null,
   };
 }

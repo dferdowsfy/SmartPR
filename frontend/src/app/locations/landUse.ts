@@ -13,6 +13,8 @@
 // that shows up as QA work. An LLM never decides compatibility.
 // ============================================================================
 
+import { formatShare, SMALL_SHARE } from "./coverage.ts";
+
 type Node = Record<string, unknown> & { id: string };
 type Bi = { en: string; es: string };
 const bi = (en: string, es: string = en): Bi => ({ en, es });
@@ -168,7 +170,8 @@ export interface LandUseGraph {
 
 // ---------------------------------------------------------------------------
 
-const SLIVER = 0.02;
+/** Districts covering less than this share are small intersections: listed, not used for the principal determination. */
+const SLIVER = SMALL_SHARE;
 const CONSTRUCTIVE: Construction[] = ["new", "addition", "substantial_improvement"];
 
 function srcRefs(g: LandUseGraph, ids: string[]): SourceRef[] {
@@ -278,7 +281,7 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
     const sources = srcRefs(g, arr(r.source_ids));
     if (doc && !sources.length && s(doc.citation)) sources.push({ id: doc.id, name: s(doc.name), citation: s(doc.citation), url: s(doc.citation_url) || null });
     const trigger = r.id === "SR_FLOOD_SFHA_CONSTRUCTION"
-      ? `Proposed construction on a parcel that intersects FEMA ${parcel.flood.zones.filter((z) => z.sfha).map((z) => `Zone ${z.zone}${z.share !== null ? ` (${Math.round(z.share * 100)}% of the parcel)` : ""}`).join(", ")}.${partial ? " Required if the work falls in the mapped flood area." : ""}`
+      ? `Proposed construction on a parcel that intersects FEMA ${parcel.flood.zones.filter((z) => z.sfha).map((z) => `Zone ${z.zone}${z.share !== null ? ` (${formatShare(z.share, true)} of the parcel)` : ""}`).join(", ")}.${partial ? " Required if the work falls in the mapped flood area." : ""}`
       : s(r.name);
     approvals.push({
       id: r.id, name: doc ? s(doc.name) : s(r.name), status, trigger, agency: s(r.agency) || s(doc?.agency),
@@ -314,8 +317,8 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
   let outcome: Compatibility = activity.use ? base : "insufficient";
   const decisiveWithRule = decisive.filter((d) => d.permissionId);
   for (const d of decisive) {
-    if (d.permissionId) reasons.push(`${d.districtName ?? d.code}${d.share !== null ? ` (${Math.round(d.share * 100)}% of the parcel)` : ""}: ${COMPATIBILITY_TEXT[d.outcome].en} — ${d.citation}.`);
-    else if (activity.use) reasons.push(`${d.code}${d.share !== null ? ` (${Math.round(d.share * 100)}% of the parcel)` : ""}: no verified rule for ${activity.useName} — SmartPR cannot determine this from its knowledge base.`);
+    if (d.permissionId) reasons.push(`${d.districtName ?? d.code}${d.share !== null ? ` (${formatShare(d.share, parcel.districts.length > 1)} of the parcel)` : ""}: ${COMPATIBILITY_TEXT[d.outcome].en} — ${d.citation}.`);
+    else if (activity.use) reasons.push(`${d.code}${d.share !== null ? ` (${formatShare(d.share, parcel.districts.length > 1)} of the parcel)` : ""}: no verified rule for ${activity.useName} — SmartPR cannot determine this from its knowledge base.`);
   }
   if (!activity.use) reasons.push("The proposed use was not recognised — describe it or pick one of the options.");
   if (decisive.length > 1 && decisive.some((d) => d.outcome !== decisive[0]!.outcome)) {
@@ -331,7 +334,7 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
   const primary = decisiveWithRule[0];
   const compatPath: PathStep[] = [actStep, parcelStep];
   if (primary) {
-    compatPath.push({ kind: "district", label: `${primary.code} → ${primary.districtName}${primary.share !== null ? ` (${Math.round(primary.share * 100)}%)` : ""}`, ref: primary.districtId ?? undefined });
+    compatPath.push({ kind: "district", label: `${primary.code} → ${primary.districtName}${primary.share !== null ? ` (${formatShare(primary.share, parcel.districts.length > 1)})` : ""}`, ref: primary.districtId ?? undefined });
     compatPath.push({ kind: "rule", label: `${COMPATIBILITY_TEXT[primary.outcome].en}: ${primary.citation}`, ref: primary.permissionId ?? undefined });
     for (const x of primary.sources) compatPath.push({ kind: "source", label: x.name, ref: x.id });
   } else {
