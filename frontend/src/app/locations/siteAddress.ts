@@ -3,6 +3,8 @@
 //   "Almacenes AEE / Luma Energy, Palo Seco, Toa Baja, Puerto Rico, 00962, United States"
 //   → primary "Palo Seco, Toa Baja" · secondary "Puerto Rico 00962" · place "Almacenes AEE / Luma Energy"
 
+import { addressMunicipio } from "./municipios.ts";
+
 export interface SiteAddressParts {
   primary: string;
   secondary: string;
@@ -23,13 +25,15 @@ export function siteAddressParts(site: {
   barrio?: { name: string } | null;
 }): SiteAddressParts {
   const muni = site.municipality.name;
+  // A different municipio named by the geocoder is flagged in the report, never mixed into the address line.
+  const otherMuni = addressMunicipio(site.formatted_address);
   const raw = site.formatted_address ?? "";
   const zip = raw.match(/\b(00[6-9]\d{2})(?:-\d{4})?\b/)?.[1] ?? null;
   const barrio = site.barrio && norm(site.barrio.name) !== norm(muni) ? site.barrio.name : null;
   const segs = raw
     .split(",")
     .map((s) => s.replace(/\b00[6-9]\d{2}(?:-\d{4})?\b/, "").replace(/\s+PR$/i, "").trim())
-    .filter((s) => s && !COUNTRY.test(s) && !TERRITORY.test(s) && norm(s) !== norm(muni) && !/^municipio de /i.test(s) && !(barrio && norm(s) === norm(barrio)))
+    .filter((s) => s && !COUNTRY.test(s) && !TERRITORY.test(s) && norm(s) !== norm(muni) && !(otherMuni && norm(s) === norm(otherMuni)) && !/^municipio de /i.test(s) && !(barrio && norm(s) === norm(barrio)))
     // Census-style "X barrio" / "X Pueblo" duplicates of the municipio.
     .filter((s) => !norm(s).startsWith(`${norm(muni)} `));
   // A bare house number ("60") belongs to the street that follows it.

@@ -27,6 +27,7 @@
 // same place.
 // ============================================================================
 
+import { addressMunicipio, sameMunicipio } from "./municipios.ts";
 import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
 import { parsePlanTerritorialExtra, ptDateText, PT_FIELDS, toPrStatePlane, type ExtraFinding, type ParcelFindings } from "./parcel.ts";
@@ -1189,6 +1190,9 @@ export function buildPropertyReport(input: {
   if (parcelStatus === "not_identified") locationNotices.push(bi("No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.", "No se identificó una parcela catastral. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela."));
   if (parcelStatus === "unavailable") locationNotices.push(bi(`The CRIM parcel source did not respond (${reasonText(boundary?.reason).en}). Findings describe the selected point only; parcel-wide checks have not been performed.`, `La fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es}). Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela.`));
   if (roadway) locationNotices.push(bi("This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements.", "Este punto puede estar sobre una vía y no en su propiedad. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
+  // The geocoder's address can name a neighbouring municipio (a point near a boundary); the pin's Census municipio governs.
+  const addrMuni = addressMunicipio(site.formatted_address);
+  if (addrMuni && site.municipality.name && !sameMunicipio(addrMuni, site.municipality.name)) locationNotices.push(bi(`The address returned for this point names ${addrMuni}, but the pin lies inside ${site.municipality.name} (Census boundary). This report uses ${site.municipality.name}; confirm which municipio the property is registered in.`, `La dirección obtenida para este punto indica ${addrMuni}, pero el pin está dentro de ${site.municipality.name} (límite del Censo). Este informe usa ${site.municipality.name}; confirme en qué municipio está registrada la propiedad.`));
   if (waterAtPin) locationNotices.push(bi("This point is on a mapped water body, not on a land parcel. Move or confirm the pin before evaluating site-specific requirements.", "Este punto está sobre un cuerpo de agua mapeado y no sobre una parcela de terreno. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
   if (pointConfirmed && !parcelVerified) locationNotices.push(bi("You confirmed this point as your property. That confirms the location you intend, not a parcel boundary: parcel-wide checks remain not performed.", "Usted confirmó este punto como su propiedad. Eso confirma la ubicación que indica, no un límite de parcela: las verificaciones de toda la parcela siguen sin realizarse."));
 
