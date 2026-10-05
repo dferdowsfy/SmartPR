@@ -1,16 +1,20 @@
 // SmartPR MCP Apps widget (text/html;profile=mcp-app). Self-contained: no
-// external scripts, styles, fonts or network calls (empty CSP allowlists).
+// external scripts, styles, fonts, images or network calls — the CSP
+// allowlists stay empty. The site map is an inline-SVG vector map of the 78
+// municipios (prMapShapes.ts) instead of remote raster tiles, so nothing the
+// ChatGPT sandbox CSP could block is ever requested.
 // Renders only from tool results delivered over the MCP Apps bridge
 // (ui/notifications/tool-result), falling back to window.openai.toolOutput.
 // All rendered strings go through textContent — tool data is untrusted.
 
-export const WIDGET_URI = "ui://smartpr/requirements-v3.html";
-/** Raster basemap tiles (plain <img>, the only external origin; same Esri
- *  service family the portal's satellite base uses). Declared in the
- *  widget CSP resource domains. */
-export const MAP_TILE_ORIGIN = "https://server.arcgisonline.com";
-export const MAP_TILE_URL = `${MAP_TILE_ORIGIN}/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}`;
-export const MAP_SATELLITE_URL = `${MAP_TILE_ORIGIN}/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`;
+import { PR_MUNICIPIO_SHAPES, PR_MAP_SOURCE } from "./prMapShapes";
+
+// v4: vector map (no external tiles) — new URI so ChatGPT drops the cached v3 template.
+export const WIDGET_URI = "ui://smartpr/requirements-v4.html";
+/** Map zoom range. z7 fits the whole island in a phone-width iframe; outlines
+ *  are ~1:500k generalized, so beyond z14 they add nothing. */
+export const MAP_MIN_ZOOM = 7;
+export const MAP_MAX_ZOOM = 14;
 export const WIDGET_MIME = "text/html;profile=mcp-app";
 
 const CSS = `
@@ -38,11 +42,13 @@ label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}select,inpu
 .cont{display:flex;gap:8px;align-items:flex-start;padding:12px 4px 0;background:none;border:0;cursor:pointer;font:inherit;text-align:left;color:inherit}.cont b{color:var(--ink)}
 .note{border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px}.note.warn{background:#fffbeb;border:1px solid #fde68a}.note.err{background:#fef2f2;border:1px solid #fecaca}
 .mapc{margin:0 0 12px;display:block}.mapc h2{font-size:16px;margin:0 0 4px;display:flex;align-items:center}
-.map{position:relative;height:240px;min-height:220px;width:100%;overflow:hidden;border-radius:10px;border:1px solid var(--line);background:#e5e7eb;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.map{position:relative;height:240px;min-height:220px;width:100%;overflow:hidden;border-radius:10px;border:1px solid var(--line);background:#cfe6f2;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 @media(max-width:640px){.map{height:220px;min-height:200px}.wrap{padding:14px 12px}h1{font-size:18px;margin:12px 0 2px}.map .zc button{width:36px;height:36px}}
-.map .tl{position:absolute;inset:0}.map .tl img{position:absolute;width:256px;height:256px;max-width:none;pointer-events:none;-webkit-user-drag:none}
+.map .vm{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;display:block}
+.map .vm .m{fill:#f7f5ef;stroke:#9aa8b8;stroke-width:.8;fill-rule:evenodd;stroke-linejoin:round}.map .vm .m.on{fill:#d5efe9;stroke:#0f766e;stroke-width:1.6}
+.map .vm text{font:600 10px/1 ui-sans-serif,system-ui,sans-serif;fill:#475569;text-anchor:middle;paint-order:stroke;stroke:#f7f5ef;stroke-width:3px;stroke-linejoin:round}
 .map .pin{position:absolute;width:28px;height:28px;margin:-28px 0 0 -14px;pointer-events:none}.map .pin.pend{opacity:.75}
-.map .zc{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px;z-index:2}.map .zc .bt{font-size:11px}.map .zc button{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:#fff;font:600 16px/1 system-ui;cursor:pointer;color:var(--ink);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.map .zc{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px;z-index:2}.map .zc button{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:#fff;font:600 16px/1 system-ui;cursor:pointer;color:var(--ink);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .map .attr{position:absolute;right:0;bottom:0;background:rgba(255,255,255,.8);font-size:10px;padding:1px 5px;color:#334155;z-index:1}
 .map .tip{position:absolute;left:8px;top:8px;background:rgba(255,255,255,.92);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--ink);z-index:1;pointer-events:none}
 .siteinfo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px}.siteinfo .btn{padding:6px 12px;touch-action:manipulation}
@@ -52,7 +58,7 @@ label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}select,inpu
 
 const JS = String.raw`
 (function(){
-var root=document.getElementById("root"),pending={},nextId=1,state={result:null,input:null,answers:{},busy:false,error:null,lastAction:null,map:{lat:18.22,lng:-66.45,z:8,pin:null,base:"streets"}},lastSizeH=0,mapDraws=[];
+var root=document.getElementById("root"),pending={},nextId=1,state={result:null,input:null,answers:{},busy:false,error:null,lastAction:null,map:{lat:18.22,lng:-66.45,z:8,pin:null}},lastSizeH=0,mapDraws=[];
 function post(m){window.parent.postMessage(m,"*")}
 function request(method,params,ms){var id=nextId++;post({jsonrpc:"2.0",id:id,method:method,params:params||{}});return new Promise(function(res,rej){pending[id]={res:res,rej:rej};setTimeout(function(){if(pending[id]){delete pending[id];rej(new Error("timeout"))}},ms||20000)})}
 function notify(method,params){post({jsonrpc:"2.0",method:method,params:params||{}})}
@@ -64,7 +70,7 @@ window.addEventListener("message",function(e){if(e.source!==window.parent)return
  if(m.method==="ui/notifications/tool-cancelled"){state.error="The request was cancelled.";render()}
 },{passive:true});
 function accept(r){if(!r)return;if(r.isError){state.error=txt(r)||"SmartPR could not complete the request.";state.busy=false;render();return}
- var sc=r.structuredContent||r;if(sc&&sc.scenario&&sc.versions){state.result=sc;state.error=null;state.busy=false;state.answers={};var f=sc.map_focus||{latitude:18.22,longitude:-66.45,zoom:8};state.map={lat:f.latitude,lng:f.longitude,z:f.zoom,pin:null,base:state.map&&state.map.base||"streets"};render()}}
+ var sc=r.structuredContent||r;if(sc&&sc.scenario&&sc.versions){state.result=sc;state.error=null;state.busy=false;state.answers={};var f=sc.map_focus||{latitude:18.22,longitude:-66.45,zoom:8};state.map={lat:f.latitude,lng:f.longitude,z:Math.min(f.zoom,FOCUS_Z),pin:null};clampMap(state.map);render()}}
 function txt(r){try{return(r.content||[]).map(function(c){return c.text||""}).join(" ").slice(0,300)}catch(_){return""}}
 function callTool(name,args){
  return request("tools/call",{name:name,arguments:args},30000).catch(function(e){var o=window.openai;if(o&&o.callTool)return o.callTool(name,args);throw e})}
@@ -79,32 +85,43 @@ function act(kind){if(state.busy)return;state.lastAction=kind;var r=state.result
  if(kind==="refine"){var ans={};for(var k in state.answers)if(state.answers[k]!=="")ans[k]=state.answers[k];if(!Object.keys(ans).length)return;
   state.busy=true;state.error=null;render();callTool("refine_scenario",{scenario:r.scenario,answers:ans}).then(function(res){if(res&&!res.isError){accept(res);var n=state.result;request("ui/update-model-context",{content:[{type:"text",text:"User refined the SmartPR scenario in the widget. "+(n&&n.message||"")}]},5000).catch(function(){})}else{state.busy=false;state.error=txt(res)||"Could not update the preview.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
  else{state.busy=true;state.error=null;render();callTool("create_portal_handoff",{scenario:r.scenario,intent:kind}).then(function(res){state.busy=false;var u=res&&res.structuredContent&&res.structuredContent.url;if(u){openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
-var TILES={streets:"__TILE_URL__",satellite:"__SAT_URL__"},TS=256,BX={s:17.55,n:18.9,w:-68.4,e:-64.85};
+var SHAPES=__MAP_SHAPES__,TS=256,ZMIN=__ZMIN__,ZMAX=__ZMAX__,FOCUS_Z=11,BX={s:17.55,n:18.9,w:-68.4,e:-64.85},MUNIS=null,SVGNS="http://www.w3.org/2000/svg";
 function wsz(z){return TS*Math.pow(2,z)}
 function px(lng,z){return (lng+180)/360*wsz(z)}
 function py(lat,z){var r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*wsz(z)}
 function unx(x,z){return x/wsz(z)*360-180}
 function uny(y,z){var n=Math.PI-2*Math.PI*y/wsz(z);return 180/Math.PI*Math.atan(.5*(Math.exp(n)-Math.exp(-n)))}
-function clampMap(m){m.z=Math.max(8,Math.min(18,m.z));m.lat=Math.max(BX.s,Math.min(BX.n,m.lat));m.lng=Math.max(BX.w,Math.min(BX.e,m.lng))}
+function clampMap(m){m.z=Math.max(ZMIN,Math.min(ZMAX,Math.round(m.z)||ZMIN));m.lat=Math.max(BX.s,Math.min(BX.n,m.lat));m.lng=Math.max(BX.w,Math.min(BX.e,m.lng))}
+function fold(s){return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
+function decodeRing(str){var pts=[],i=0,lat=0,lng=0,n=str.length;while(i<n){var r=0,sh=0,b;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32&&i<n);lat+=(r&1)?~(r>>1):(r>>1);r=0;sh=0;do{b=str.charCodeAt(i++)-63;r|=(b&31)<<sh;sh+=5}while(b>=32&&i<n);lng+=(r&1)?~(r>>1):(r>>1);pts.push(px(lng/1e4,0),py(lat/1e4,0))}return pts}
+function munis(){if(MUNIS)return MUNIS;MUNIS=[];for(var k=0;k<SHAPES.length;k++){var sh=SHAPES[k],rings=sh[3].split(" ").map(decodeRing),bb=[1e9,1e9,-1e9,-1e9];rings.forEach(function(r){for(var i=0;i<r.length;i+=2){if(r[i]<bb[0])bb[0]=r[i];if(r[i]>bb[2])bb[2]=r[i];if(r[i+1]<bb[1])bb[1]=r[i+1];if(r[i+1]>bb[3])bb[3]=r[i+1]}});MUNIS.push({n:sh[0],f:fold(sh[0]),lx:px(sh[1],0),ly:py(sh[2],0),rings:rings,bb:bb})}return MUNIS}
 function pinSvg(color){var d=document.createElementNS("http://www.w3.org/2000/svg","svg");d.setAttribute("viewBox","0 0 24 24");d.setAttribute("width","28");d.setAttribute("height","28");d.innerHTML='<path fill="'+color+'" stroke="#fff" stroke-width="1.2" d="M12 1.5a7 7 0 0 0-7 7c0 5.2 7 14 7 14s7-8.8 7-14a7 7 0 0 0-7-7z"/><circle cx="12" cy="8.5" r="2.6" fill="#fff"/>';return d}
-function mapCard(r,opts){opts=opts||{};var m=state.map;if(!m){state.map={lat:18.22,lng:-66.45,z:8,pin:null,base:"streets"};m=state.map}var site=r&&r.scenario&&r.scenario.site;
+function mapCard(r,opts){opts=opts||{};var m=state.map;if(!m){state.map={lat:18.22,lng:-66.45,z:8,pin:null};m=state.map}var site=r&&r.scenario&&r.scenario.site;
  var c=el("div","card mapc"+(opts.embed?" muni-map":""));var h=el("h2",null,opts.embed?"Drop a pin on the site":"Where is the site?");if(site)add(h,el("span","badge","Pinned"));add(c,h);
  add(c,el("p","sub",site?"The pin sets the municipality from official Census boundaries. Move it if needed.":"Tap the map to drop a pin on the property. The pin sets the municipality; zoning, flood-zone and parcel checks for it are in SmartPR."));
- var box=el("div","map"),tl=el("div","tl"),pin=el("div","pin"),pend=el("div","pin pend");pin.appendChild(pinSvg("#0f766e"));pend.appendChild(pinSvg("#f59e0b"));
+ var box=el("div","map"),pin=el("div","pin"),pend=el("div","pin pend");pin.appendChild(pinSvg("#0f766e"));pend.appendChild(pinSvg("#f59e0b"));
  box.style.height=box.style.minHeight=(window.matchMedia&&window.matchMedia("(max-width:640px)").matches?"220px":"240px");
- var zc=el("div","zc"),zi=el("button",null,"+"),zo=el("button",null,"\u2212"),bb=el("button","bt",m.base==="satellite"?"Map":"Sat");zi.setAttribute("aria-label","Zoom in");zo.setAttribute("aria-label","Zoom out");bb.setAttribute("aria-label",m.base==="satellite"?"Street map":"Satellite imagery");zi.type=zo.type=bb.type="button";add(zc,zi,zo,bb);
- var att=el("div","attr",m.base==="satellite"?"Imagery \u00a9 Esri, Maxar, Earthstar Geographics":"Map \u00a9 Esri, HERE, Garmin, USGS");add(box,tl,site?pin:null,pend,zc,att);if(!site&&!m.pin)add(box,el("div","tip","Tap to drop a pin"));
- function draw(){var W=box.clientWidth||box.offsetWidth||320,H=box.clientHeight||box.offsetHeight||220;if(W<40){W=320}var cx=px(m.lng,m.z),cy=py(m.lat,m.z),x0=cx-W/2,y0=cy-H/2,n=Math.pow(2,m.z);tl.textContent="";
-  for(var i=Math.floor(x0/TS);i<=Math.floor((x0+W)/TS);i++)for(var j=Math.floor(y0/TS);j<=Math.floor((y0+H)/TS);j++){if(j<0||j>=n||i<0||i>=n)continue;var im=document.createElement("img");im.alt="";im.draggable=false;im.src=TILES[m.base==="satellite"?"satellite":"streets"].replace("{z}",m.z).replace("{y}",j).replace("{x}",i);im.style.left=(i*TS-x0)+"px";im.style.top=(j*TS-y0)+"px";tl.appendChild(im)}
+ var zc=el("div","zc"),zi=el("button",null,"+"),zo=el("button",null,"\u2212");zi.setAttribute("aria-label","Zoom in");zo.setAttribute("aria-label","Zoom out");zi.type=zo.type="button";add(zc,zi,zo);
+ var att=el("div","attr","Boundaries: __MAP_SOURCE__");
+ var svg=document.createElementNS(SVGNS,"svg");svg.setAttribute("class","vm");svg.setAttribute("aria-hidden","true");var gP=document.createElementNS(SVGNS,"g"),gL=document.createElementNS(SVGNS,"g");svg.appendChild(gP);svg.appendChild(gL);
+ var siteF=site?fold(site.municipality):"",ML=munis(),paths=[],labels=[];
+ ML.forEach(function(mu){var p=document.createElementNS(SVGNS,"path");p.setAttribute("class","m"+(siteF&&mu.f===siteF?" on":""));gP.appendChild(p);paths.push(p);var t=document.createElementNS(SVGNS,"text");t.textContent=mu.n;gL.appendChild(t);labels.push(t)});
+ add(box,svg,site?pin:null,pend,zc,att);if(!site&&!m.pin)add(box,el("div","tip","Tap to drop a pin"));
+ function draw(){var W=box.clientWidth||box.offsetWidth||320,H=box.clientHeight||box.offsetHeight||220;if(W<40){W=320}if(!m.fit&&box.clientWidth){m.fit=1;if(m.z<=8&&W<540)m.z=7}var cx=px(m.lng,m.z),cy=py(m.lat,m.z),x0=cx-W/2,y0=cy-H/2,k=Math.pow(2,m.z),showL=m.z>=10;
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);svg.setAttribute("width",W);svg.setAttribute("height",H);
+  for(var a=0;a<ML.length;a++){var mu=ML[a],b=mu.bb,vis=!(b[2]*k<x0-2||b[0]*k>x0+W+2||b[3]*k<y0-2||b[1]*k>y0+H+2),d="";
+   if(vis){for(var q=0;q<mu.rings.length;q++){var r=mu.rings[q];if(r.length<6)continue;d+="M";for(var i=0;i<r.length;i+=2){d+=(i?"L":"")+(Math.round((r[i]*k-x0)*10)/10)+" "+(Math.round((r[i+1]*k-y0)*10)/10)}d+="Z"}}
+   paths[a].setAttribute("d",d||"M0 0");var t=labels[a],lx=mu.lx*k-x0,ly=mu.ly*k-y0;if(showL&&lx>-40&&lx<W+40&&ly>-10&&ly<H+10){t.setAttribute("x",Math.round(lx));t.setAttribute("y",Math.round(ly));t.style.display=""}else t.style.display="none"}
   function place(node,p){if(!p){node.style.display="none";return}node.style.display="block";node.style.left=(px(p.lng,m.z)-x0)+"px";node.style.top=(py(p.lat,m.z)-y0)+"px"}
   place(pin,site?{lat:site.latitude,lng:site.longitude}:null);place(pend,m.pin)}
  mapDraws.push(draw);
  function zoom(d){m.z+=d;clampMap(m);draw()}
- zi.onclick=function(e){e.preventDefault();e.stopPropagation();zoom(1)};bb.onclick=function(e){e.preventDefault();e.stopPropagation();m.base=m.base==="satellite"?"streets":"satellite";bb.textContent=m.base==="satellite"?"Map":"Sat";att.textContent=m.base==="satellite"?"Imagery \u00a9 Esri, Maxar, Earthstar Geographics":"Map \u00a9 Esri, HERE, Garmin, USGS";draw()};zo.onclick=function(e){e.preventDefault();e.stopPropagation();zoom(-1)};
+ var raf=0;function drawSoon(){if(raf)return;var rq=window.requestAnimationFrame||function(f){return setTimeout(f,16)};raf=rq(function(){raf=0;draw()})}
+ zi.onclick=function(e){e.preventDefault();e.stopPropagation();zoom(1)};zo.onclick=function(e){e.preventDefault();e.stopPropagation();zoom(-1)};
  zc.addEventListener("pointerdown",function(e){e.stopPropagation()});
  var drag=null;
  box.addEventListener("pointerdown",function(e){if(e.pointerType==="mouse"&&e.button!==0)return;drag={x:e.clientX,y:e.clientY,cx:px(m.lng,m.z),cy:py(m.lat,m.z),moved:false};try{box.setPointerCapture(e.pointerId)}catch(_){}});
- box.addEventListener("pointermove",function(e){if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<8)return;drag.moved=true;m.lng=unx(drag.cx-dx,m.z);m.lat=uny(drag.cy-dy,m.z);clampMap(m);draw()});
+ box.addEventListener("pointermove",function(e){if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<8)return;drag.moved=true;m.lng=unx(drag.cx-dx,m.z);m.lat=uny(drag.cy-dy,m.z);clampMap(m);drawSoon()});
  box.addEventListener("pointerup",function(e){if(!drag)return;var d=drag;drag=null;if(d.moved||state.busy)return;var rc=box.getBoundingClientRect(),W=box.clientWidth||rc.width,H=box.clientHeight||rc.height;
   var x=px(m.lng,m.z)-W/2+(e.clientX-rc.left),y=py(m.lat,m.z)-H/2+(e.clientY-rc.top);m.pin={lat:Math.round(uny(y,m.z)*1e6)/1e6,lng:Math.round(unx(x,m.z)*1e6)/1e6};render()});
  box.addEventListener("pointercancel",function(){drag=null});
@@ -175,7 +192,11 @@ window.addEventListener("resize",function(){redrawMaps()},{passive:true});
 })();
 `;
 
-const JS_FINAL = JS.replace("__TILE_URL__", MAP_TILE_URL).replace("__SAT_URL__", MAP_SATELLITE_URL);
+// Function replacers: the polyline alphabet must never be read as `$&`-style patterns.
+const JS_FINAL = JS.replace("__MAP_SHAPES__", () => JSON.stringify(PR_MUNICIPIO_SHAPES).replace(/</g, "\\u003c"))
+  .replace("__ZMIN__", () => String(MAP_MIN_ZOOM))
+  .replace("__ZMAX__", () => String(MAP_MAX_ZOOM))
+  .replace("__MAP_SOURCE__", () => PR_MAP_SOURCE);
 
 export function widgetHtml(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SmartPR</title><style>${CSS}</style></head><body><div id="root"></div><script>${JS_FINAL}</script></body></html>`;

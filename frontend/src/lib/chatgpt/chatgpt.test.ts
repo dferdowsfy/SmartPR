@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite } from "./assessment";
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
 import { handleChatgptMcp, TOOLS, widgetResourceMeta } from "./mcp";
-import { WIDGET_URI, WIDGET_MIME, widgetHtml, MAP_TILE_ORIGIN } from "./widget";
+import { WIDGET_URI, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM } from "./widget";
+import { PR_MUNICIPIO_SHAPES } from "./prMapShapes";
 import { municipioFocus } from "../../app/locations/boundaries";
 import { restoreIntakeSite } from "../../app/locations/intakeLocation";
 import { resolvePortalUrl, portalUrlForRequest, PORTAL_DEFAULT } from "./portalUrl";
@@ -88,7 +89,7 @@ test("MCP: initialize, tools/list, resources, tools/call", () => {
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
   assert.equal(res.mimeType, WIDGET_MIME);
-  assert.ok(!/<script[^>]+src=|https?:\/\/(?!www\.w3\.org|server\.arcgisonline\.com\/ArcGIS\/rest\/services\/(World_Street_Map|World_Imagery)\/)/.test(widgetHtml()), "widget loads nothing external except basemap tile images");
+  assert.ok(!/<script[^>]+src=|<link|<img|https?:\/\/(?!www\.w3\.org\/2000\/svg)/.test(widgetHtml()), "widget loads nothing external (no URLs except the SVG namespace)");
   const a = (rpc("tools/call", { name: "assess_scenario", arguments: GUAYNABO }).body as Body).result;
   assert.equal(a.structuredContent.status, "partial");
   const r = (rpc("tools/call", { name: "refine_scenario", arguments: { scenario: a.structuredContent.scenario, answers: { activity: "Furniture Manufacturing" } } }).body as Body).result;
@@ -236,22 +237,50 @@ test("map pin: resolved server-side, authoritative for municipality, carried to 
   assert.equal(Math.round(restored!.latitude * 1e5), Math.round(g.latitude * 1e5));
 });
 
-test("widget map: tile images only, CSP declares the tile origin and the portal redirect", () => {
+test("widget map: CSP-safe vector map — empty CSP allowlists, no tiles/images, pin drop over the bridge", () => {
   const meta = widgetResourceMeta("https://www.getsmartpr.com");
-  assert.deepEqual(meta.ui.csp, { connectDomains: [], resourceDomains: [MAP_TILE_ORIGIN] });
-  assert.deepEqual(meta["openai/widgetCSP"], { connect_domains: [], resource_domains: [MAP_TILE_ORIGIN], redirect_domains: ["https://www.getsmartpr.com"] });
+  assert.deepEqual(meta.ui.csp, { connectDomains: [], resourceDomains: [] });
+  assert.deepEqual(meta["openai/widgetCSP"], { connect_domains: [], resource_domains: [], redirect_domains: ["https://www.getsmartpr.com"] });
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
-  assert.deepEqual(res._meta["openai/widgetCSP"].resource_domains, [MAP_TILE_ORIGIN]);
+  assert.deepEqual(res._meta.ui.csp, { connectDomains: [], resourceDomains: [] });
+  assert.deepEqual(res._meta["openai/widgetCSP"].resource_domains, []);
   const html = widgetHtml();
-  assert.ok(html.includes(`${MAP_TILE_ORIGIN}/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}`));
-  assert.ok(!/fetch\(|XMLHttpRequest|EventSource|WebSocket/.test(html), "no network calls from the widget");
+  assert.ok(!/arcgisonline|tile\.openstreetmap|mapbox|googleapis|<img|\.src=|url\(/i.test(html), "no raster tiles, images or CSS urls");
+  assert.ok(!/fetch\(|XMLHttpRequest|EventSource|WebSocket|importScripts/.test(html), "no network calls from the widget");
+  assert.match(html, /createElementNS\(SVGNS,"path"\)/);
+  assert.ok(!html.includes("__MAP_SHAPES__") && !html.includes("__ZMAX__"), "map data injected");
+  assert.ok(html.includes(JSON.stringify(PR_MUNICIPIO_SHAPES[0][3]).slice(1, 40)), "municipio geometry inlined");
+  assert.ok(html.length < 120_000, `widget stays small (${html.length} bytes)`);
   assert.match(html, /callTool\("refine_scenario",\{scenario:r\.scenario,site:p\?\{latitude:p\.lat,longitude:p\.lng\}:null\}\)/);
   const site = (TOOLS[1].inputSchema.properties as Record<string, any>).site;
   assert.deepEqual(site.required, ["latitude", "longitude"]);
 });
 
-test("widget map: visible after assess — size-changed, muni question embeds map, URI v3, map_focus in schema", () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v3.html");
+test("widget map data: 78 municipios, decodable polyline rings inside Puerto Rico", () => {
+  assert.equal(PR_MUNICIPIO_SHAPES.length, 78);
+  const names = new Set(PR_MUNICIPIO_SHAPES.map((m) => m[0]));
+  for (const n of ["San Juan", "Guaynabo", "Mayagüez", "Bayamón", "Vieques", "Culebra"]) assert.ok(names.has(n), n);
+  const decode = (str: string) => {
+    const pts: [number, number][] = [];
+    let i = 0, lat = 0, lng = 0;
+    const next = () => { let r = 0, sh = 0, b; do { b = str.charCodeAt(i++) - 63; r |= (b & 31) << sh; sh += 5; } while (b >= 32 && i < str.length); return r & 1 ? ~(r >> 1) : r >> 1; };
+    while (i < str.length) { lat += next(); lng += next(); pts.push([lng / 1e4, lat / 1e4]); }
+    return pts;
+  };
+  for (const [name, lx, ly, rings] of PR_MUNICIPIO_SHAPES) {
+    assert.ok(lx > -68.1 && lx < -65.1 && ly > 17.8 && ly < 18.6, `${name} label in PR`);
+    for (const ring of rings.split(" ")) {
+      const pts = decode(ring);
+      assert.ok(pts.length >= 3, `${name} ring has points`);
+      for (const [x, y] of pts) assert.ok(x > -68.1 && x < -65.1 && y > 17.8 && y < 18.6, `${name} point in PR`);
+    }
+  }
+});
+
+test("widget map: visible after assess — size-changed, muni question embeds map, URI v4, map_focus in schema", () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v4.html");
+  assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
+  assert.equal(MAP_MAX_ZOOM, 14);
   const html = widgetHtml();
   assert.match(html, /ui\/notifications\/size-changed/);
   assert.match(html, /notifyIntrinsicHeight/);
