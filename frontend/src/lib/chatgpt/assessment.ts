@@ -398,7 +398,12 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
   // Free preview: always surface unresolved items (they drive clarification),
   // fill the rest by posture. Everything beyond the limit stays server-side.
   const unresolvedFirst = reqs.filter((r) => r.applicability === "unresolved").slice(0, 3);
-  const visible = [...unresolvedFirst, ...reqs.filter((r) => !unresolvedFirst.includes(r))]
+  // …and at least one item per group so the preview shows the full shape.
+  const groupLeads = (["Business registrations", "Construction & site authorization", "Operating permits"] as const)
+    .map((g) => reqs.find((r) => r.group === g && !unresolvedFirst.includes(r)))
+    .filter((r): r is AssessedRequirement => !!r);
+  const picked = [...unresolvedFirst, ...groupLeads];
+  const visible = [...picked, ...reqs.filter((r) => !picked.includes(r))]
     .slice(0, FREE_PREVIEW_LIMIT)
     .sort((a, b) => rank[a.applicability] - rank[b.applicability]);
   const counts = {

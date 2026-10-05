@@ -91,7 +91,7 @@ function render(){root.textContent="";var w=el("div","wrap");add(root,w);add(w,h
  var right=el("div","card");add(right,el("h2",null,"Refine your scenario"));var qs=r.clarifying_questions||[];
  add(right,el("p","sub",qs.length?qs.length+" detail(s) need clarification.":"No open questions — change a fact in chat to re-run."));
  qs.forEach(function(q){var id="q_"+q.id;var l=el("label",null,q.question);l.htmlFor=id;add(right,l);var inp;
-  if(q.options&&q.options.length){inp=el("select");inp.id=id;add(inp,el("option",null,"Select…")).value="";q.options.forEach(function(o){var op=el("option",null,o.label);op.value=o.value;add(inp,op)})}else{inp=el("input");inp.id=id;inp.placeholder="Type your answer"}
+  if(q.options&&q.options.length){inp=el("select");inp.id=id;var ph=el("option",null,"Select…");ph.value="";add(inp,ph);q.options.forEach(function(o){var op=el("option",null,o.label);op.value=o.value;add(inp,op)})}else{inp=el("input");inp.id=id;inp.placeholder="Type your answer"}
   inp.value=state.answers[q.id]||"";inp.onchange=function(){state.answers[q.id]=inp.value};add(right,inp)});
  if(qs.length){var ub=el("button","btn o full",state.busy?"Updating…":"Update preview");ub.disabled=state.busy;ub.onclick=function(){act("refine")};add(right,ub)}
  add(right,el("div","hint","Hypothetical scenarios welcome. No project is saved."));add(g,right);add(w,g);
