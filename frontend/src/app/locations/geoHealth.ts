@@ -101,11 +101,42 @@ export async function runGeoHealth(opts: { fetchImpl?: FetchLike; now?: () => Da
   }
   await Promise.all(endpointJobs);
 
+  // 1b) Configured LAYER_SOURCES URLs must exist (service metadata answers
+  // without "service not found" / 404 / 502). Catches dead primaries like the
+  // old sige.pr.gov Reglamentario_va2 path before they burn live traffic.
+  const metaJobs: Promise<void>[] = [];
+  const metaSeen = new Set<string>();
+  for (const [key, spec] of Object.entries(LAYER_QUERIES)) {
+    for (const ep of sourceEndpoints(spec.source)) {
+      if (metaSeen.has(ep)) continue;
+      metaSeen.add(ep);
+      if (!/\/(Map|Feature)Server\/\d+$/i.test(ep)) continue;
+      metaJobs.push((async () => {
+        const t0 = Date.now();
+        try {
+          const r = await fetchImpl(`${ep}?f=json`, { headers: { Accept: "application/json" } });
+          let detail = `http_${r.status}`;
+          let ok = false;
+          if (r.ok) {
+            const body = (await r.json()) as { error?: { code?: number; message?: string }; name?: string; type?: string; fields?: unknown; layers?: unknown };
+            if (body.error) detail = `arcgis_error_${body.error.code}: ${body.error.message ?? ""}`;
+            else if (body.name || body.type || body.fields || body.layers) { ok = true; detail = `name=${body.name ?? body.type ?? "ok"}`; }
+            else detail = "missing_layer_metadata";
+          }
+          checks.push({ kind: "endpoint", id: `exists ${key} ${ep}`, required: !spec.optional && ep === LAYER_SOURCES[spec.source].url, ok, detail, latency_ms: Date.now() - t0 });
+        } catch (err) {
+          checks.push({ kind: "endpoint", id: `exists ${key} ${ep}`, required: !spec.optional && ep === LAYER_SOURCES[spec.source].url, ok: false, detail: `network_error: ${(err as Error)?.message ?? "error"}`.slice(0, 160), latency_ms: Date.now() - t0 });
+        }
+      })());
+    }
+  }
+  await Promise.all(metaJobs);
+
   // 2) Resolved answers at the known points (the full production path:
   // fallbacks, retries, parsers, placement).
   for (const p of PROBE_POINTS) {
     const t0 = Date.now();
-    const l = await resolveSiteLayers(p.latitude, p.longitude, { fetchImpl, cache: new LayerCache(), store: null, refresh: true, skipOptional: true });
+    const l = await resolveSiteLayers(p.latitude, p.longitude, { fetchImpl, cache: new LayerCache(), store: null, refresh: true, skipOptional: true, recordHealth: false });
     const latency = Date.now() - t0;
     if (p.placement) {
       const got = pinPlacement(l).state;

@@ -24,6 +24,8 @@ import { validateCoordinates } from "../../locations/geo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Platform kill switch; internal deadline is ~2 s below this. */
+export const maxDuration = 20;
 
 /**
  * App-wide slot reservation through Postgres, so the public Nominatim limit

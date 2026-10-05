@@ -220,6 +220,7 @@ export function PropertyReportDrawer({
   const [copied, setCopied] = useState(false);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "pdf">(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [showTech, setShowTech] = useState(false);
   const savedVersion = passport.kind === "ready" ? passport.saved?.version ?? null : null;
   const api = usePropertyReview(open && savedVersion ? reviewTarget : null, savedVersion);
@@ -309,9 +310,21 @@ export function PropertyReportDrawer({
                 : L("Draft — it will be saved to the Passport once the business and location are saved.", "Borrador — se guardará en el Pasaporte cuando se guarden el negocio y la ubicación.", lang)}
             </span>
           )}
-          <button type="button" className="spr-loc-btn" onClick={async () => { setBusy("pdf"); try { await downloadPropertyReportPdf(report, lang, reviewExport); } finally { setBusy(null); } }} data-testid="report-pdf">
+          <button type="button" className="spr-loc-btn" onClick={async () => {
+            setBusy("pdf");
+            setPdfError(null);
+            try {
+              await downloadPropertyReportPdf(report, lang, reviewExport);
+            } catch (err) {
+              setPdfError(L("Could not create the PDF. Try again.", "No se pudo crear el PDF. Intente de nuevo.", lang));
+              console.error("[property-report] PDF download failed:", err);
+            } finally {
+              setBusy(null);
+            }
+          }} data-testid="report-pdf">
             {busy === "pdf" ? <Loader2 className="spr-loc-spin" aria-hidden="true" /> : <Download aria-hidden="true" />} {L("Download PDF", "Descargar PDF", lang)}
           </button>
+          {pdfError && <span className="spr-prd-error" role="alert" data-testid="report-pdf-error">{pdfError}</span>}
           <button type="button" className="spr-loc-btn" onClick={copy} data-testid="report-copy">
             {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied ? L("Copied", "Copiado", lang) : L("Copy summary", "Copiar resumen", lang)}
           </button>
