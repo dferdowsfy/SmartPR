@@ -79,13 +79,61 @@ export function groupRequirements(
     const a = r.applicability ?? "";
     let group: RequirementGroupId;
     if (r.done) group = "completed";
+    // A pending KB prerequisite beats "may apply": the card cannot be filed
+    // until that prerequisite is done, so it sits with the rest of the gated
+    // path rather than above it in the conditional group.
+    else if (waitingOn.length > 0) group = "prerequisites";
     else if (r.awaitingAnswer || CONDITIONAL.has(a)) group = "conditional";
     else if (a === "supporting_evidence") group = "supporting";
     else if (a === "verify_existing" || (REGISTRATION_STAGES.has(r.stage ?? "") && a !== "required" && a !== "likely_required")) group = "registrations";
-    else if (waitingOn.length > 0) group = "prerequisites";
     else group = "required_now";
     return { group, waitingOn, neededBefore };
   });
+}
+
+/**
+ * Within one rendered group, a present prerequisite always renders before the
+ * requirements that wait on it (KB `depends_on_document_ids`), so a numbered
+ * checklist never asks for the Permiso Único before the construction permit
+ * it depends on. Stable: items with no ordering constraint between them keep
+ * their engine order; cycles fall back to engine order.
+ */
+export function orderByPrerequisites<T>(
+  items: readonly T[],
+  documentIdOf: (item: T) => string | null | undefined,
+  documents: ReadonlyArray<{ id: string; depends_on_document_ids?: string[] | null }>
+): T[] {
+  const ids = items.map((it) => documentIdOf(it) ?? null);
+  const present = new Map<string, number>();
+  ids.forEach((id, i) => { if (id && !present.has(id)) present.set(id, i); });
+  // Transitive prerequisites among the present items (A -> B -> C orders C first even if B is absent).
+  const prereqIdx = ids.map((id) => {
+    const out = new Set<number>();
+    const seen = new Set<string>();
+    const queue = [...prerequisitesOf(id, documents)];
+    while (queue.length) {
+      const d = queue.shift() as string;
+      if (seen.has(d) || d === id) continue;
+      seen.add(d);
+      const j = present.get(d);
+      if (j !== undefined) out.add(j);
+      queue.push(...prerequisitesOf(d, documents));
+    }
+    return out;
+  });
+  const placed = new Set<number>();
+  const result: T[] = [];
+  while (result.length < items.length) {
+    let next = -1;
+    for (let i = 0; i < items.length; i++) {
+      if (placed.has(i)) continue;
+      if ([...prereqIdx[i]].every((j) => placed.has(j))) { next = i; break; }
+    }
+    if (next === -1) next = [...Array(items.length).keys()].find((i) => !placed.has(i)) as number; // cycle
+    placed.add(next);
+    result.push(items[next]);
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------

@@ -132,7 +132,7 @@ import { detectLocationNeed, restoreIntakeSite, siteEngineFacts, siteFactDetails
 import { unavailableSiteLayers, type SiteLayers } from './locations/layers';
 import type { LocationEngineFacts } from './locations/locationContext';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
-import { claraSupportFor, groupRequirements, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
+import { claraSupportFor, groupRequirements, orderByPrerequisites, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
 import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
@@ -6298,8 +6298,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   );
   const groupedCards = REQUIREMENT_GROUP_ORDER.map((groupId) => ({
     id: groupId,
-    cards: mainGroupedCards
-      .filter(({ group }) => group === groupId)
+    cards: orderByPrerequisites(mainGroupedCards.filter(({ group }) => group === groupId), ({ c }) => c.req.document_id, kbDocs)
       .map(({ c, g }) => ({
         ...c,
         facts: [
