@@ -109,7 +109,7 @@ export async function runSitePipeline(
     isOnLand: (p) => locateInPuertoRico(p.latitude, p.longitude) !== null,
   });
   resetEndpointHealth();
-  const parcel = await resolveParcelFindings(point.latitude, point.longitude, { fetchImpl: net.fetchImpl, postJson: net.postJson, now, refresh: true });
+  const parcel = await resolveParcelFindings(point.latitude, point.longitude, { fetchImpl: net.fetchImpl, postJson: net.postJson, now, refresh: true, neighbors: false });
   const snap = opts.withSnap ? await findNearbyLots(point.latitude, point.longitude, { fetchImpl: net.fetchImpl }) : null;
   return { layers, parcel, snap };
 }

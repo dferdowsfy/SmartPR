@@ -117,7 +117,7 @@ function url(layerUrl: string, params: Record<string, string>): string {
   return `${layerUrl}/query?${new URLSearchParams({ inSR: "4326", spatialRel: "esriSpatialRelIntersects", f: "json", ...params }).toString()}`;
 }
 
-export async function resolveParcelFindings(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; postJson?: PostJson; now?: () => Date; refresh?: boolean; deadlineMs?: number } = {}): Promise<ParcelFindings> {
+export async function resolveParcelFindings(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; postJson?: PostJson; now?: () => Date; refresh?: boolean; deadlineMs?: number; neighbors?: boolean } = {}): Promise<ParcelFindings> {
   const fetchImpl: FetchLike = opts.fetchImpl ?? ((u, init) => fetch(u, { ...init, cache: "no-store" }) as ReturnType<FetchLike>);
   const postJson = opts.postJson ?? defaultPostJson;
   const now = opts.now ?? (() => new Date());
@@ -255,16 +255,18 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
   let neighbors: ParcelFindings["neighbors"] = undefined;
   let partials: ParcelFindings["partials"] = undefined;
   if (g && boundary.value) {
-    const [x0, y0, x1, y1] = boundary.value.bbox;
-    const pad = 0.0006; // ~60 m
-    const env = JSON.stringify({ xmin: x0 - pad, ymin: y0 - pad, xmax: x1 + pad, ymax: y1 + pad, spatialReference: { wkid: 4326 } });
-    const nResp = await q("crim_parcels", { geometry: env, geometryType: "esriGeometryEnvelope", outFields: "NUM_CATASTRO", returnGeometry: "true", outSR: "4326", geometryPrecision: "6", maxAllowableOffset: "0.00001", resultRecordCount: "80" });
-    if (typeof nResp !== "string") {
-      neighbors = (((nResp as { features?: Array<{ attributes?: Record<string, unknown>; geometry?: { rings?: number[][][] } }> }).features) ?? [])
-        .map((f) => ({ catastro: s(f.attributes?.NUM_CATASTRO), geo: f.geometry?.rings ? ringsToGeoJson(f.geometry.rings) : null }))
-        .filter((f) => f.geo && f.catastro !== boundary.value!.catastro)
-        .slice(0, 60)
-        .map((f) => ({ catastro: f.catastro, geometry: f.geo!.geometry }));
+    if (opts.neighbors !== false) {
+      const [x0, y0, x1, y1] = boundary.value.bbox;
+      const pad = 0.0006; // ~60 m
+      const env = JSON.stringify({ xmin: x0 - pad, ymin: y0 - pad, xmax: x1 + pad, ymax: y1 + pad, spatialReference: { wkid: 4326 } });
+      const nResp = await q("crim_parcels", { geometry: env, geometryType: "esriGeometryEnvelope", outFields: "NUM_CATASTRO", returnGeometry: "true", outSR: "4326", geometryPrecision: "6", maxAllowableOffset: "0.00001", resultRecordCount: "80" });
+      if (typeof nResp !== "string") {
+        neighbors = (((nResp as { features?: Array<{ attributes?: Record<string, unknown>; geometry?: { rings?: number[][][] } }> }).features) ?? [])
+          .map((f) => ({ catastro: s(f.attributes?.NUM_CATASTRO), geo: f.geometry?.rings ? ringsToGeoJson(f.geometry.rings) : null }))
+          .filter((f) => f.geo && f.catastro !== boundary.value!.catastro)
+          .slice(0, 60)
+          .map((f) => ({ catastro: f.catastro, geometry: f.geo!.geometry }));
+      }
     }
     partials = [];
     const addPartials = (layer: "zoning" | "flood" | "put", resp: ArcGisQueryResponse | string, keyOf: (a: Record<string, unknown>) => string | null, cov: { parts: Array<{ key: string; share: number }> } | null | undefined) => {

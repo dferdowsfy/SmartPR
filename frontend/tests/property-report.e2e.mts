@@ -498,7 +498,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   const soils = await text(page, '[data-testid="property-report"] [data-finding="soils"]');
   check("AB: parcel-wide soils with shares; pin answer separate", /HtF 75\.3% · MxF 23\.9% · HtE 0\.8% \(small\)/.test(soils) && /At the pin:\s*Humatas clay, 40 to 60 percent slopes \(HtF\)/.test(soils) && /survey area PR686/.test(soils) && /Well drained · flooding: None/.test(soils));
   const hz = page.locator('[data-testid="property-report"] [data-finding="historic_zone"]');
-  check("AB: refused source → 'Unable to verify' + reason, basis 'Source unavailable'", (await hz.getAttribute("data-basis")) === "source_unavailable" && /refused the request \(HTTP 403\)/.test(await hz.innerText()) && !/Official map finding/.test(await hz.innerText()));
+  check("AB: refused source → 'Unable to verify' + reason, basis 'Source unavailable'", (await hz.getAttribute("data-basis")) === "source_unavailable" && /refused the request \(HTTP 403\)/.test((await hz.textContent()) ?? "") && !/Official map finding/.test(await hz.innerText()), `${await hz.getAttribute("data-basis")} | ${(await hz.innerText()).slice(0, 300)}`);
   check("AB: approximate area is a number with units", /^15,152 m² \(3\.86 cuerdas\)/.test((await text(page, '[data-testid="report-area"]')).trim()));
   await page.click(".spr-prd-tech-toggle");
   const nad = await text(page, '[data-testid="report-nad83"]');
