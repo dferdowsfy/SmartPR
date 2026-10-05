@@ -526,6 +526,15 @@ export function classifyEngineRequirements(
       triggerFacts.push("formationGate:unresolved");
     }
 
+    // REG-OFFLOT-PIN-001: every basis is a map fact read at a pin that is
+    // on a road, in water, or between lots. Keep the card (never drop a
+    // flood / coastal review) but do not assert it: it needs the pin moved
+    // onto the property before it can be confirmed.
+    if (row.site_unconfirmed && (applicability === "required" || applicability === "likely_required" || applicability === "verify_existing")) {
+      applicability = "needs_more_information";
+      triggerFacts.push("placement:off_lot");
+    }
+
     if (row.document_id === CORP_FORMATION && options.entityType === "limited_liability_company") {
       continue;
     }
@@ -653,6 +662,7 @@ export function classifyEngineRequirements(
     let confidence = 0.9;
     if (basisHeuristic[winIdx]) confidence = Math.min(confidence, 0.5);
     if (row.formation_unresolved) confidence = Math.min(confidence, 0.4);
+    if (row.site_unconfirmed) confidence = Math.min(confidence, 0.4);
     const classified: ClassifiedRequirement = {
       document_id: row.document_id,
       document_name: row.document_name,

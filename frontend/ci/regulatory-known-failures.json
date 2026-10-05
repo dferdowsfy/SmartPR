@@ -26,10 +26,6 @@
     {
       "id": "KG29",
       "name": "KG29 kg-scenario: rooftop_solar_battery / new_business_existing_building / flood_ae"
-    },
-    {
-      "id": "KG35",
-      "name": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin"
     }
   ],
   "kgScenariosRecordedAt": "2026-10-04",

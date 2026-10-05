@@ -1,0 +1,100 @@
+{
+  "id": "KG48",
+  "title": "Dental office in an existing leased medical suite — Ponce, zone X",
+  "matrix": {
+    "businessType": "dental_office",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "I am a dentist opening my own dental office in an existing leased suite in a medical building in Ponce. No construction. One hygienist and one receptionist.",
+  "profile": {
+    "business_type": "Dental Office",
+    "municipality": "Ponce",
+    "location_type": "Medical Office",
+    "number_of_employees": 2,
+    "industry": "Healthcare",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_PROFESSIONAL_LICENSES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased suite"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased suite"
+    }
+  },
+  "site": {
+    "municipality": "Ponce",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Business-type rule: the licensed professional (veterinarian / dentist) must hold the Junta Examinadora license."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643/0644 need a construction / renovation project type."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X (outside the SFHA): RULE_0706 needs location.flood_zone.sfha."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial use in an existing building in an urban district: no rural/SREP consulta trigger."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol stated."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-05 by the scenario loop: first dental-office scenario and first Ponce scenario."
+}
