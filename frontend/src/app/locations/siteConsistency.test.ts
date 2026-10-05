@@ -32,3 +32,19 @@ for (const c of SITE_CASES) {
     assert.deepEqual(issues, []);
   });
 }
+
+// ---- geo:drift review items (read-only) ----------------------------------------------------
+test("geo:drift: identical answers give no items; a changed zone goes to the land-use reviewer; a silent source retries", async () => {
+  const { officialFacts } = await import("./siteCases/officialFacts.ts");
+  const { diffOfficialFacts } = await import("./siteCases/drift.ts");
+  const c = SITE_CASES[0]!;
+  const rec = officialFacts(JSON.parse(readFileSync(fixture(c.id), "utf8")));
+  assert.deepEqual(diffOfficialFacts(c, rec, rec), []);
+  const changed = diffOfficialFacts(c, rec, { ...rec, captured_at: "2099-01-01T00:00:00.000Z", jp: { ...rec.jp, cali: "ZZ-TEST" } });
+  assert.equal(changed.length, 1);
+  assert.equal(changed[0]!.route, "land_use_reviewer");
+  assert.match(changed[0]!.what_changed, /ZZ-TEST/);
+  const silent = diffOfficialFacts(c, rec, { ...rec, fema: { ...rec.fema, answered: false }, femaParcel: { ...rec.femaParcel, answered: false } });
+  assert.ok(silent.length >= 1 && silent.every((i) => i.route === "auto_resolve"));
+  assert.equal(silent.filter((i) => i.evidence.source.startsWith("FEMA")).length, 1);
+});
