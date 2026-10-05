@@ -4228,6 +4228,7 @@ section.spr-plc .spr-plc-proposal { margin: 0; padding: 10px 12px; border: 1px s
 .spr-rv-review { border-color: #efd39a; background: #fdf7ea; } .spr-rv-review h4 { color: #8a5a00; } .spr-rv-review .spr-rv-dot { background: #d98c12; }
 .spr-rv-review li[data-severe] .spr-rv-dot { background: #c2410c; } .spr-rv-review li[data-severe] strong { color: #9a2e0e; }
 .spr-rv-clear { border-color: #cfe6d7; background: #f3faf5; } .spr-rv-clear h4 { color: #1d6b3a; } .spr-rv-clear .spr-rv-dot { background: #2e9d5b; }
+.spr-rv-mapped { border-color: #cdd9ee; background: #f4f7fc; } .spr-rv-mapped h4 { color: #24508f; } .spr-rv-mapped .spr-rv-dot { background: #3a6fc4; }
 .spr-rv-unable { border-color: #d9e1ea; background: #f5f7fa; } .spr-rv-unable h4 { color: #4a5d73; } .spr-rv-unable .spr-rv-dot { background: #fff; border: 2px solid #8796a8; width: 6px; height: 6px; }
 .spr-rv-steps ol { margin: 0; padding-left: 24px; list-style: decimal; }
 .spr-rv-steps li::marker { font-weight: 700; color: #1f6b66; }

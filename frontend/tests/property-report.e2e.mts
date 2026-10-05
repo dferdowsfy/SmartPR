@@ -246,6 +246,13 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   await page.click('[data-testid="report-copy"]');
   const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
   check("copy summary", clip.includes("173-000-001-39") && /Material constraints or exposure:\n• Land classification: Specially protected rustic land/.test(clip));
+  await page.click('[data-testid="report-copy-full"]');
+  const full = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
+  const screenKeys = await page.locator('[data-testid="key-findings"] li').evaluateAll((els) => els.map((e) => `${e.querySelector("strong")?.textContent ?? ""}${e.querySelector("span:not(.spr-rv-dot)")?.childNodes[0]?.textContent ?? ""}`).filter(Boolean));
+    const strip = (t: string) => t.replace(/[\s:•]/g, "");
+  const fullS = strip(full);
+  const missingOnCopy = screenKeys.filter((k) => !fullS.includes(strip(k).slice(0, 50)));
+  check("copy full report: every key finding on screen is in the full copy, plus the snapshot and every detailed finding", full.includes("173-000-001-39") && /DETAILED SITE FINDINGS/.test(full) && /Report \S+ · smartpr\.property-report\/v3/.test(full) && missingOnCopy.length === 0, missingOnCopy.slice(0, 3).join(" | "));
   await page.screenshot({ path: path.join(OUT, "2-drawer-desktop.png") });
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
@@ -405,7 +412,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   await page.click('[data-testid="open-property-report"]');
   await expandAll(page);
   const groups = await page.locator('[data-testid="key-findings"] [data-status]').evaluateAll((els) => els.map((e) => e.getAttribute("data-status")));
-  check("santurce: key findings grouped (review before clear; no 'unable' group when every source answered)", groups.join(",") === "review,clear", groups.join(","));
+  check("santurce: key findings grouped (review, then mapped findings, then clear; no 'unable' group when every source answered)", groups.join(",") === "review,mapped,clear", groups.join(","));
   check("santurce: description pre-fills the proposed activity (not asked twice)", /120-room hotel/.test(await page.locator('[data-testid="activity-input"]').inputValue()));
   const compat = page.locator('[data-testid="land-use-compatibility"]');
   check("santurce hotel: professional review (APE-ZC overlay), base zoning conditional", (await compat.getAttribute("data-outcome")) === "professional_review" && /Conditional/.test(await compat.innerText()));

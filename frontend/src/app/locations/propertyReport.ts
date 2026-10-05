@@ -617,7 +617,7 @@ export function buildPropertyReport(input: {
   });
   // PUT, municipal plan, permitted uses — from authoritative layers / the land-use engine.
   const ex = parcel?.extras ?? {};
-  const presenceNote = bi(`Checked across the parcel boundary pulled in by about 3 m (the two maps' shared edges are not counted). This layer returns no shapes, so its area on the parcel is not measured.`, `Verificado en el límite de la parcela reducido unos 3 m (no se cuentan los bordes compartidos). Esta capa no devuelve formas, así que su área en la parcela no se mide.`);
+  const presenceNote = bi(`Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.`, `Verificado dentro del límite de la parcela, excluyendo una franja de unos 3 m a lo largo del borde (para no contar elementos que solo tocan el límite o el borde de un vecino). Un elemento que esté solo dentro de esa franja no se detectaría. Esta capa no devuelve formas, así que su área en la parcela no se mide.`);
   const extraFinding = (e: ExtraFinding | undefined, id: string, group: ReportGroup, title: Bi, fallback: Bi, valueOf?: (e: ExtraFinding) => Bi | null, tone: ReportTone = "info", key = false, extra: Partial<ReportFinding> = {}) => {
     if (!e) {
       add({ id, group, title, value: null, detail: input.parcelLoading ? null : fallback, state: input.parcelLoading ? "loading" : parcel ? "not_performed" : input.parcel ? "stale" : "not_performed", tone: "unknown", scope: "parcel", sources: [], looked_up_at: null, key });
@@ -753,7 +753,7 @@ export function buildPropertyReport(input: {
     add({
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
-      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)") : null,
+      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)") : bi("Pending proposed activity", "Pendiente de la actividad propuesta"),
       detail: roadway
         ? bi("Not evaluated: the selected point is mapped as a roadway (VIAL / Sistema vial), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como vía (VIAL / Sistema vial), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
         : bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
@@ -1357,7 +1357,8 @@ export function basisOf(f: ReportFinding): FindingBasis {
 
 /** Reviewer assessment — stored on v2 reports, derived for older ones. */
 export function assessmentOf(r: PropertyReport): ReviewerAssessment {
-  return r.assessment ?? reviewerAssessment(r);
+  // Assessments saved before the "mapped findings" group listed classifications as "no mapped intersection": re-derive.
+  return r.assessment?.mapped ? r.assessment : reviewerAssessment(r);
 }
 
 export const SCOPE_TEXT = {
@@ -1366,6 +1367,12 @@ export const SCOPE_TEXT = {
   municipality: bi("Municipality-wide record", "Registro de todo el municipio"),
   not_evaluated: bi("Not evaluated", "No evaluado"),
 } as const;
+
+/** One line identifying the report snapshot; identical in the screen footer, both copies and the PDF. */
+export function snapshotLine(r: PropertyReport, lang: "en" | "es"): string {
+  const L = (en: string, es: string) => (lang === "es" ? es : en);
+  return `${L("Report", "Informe")} ${r.fingerprint} · ${r.schema} · ${L("location revision", "revisión de ubicación")} ${r.location_revision} · ${L("generated", "generado")} ${r.generated_at}`;
+}
 
 /** Decision summary lines (copy text, and anything else that prints the report as text). */
 export function decisionText(r: PropertyReport, lang: "en" | "es"): string[] {
@@ -1397,7 +1404,7 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
   const a = assessmentOf(r);
   const nad = r.property.technical.nad83_state_plane;
   const meta = (x: (typeof a.review)[number]) => { const m = [x.scope ? t(SCOPE_TEXT[x.scope]).toLowerCase() : null, x.dataset ? `${x.dataset.name}${x.dataset.date ? `, ${x.dataset.date}` : ""}` : null].filter(Boolean); return m.length ? ` (${m.join("; ")})` : ""; };
-  const group = (title: string, xs: typeof a.review) => (xs.length ? [title, ...xs.map((x) => `• ${t(x.label)}: ${t(x.value)}${meta(x)}`)] : []);
+  const group = (title: string, xs: typeof a.review = []) => (xs.length ? [title, ...xs.map((x) => `• ${t(x.label)}: ${t(x.value)}${meta(x)}`)] : []);
   const loc = r.property.location;
   const lines = [
     `${L("Property & Site Report", "Informe de propiedad y lugar")} — ${r.property.title}`,
@@ -1411,6 +1418,7 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     "",
     L("KEY REGULATORY FINDINGS", "HALLAZGOS REGULATORIOS CLAVE"),
     ...group(L("Material constraints or exposure:", "Restricciones o exposición importantes:"), a.review),
+    ...group(L("Mapped findings (no constraint indicated by the layer alone):", "Hallazgos mapeados (la capa por sí sola no indica restricción):"), a.mapped),
     ...group(L("No mapped intersection identified (checked; not a clearance):", "No se identificó intersección mapeada (verificado; no es una autorización):"), a.clear),
     ...group(L("Unresolved or insufficient evidence:", "Sin resolver o evidencia insuficiente:"), a.unable),
     "",
@@ -1441,7 +1449,7 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     ...(r.regulation ? [`${L("Regulation for use rules", "Reglamento para reglas de uso")}: ${r.regulation.name}${r.regulation.publication_date ? ` (${L("publication date", "fecha de publicación")} ${r.regulation.publication_date})` : ""} — ${L("applicability to this site", "aplicabilidad a este lugar")}: ${r.regulation.applicability === "verified" ? L("verified", "verificada") : L("not verified", "no verificada")}. ${t(r.regulation.note)}`] : []),
     ...(r.schema !== REPORT_SCHEMA ? [L(`Saved with an earlier report format (${r.schema}); shown as saved, not re-evaluated.`, `Guardado con un formato anterior (${r.schema}); se muestra tal como se guardó, sin reevaluar.`)] : []),
     `${L("Sources", "Fuentes")}: ${r.sources.map((s) => `${s.name}${s.dataset_date ? ` (${L("dataset date", "fecha de datos")} ${s.dataset_date})` : ""}`).join("; ")}`,
-    `${L("Report", "Informe")} ${r.fingerprint} · ${r.schema} · ${L("location revision", "revisión de ubicación")} ${r.location_revision} · ${L("generated", "generado")} ${r.generated_at}`,
+    snapshotLine(r, lang),
     t(r.disclaimer),
   ];
   return lines.join("\n");

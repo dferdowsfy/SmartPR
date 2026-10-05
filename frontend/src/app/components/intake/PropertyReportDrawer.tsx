@@ -13,6 +13,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { BookmarkPlus, Check, ChevronDown, Copy, Download, FileJson, Loader2, X } from "lucide-react";
 import type { Lang } from "../../forms/engine/types";
 import { PassportMap } from "../map/PassportMap";
+import { reportDocument, reportDocumentText } from "../../locations/reportDocument";
 import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, reportSummaryText, RETRIEVAL_TEXT, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
 import { FindingValue } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
@@ -122,6 +123,7 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
 
 const STATUS_HEAD = {
   review: { en: "Material constraints or exposure", es: "Restricciones o exposición importantes", note: { en: "Mapped constraint, exposure or issue that needs review.", es: "Restricción, exposición o asunto mapeado que requiere revisión." } },
+  mapped: { en: "Mapped findings", es: "Hallazgos mapeados", note: { en: "A classification or zone is mapped; that layer alone indicates no constraint.", es: "Hay una clasificación o zona mapeada; esa capa por sí sola no indica restricción." } },
   clear: { en: "No mapped intersection identified", es: "No se identificó intersección mapeada", note: { en: "Checked; nothing mapped in the stated dataset at the stated scope. Not a clearance.", es: "Verificado; nada mapeado en el conjunto de datos y alcance indicados. No es una autorización." } },
   unable: { en: "Unresolved or insufficient evidence", es: "Sin resolver o evidencia insuficiente", note: { en: "Source unavailable, did not respond, or evidence is insufficient — unknown, not clear.", es: "Fuente no disponible, no respondió o evidencia insuficiente — desconocido, no despejado." } },
 } as const;
@@ -131,7 +133,7 @@ function KeyFindings({ report, lang }: { report: PropertyReport; lang: Lang }) {
   return (
     <section className="spr-prd-section spr-rv-findings" aria-labelledby="spr-rv-findings" data-testid="key-findings">
       <h3 id="spr-rv-findings">{L("Key regulatory findings", "Hallazgos regulatorios clave", lang)}</h3>
-      {(["review", "clear", "unable"] as const).map((k) => a[k].length > 0 && (
+      {(["review", "mapped", "clear", "unable"] as const).map((k) => (a[k]?.length ?? 0) > 0 && (
         <div key={k} className={`spr-rv-group spr-rv-${k}`} data-status={k}>
           <h4>{STATUS_HEAD[k][lang]} <small>{STATUS_HEAD[k].note[lang]}</small></h4>
           <ul>{a[k].map((x) => (
@@ -224,7 +226,7 @@ export function PropertyReportDrawer({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"summary" | "full" | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "pdf">(null);
   const [showTech, setShowTech] = useState(false);
@@ -264,8 +266,8 @@ export function PropertyReportDrawer({
   const assessment = assessmentOf(report);
   const nad = p.technical.nad83_state_plane;
 
-  const copy = async () => {
-    const text = reportSummaryText(report, lang, reviewExport);
+  const copy = async (kind: "summary" | "full" = "summary") => {
+    const text = kind === "full" ? reportDocumentText(reportDocument(report, lang, reviewExport)) : reportSummaryText(report, lang, reviewExport);
     setCopyFallback(null);
     // 1) Async Clipboard API (refused in some mobile browsers / in-app views).
     let ok = false;
@@ -278,8 +280,8 @@ export function PropertyReportDrawer({
     // 2) Legacy copy from a selected textarea (works on iOS Safari/Chrome).
     if (!ok) ok = legacyCopy(text, panelRef.current);
     if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 2500);
     } else {
       // 3) Show the text selected so the user can copy it by hand.
       setCopyFallback(text);
@@ -319,8 +321,11 @@ export function PropertyReportDrawer({
           <button type="button" className="spr-loc-btn" onClick={async () => { setBusy("pdf"); try { await downloadPropertyReportPdf(report, lang, reviewExport); } finally { setBusy(null); } }} data-testid="report-pdf">
             {busy === "pdf" ? <Loader2 className="spr-loc-spin" aria-hidden="true" /> : <Download aria-hidden="true" />} {L("Download PDF", "Descargar PDF", lang)}
           </button>
-          <button type="button" className="spr-loc-btn" onClick={copy} data-testid="report-copy">
-            {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied ? L("Copied", "Copiado", lang) : L("Copy summary", "Copiar resumen", lang)}
+          <button type="button" className="spr-loc-btn" onClick={() => copy("summary")} data-testid="report-copy">
+            {copied === "summary" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied === "summary" ? L("Copied", "Copiado", lang) : L("Copy summary", "Copiar resumen", lang)}
+          </button>
+          <button type="button" className="spr-loc-btn" onClick={() => copy("full")} data-testid="report-copy-full">
+            {copied === "full" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied === "full" ? L("Copied", "Copiado", lang) : L("Copy full report", "Copiar informe completo", lang)}
           </button>
           <button type="button" className="spr-loc-btn" onClick={() => downloadJson(report, reviewExport)} data-testid="report-json">
             <FileJson aria-hidden="true" /> {L("Export data (JSON)", "Exportar datos (JSON)", lang)}

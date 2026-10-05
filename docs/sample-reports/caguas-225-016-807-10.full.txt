@@ -1,0 +1,190 @@
+Property & Site Report — Caguas · Calle Génova
+Calle Génova, Caguas · Puerto Rico 00725
+Report 1bnb4h7 · smartpr.property-report/v3 · location revision 2 · generated 2026-10-05T12:00:00.000Z
+Municipality: Caguas
+Barrio: Caguas
+Catastro: 225-016-807-10
+Approx. area: 1,354 m² (0.34 cuerdas)
+Coordinates (WGS84): 18.242180, -66.025590
+Report: 1bnb4h7 · v3 · rev. 2
+Area: From the mapped CRIM boundary (planar, EPSG:32161) — not a survey.
+
+Based on available official map sources, site review found 2 items requiring attention: small parts of the parcel are mapped VIAL and land-use compatibility cannot be determined until the proposed activity is provided.
+
+KEY REGULATORY FINDINGS
+MATERIAL CONSTRAINTS OR EXPOSURE:
+• Zoning — minor or road intersections: VIAL 0.1% (road district) — may be a right-of-way, a real strip or a map-edge difference
+  Checked across verified parcel · Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)
+• Land-use compatibility: Proposed activity required before compatibility can be evaluated (zoning: C-L 99.1%)
+  Not evaluated · Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023) (2023-06-16)
+MAPPED FINDINGS (NO CONSTRAINT INDICATED BY THE LAYER ALONE):
+• FEMA flood zone: FEMA Zone X — Area of Minimal Flood Hazard (FEMA NFHL zone subtype)
+  Checked across verified parcel · FEMA National Flood Hazard Layer — Flood Hazard Zones (2009-11-18)
+• Land classification: SU — Suelo Urbano (no protection classification at the pin)
+  At selected point only · Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)
+• PUT classification: SU 99.8% · VIAL 0.2% (small)
+  Checked across verified parcel · Junta de Planificación — Plan de Uso de Terrenos (PUT), clasificación de suelos (30-nov-2015)
+• Landslide susceptibility: Low
+  At selected point only · USGS — Puerto Rico Landslide Susceptibility
+NO MAPPED INTERSECTION IDENTIFIED (CHECKED; NOT A CLEARANCE):
+• Regulatory floodway: No mapped intersection identified
+  Checked across verified parcel · FEMA National Flood Hazard Layer — Flood Hazard Zones (2009-11-18)
+• JP advisory flood map: No mapped intersection identified
+  At selected point only · FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones (2019-07-08)
+• Protected natural area: No mapped intersection identified
+  Checked across verified parcel · Junta de Planificación — Áreas Protegidas
+• Natural reserve: No mapped intersection identified
+  Checked across verified parcel · Junta de Planificación — Reservas Naturales
+• Wetlands & waters: No mapped intersection identified
+  Checked across verified parcel · Junta de Planificación (MIPR) — Humedales
+• Coastal zone: Outside mapped boundary
+  At selected point only · NOAA Office for Coastal Management — Coastal Zone Management Act boundary
+• Historic zone: No mapped intersection identified
+  Checked across verified parcel · Junta de Planificación (MIPR) — Zonas Históricas
+• Historic sites: No mapped intersection identified
+  Checked across verified parcel · Junta de Planificación (MIPR) — Sitios Históricos JP
+• Archaeological sensitivity: No mapped intersection identified
+  Checked across verified parcel · Junta de Planificación (MIPR) — Áreas de sensibilidad arqueológica
+
+RECOMMENDED NEXT STEPS
+1. Land-use compatibility — Describe the proposed activity so SmartPR can evaluate compatibility with the C-L zoning district.
+   Why: Permitted uses depend on the zoning district and on what you plan to do.
+   Sources: Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023)
+2. Minor and road zoning intersections — Check on a site plan over a boundary survey whether the building, yards, access or other site work fall in these strips before relying on the main district.
+   Why: Parcel-wide percentages cannot establish where the proposed footprint sits.
+   Sources: Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)
+3. Small mapped intersections — If they matter for your plans, confirm with a licensed surveyor: Calificación: VIAL (0.1%); PUT classification: VIAL (0.2%).
+   Why: The maps alone cannot tell a real strip from an edge-alignment difference.
+
+STILL NEEDED
+• Proposed activity: Describe what you plan to build, operate, renovate, or use the property for so SmartPR can evaluate land-use compatibility and permitted-use rules.
+• Exact property location: The pin comes from an address search. Move it onto the exact property so the findings are for the right parcel.
+
+DETAILED SITE FINDINGS
+Land & zoning:
+• Calificación (zoning): Zoned commercial: C-L (Comercial Liviano). Small intersection with VIAL also mapped.
+  C-L 99.1% · VIAL 0.1% (small) · Official map finding · Checked across verified parcel · at the pin: C-L — Comercial Liviano
+  C-L (Comercial Liviano): 1,342 m² — 99.1% of the parcel · contains the pin. VIAL (Sistema vial): 1.4 m² — 0.1% of the parcel. Small intersection.
+  Comercial Liviano: 1,342 m² (99.1%); Sistema vial: 1.4 m² (0.1%) — small intersection
+  No polygon in this layer covers 0.8% of the parcel (11 m²). That part is unmapped, not "none".
+  Small intersection. The maps alone cannot tell whether this is a real strip of the area or a difference in how the two maps' edges were drawn; confirm with a survey if it matters.
+  [Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos) · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0]
+• Land classification (calificación map): Urban land.
+  SU — Suelo Urbano · Official map finding · At selected point only
+  At the pin, from the JP calificación map. The island-wide PUT classification is a separate plan, listed separately.
+  [Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos) · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0]
+• PUT classification (island-wide Plan de Uso de Terrenos): SU 99.8% · VIAL 0.2% (small)
+  Official map finding · Checked across verified parcel · at the pin: SU
+  SU (Suelo Urbano): 1,351 m² — 99.8% of the parcel · contains the pin. VIAL (Vial): 2.7 m² — 0.2% of the parcel. Small intersection. Resolution PUT-2014, effective 30-nov-2015.
+  Suelo Urbano: 1,351 m² (99.8%); Vial: 2.7 m² (0.2%) — small intersection
+  The PUT is the island-wide land-use plan. It is separate from the municipal Plan Territorial and from the calificación map.
+  Small intersection. The maps alone cannot tell whether this is a real strip of the area or a difference in how the two maps' edges were drawn; confirm with a survey if it matters.
+  [Junta de Planificación — Plan de Uso de Terrenos (PUT), clasificación de suelos (30-nov-2015) · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/MIPR/PUT_v10/MapServer/0]
+• Municipal Plan Territorial (PT): Approved 28-Jul-1998 · first revision approved 8-Dec-2015 · second revision was due 8-Dec-2023; no approval recorded
+  Official map finding · Municipality-wide record
+  From the JP record for Caguas: pt_aprobado ("Fecha Aprobada PT") = 28-Jul-1998; pt_revision_1 ("Toca Primera Revision") = 28-Jul-2006; pt_revision_1_aprobada ("Fecha Aprobacion Primera Revision") = 8-Dic-2015; pt_revision_2 ("Toca Segunda Revision PT") = 8-Dic-2023. Status recorded: POT/RIPOT con más de 8 años de elaboración / Dentro Término 8 años. A "Toca … Revision" field is a revision deadline, not a completed revision.
+  Municipal-wide record (not a parcel finding). The PT is separate from the island-wide PUT.
+  [Junta de Planificación — Planes Territoriales municipales (estado) · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1]
+• Permitted-use analysis: Pending proposed activity
+  Check not performed · Not evaluated
+  Unable to evaluate until the proposed activity is provided.
+  Rules: Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023), version 2023 (dated 2023-06-16), as recorded in SmartPR's knowledge graph. SmartPR has not confirmed whether later amendments apply. Caguas has an approved Plan Territorial; its own provisions may also apply.
+  [Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023) (2023-06-16) · Check not performed https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf]
+Flood & water:
+• FEMA flood zone (effective FIRM): FEMA Zone X — Area of Minimal Flood Hazard (FEMA NFHL zone subtype). Outside FEMA's mapped 1%-annual-chance flood areas; this does not mean no flood risk.
+  Zone X 100% · Official map finding · Checked across verified parcel · at the pin: Zone X
+  Zone X: 1,354 m² — 100% of the parcel · contains the pin. Minimal or moderate mapped flood hazard. This does not mean zero flood risk.
+  [FEMA National Flood Hazard Layer — Flood Hazard Zones (2009-11-18) · Source answered · looked up 2026-10-05 https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28]
+• Regulatory floodway: None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  [FEMA National Flood Hazard Layer — Flood Hazard Zones (2009-11-18) · Source answered · looked up 2026-10-05 https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28]
+• JP advisory flood map (not the effective FEMA map): None mapped at the pin
+  Official map finding · At selected point only
+  Advisory (ABFE) map published separately from FEMA's effective FIRM; checked at the pin only.
+  [FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones (2019-07-08) · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9]
+Environment & terrain:
+• Landslide susceptibility: Low landslide susceptibility at the pin (USGS).
+  Low · Official map finding · At selected point only
+  [USGS — Puerto Rico Landslide Susceptibility · Source answered · looked up 2026-10-05 https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer]
+• Coastal zone: Outside the mapped coastal-zone boundary.
+  Outside the mapped boundary · Official map finding · At selected point only
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  [NOAA Office for Coastal Management — Coastal Zone Management Act boundary · Source answered · looked up 2026-10-05 https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0]
+• Historic zone: None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.
+  [Junta de Planificación (MIPR) — Zonas Históricas · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/14]
+• Historic sites (JP): None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.
+  [Junta de Planificación (MIPR) — Sitios Históricos JP · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/12]
+• Archaeological sensitivity: None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.
+  [Junta de Planificación (MIPR) — Áreas de sensibilidad arqueológica · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/15]
+• Protected natural area: None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.
+  [Junta de Planificación — Áreas Protegidas · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/4]
+• Natural reserve (JP): None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.
+  [Junta de Planificación — Reservas Naturales · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/3]
+• Wetlands & waters (mapped): None mapped
+  Official map finding · Checked across verified parcel
+  Nothing is mapped here in this layer. That is not the same as no constraint on the ground.
+  Checked inside the parcel boundary, excluding a strip about 3 m wide along its edge (so features that only touch the boundary or a neighbour's edge are not counted). A feature lying only within that edge strip would not be detected. This layer returns no shapes, so its area on the parcel is not measured.
+  [Junta de Planificación (MIPR) — Humedales · Source answered · looked up 2026-10-05 https://sigejp.pr.gov/server/rest/services/MIPR/ValorEcologico_v10/MapServer/26]
+• Soils (USDA NRCS soil survey): Uv 100%
+  Official map finding · Checked across verified parcel · at the pin: Urban land-Vega Alta complex, 2 to 12 percent slopes (Uv)
+  Uv — Uv — Urban land-Vega Alta complex, 2 to 12 percent slopes: 1,354 m² (100%) · contains the pin · flooding: None · hydric components: 0%.
+  [USDA NRCS — Soil Survey (SSURGO) via Soil Data Access (9/10/2026 6:17:52 PM) · Source answered · looked up 2026-10-05 https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest]
+
+SOURCES
+• Junta de Planificación — Calificación vigente (Mapas de Calificación de Suelos)
+  [https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0]
+• Junta de Planificación — Plan de Uso de Terrenos (PUT), clasificación de suelos: data 30-nov-2015 · Clasificación de Suelos Plan de Uso de Terrenos
+  [https://sigejp.pr.gov/server/rest/services/MIPR/PUT_v10/MapServer/0]
+• Junta de Planificación — Planes Territoriales municipales (estado): Municipios Información de PT
+  [https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1]
+• Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023): data 2023-06-16 · 2023
+  [https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf]
+• FEMA National Flood Hazard Layer — Flood Hazard Zones: data 2009-11-18 · FIRM panel 72000C1210J
+  [https://hazards.fema.gov/arcgis/rest/services/public/NFHL/MapServer/28]
+• FEMA / Junta de Planificación — Puerto Rico Advisory Flood Maps (ABFE), 1% annual-chance flood zones: data 2019-07-08
+  [https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Advisory_Data_07082019/MapServer/9]
+• USGS — Puerto Rico Landslide Susceptibility: z14
+  [https://tiles.arcgis.com/tiles/v01gqwM5QqNysAAi/arcgis/rest/services/PR_Landslide_Susceptibility/MapServer]
+• NOAA Office for Coastal Management — Coastal Zone Management Act boundary
+  [https://coast.noaa.gov/arcgis/rest/services/Hosted/CoastalZoneManagementAct/FeatureServer/0]
+• Junta de Planificación (MIPR) — Zonas Históricas: Zona Histórica
+  [https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/14]
+• Junta de Planificación (MIPR) — Sitios Históricos JP: Sitios Históricos JP
+  [https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/12]
+• Junta de Planificación (MIPR) — Áreas de sensibilidad arqueológica: Arqueología Sensitivo
+  [https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/15]
+• Junta de Planificación — Áreas Protegidas: Área Protegidas
+  [https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/4]
+• Junta de Planificación — Reservas Naturales: Reservas Naturales JP
+  [https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/3]
+• Junta de Planificación (MIPR) — Humedales: Humedales
+  [https://sigejp.pr.gov/server/rest/services/MIPR/ValorEcologico_v10/MapServer/26]
+• USDA NRCS — Soil Survey (SSURGO) via Soil Data Access: data 9/10/2026 6:17:52 PM · survey area PR686 — San Juan Area, Puerto Rico (survey version date shown as data date)
+  [https://sdmdataaccess.sc.egov.usda.gov/Tabular/post.rest]
+• CRIM — Parcelas (catastro digital), febrero 2025: data 2025-02
+  [https://sigejp.pr.gov/server/rest/services/crim/crim_feb_2025/MapServer/0]
+
+TECHNICAL COORDINATES & VERSIONS
+NAD83 / Puerto Rico & Virgin Is. (EPSG:32161): X 243,122.42 m, Y 245,299.58 m (units: metres; Lambert Conformal Conic (2SP), GRS80 ellipsoid). Projected from the WGS84 pin with the NAD83 / Puerto Rico & Virgin Is. projection formulas. Not a survey coordinate. No WGS84→NAD83 datum transformation was applied; the resulting positional difference has not been quantified.
+WGS84 (EPSG:4326): 18.2421800, -66.0255900
+Regulation for use rules: Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023) (publication date 2023-06-16) — applicability to this site: not verified. The publication date is not a confirmation that this regulation governs the site. SmartPR has not verified the governing regulation (e.g. a municipal Plan Territorial regulation or later amendments), so permitted-use analysis stays pending.
+Area method: Planar areas in NAD83 / Puerto Rico & Virgin Is. State Plane (EPSG:32161, metres); source polygons (requested generalized to about 0.5 m) clipped to the CRIM parcel and dissolved by category.
+Rules: Reglamento Conjunto para la Evaluación y Expedición de Permisos (2023) 2023 (SmartPR knowledge graph; applicability to this site not verified)
+
+Reference information from official map sources. This is not a survey, permit decision, or approval.

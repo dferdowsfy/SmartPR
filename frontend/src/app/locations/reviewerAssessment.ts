@@ -13,7 +13,7 @@
 import type { Bi, PropertyReport, ReportFinding, ReportScope, ReportSource } from "./propertyReport.ts";
 import { COMPATIBILITY_TEXT, REQUIREMENT_TEXT } from "./landUse.ts";
 
-export type AssessmentStatus = "review" | "clear" | "unable";
+export type AssessmentStatus = "review" | "mapped" | "clear" | "unable";
 export interface AssessmentItem {
   id: string;
   label: Bi;
@@ -38,6 +38,8 @@ export interface AssessmentAction {
 export interface ReviewerAssessment {
   conclusion: Bi;
   review: AssessmentItem[];
+  /** Mapped results that are findings (a classification, FEMA Zone X, a susceptibility class) with no constraint indicated by that layer alone. Never "no mapped intersection". */
+  mapped: AssessmentItem[];
   clear: AssessmentItem[];
   unable: AssessmentItem[];
   /** Ranked, most important first. */
@@ -61,7 +63,7 @@ const pct = (s: number) => (s >= 0.9995 ? ">99.9%" : s < 0.001 ? "<0.1%" : `${(M
 export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   const F = (id: string) => r.findings.find((f) => f.id === id);
   const step = (id: string) => r.next_steps.steps.find((s) => s.id === id);
-  const review: AssessmentItem[] = [], clear: AssessmentItem[] = [], unable: AssessmentItem[] = [];
+  const review: AssessmentItem[] = [], mapped: AssessmentItem[] = [], clear: AssessmentItem[] = [], unable: AssessmentItem[] = [];
   const actions: Array<AssessmentAction & { rank: number }> = [];
   const act = (rank: number, a: AssessmentAction) => actions.push({ ...a, rank });
   const lu = r.land_use?.activity.use ? r.land_use : null;
@@ -126,7 +128,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   }
   if (fz?.state === "sourced" && fz.tone !== "hazard" && !shadedParts.length) {
     const first = (s: string) => s.split(/\. /)[0]!.replace(/\.$/, "");
-    clear.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: fz.plain ? bi(first(fz.plain.en), first(fz.plain.es)) : fz.value ?? bi("No high-risk zone mapped", "Sin zona de alto riesgo mapeada"), finding_ids: ["flood_zone"] });
+    mapped.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: fz.plain ? bi(first(fz.plain.en), first(fz.plain.es)) : fz.value ?? bi("No high-risk zone mapped", "Sin zona de alto riesgo mapeada"), finding_ids: ["flood_zone"] });
   } else if (fz && fz.state !== "sourced") {
     unable.push({ id: "flood_zone", label: bi("FEMA flood zone", "Zona inundable FEMA"), value: unableValue(fz), finding_ids: ["flood_zone"] });
   }
@@ -164,7 +166,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       value: bi(`${minor.map((p) => `${p.key} ${p.share_text}${/^vial$/i.test(p.key) ? " (road district)" : " (small intersection)"}`).join(" · ")} — may be a right-of-way, a real strip or a map-edge difference`, `${minor.map((p) => `${p.key} ${p.share_text}${/^vial$/i.test(p.key) ? " (distrito vial)" : " (intersección pequeña)"}`).join(" · ")} — puede ser una servidumbre, una franja real o una diferencia de bordes`),
       phrase: bi(`small parts of the parcel are mapped ${minor.map((p) => p.key).join(" and ")}`, `pequeñas partes de la parcela están mapeadas ${minor.map((p) => p.key).join(" y ")}`), finding_ids: ["zoning"], scope: zf!.scope });
     act(58, { id: "zoning_minor", issue: bi("Minor and road zoning intersections", "Intersecciones menores y viales"),
-      action: bi("Check on a site plan over a boundary survey whether the building, pool, yards or access fall in these strips before relying on the main district.", "Verifique en un plano de sitio sobre una mensura si el edificio, la piscina, los patios o el acceso caen en estas franjas antes de depender del distrito principal."),
+      action: bi("Check on a site plan over a boundary survey whether the building, yards, access or other site work fall in these strips before relying on the main district.", "Verifique en un plano de sitio sobre una mensura si el edificio, los patios, el acceso u otras obras caen en estas franjas antes de depender del distrito principal."),
       why: bi("Parcel-wide percentages cannot establish where the proposed footprint sits.", "Los porcentajes de la parcela no pueden establecer dónde queda la huella propuesta."), sources: zf!.sources });
   }
   const ov = F("zoning_overlay");
@@ -184,6 +186,14 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       value: bi("Not evaluated — the selected point is mapped as a roadway (VIAL), not a developable district; confirm the property first", "No evaluado — el punto seleccionado está mapeado como vía (VIAL), no como distrito desarrollable; confirme primero la propiedad"),
       phrase: bi("land-use compatibility was not evaluated on the roadway point", "la compatibilidad de uso no se evaluó en el punto de vía"),
       finding_ids: ["permitted_uses"] });
+  } else if (!lu && zf && !answered(zf)) {
+    // Zoning itself is unresolved: compatibility is not evaluated, whatever the activity.
+    review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
+      value: bi("Not evaluated — zoning is unresolved and no proposed activity was given", "No evaluado — la calificación no está resuelta y no se indicó la actividad propuesta"),
+      phrase: bi("land-use compatibility is not evaluated because zoning is unresolved and no activity was described", "la compatibilidad de uso no se evalúa porque la calificación no está resuelta y no se describió la actividad"), finding_ids: ["permitted_uses", "zoning"] });
+    act(40, { id: "compatibility", issue: bi("Land-use compatibility", "Compatibilidad de uso"),
+      action: bi("First obtain the zoning (calificación) record — the source did not answer — and describe the proposed activity. Compatibility is evaluated only when both are known and the governing rules are identified.", "Obtenga primero el registro de calificación — la fuente no respondió — y describa la actividad propuesta. La compatibilidad se evalúa solo cuando ambos se conocen y se identifican las reglas aplicables."),
+      why: bi("Permitted uses depend on the zoning district and on what you plan to do.", "Los usos permitidos dependen del distrito y de lo que planifica hacer."), sources: F("permitted_uses")?.sources ?? [] });
   } else if (!lu) {
     review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
       value: bi(`Proposed activity required before compatibility can be evaluated${districts ? ` (zoning: ${districts})` : ""}`, `Se requiere la actividad propuesta para evaluar la compatibilidad${districts ? ` (calificación: ${districts})` : ""}`),
@@ -239,13 +249,13 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
     const li = review.find((x) => x.id === "location");
     if (li) li.value = bi(`${li.value.en}; land classification at the pin is also VIAL`, `${li.value.es}; la clasificación del suelo en el pin también es VIAL`);
   } else if (lc?.state === "sourced") {
-    clear.push({ id: "land_class", label: bi("Land classification", "Clasificación del suelo"), value: bi(`${lc.value?.en ?? ""} (no protection classification at the pin)`, `${lc.value?.es ?? ""} (sin clasificación de protección en el pin)`), finding_ids: ["land_class"] });
+    mapped.push({ id: "land_class", label: bi("Land classification", "Clasificación del suelo"), value: bi(`${lc.value?.en ?? ""} (no protection classification at the pin)`, `${lc.value?.es ?? ""} (sin clasificación de protección en el pin)`), finding_ids: ["land_class"] });
   } else if (lc) unable.push({ id: "land_class", label: bi("Land classification", "Clasificación del suelo"), value: unableValue(lc), finding_ids: ["land_class"] });
   const put = F("put");
   if (put?.state === "sourced" && roadway && /\bvial\b/i.test(put.value?.en ?? "")) {
     const li = review.find((x) => x.id === "location");
     if (li) li.value = bi(`${li.value.en}; PUT classification at the pin is VIAL`, `${li.value.es}; la clasificación del PUT en el pin es VIAL`);
-  } else if (put?.state === "sourced") clear.push({ id: "put", label: bi("PUT classification", "Clasificación del PUT"), value: put.value!, finding_ids: ["put"] });
+  } else if (put?.state === "sourced") mapped.push({ id: "put", label: bi("PUT classification", "Clasificación del PUT"), value: put.value!, finding_ids: ["put"] });
   else if (put && put.state !== "none_mapped") unable.push({ id: "put", label: bi("PUT classification", "Clasificación del PUT"), value: unableValue(put), finding_ids: ["put"] });
 
   // ---- Environment & terrain ----------------------------------------------------------
@@ -277,7 +287,8 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   if (tf?.state === "sourced" && (tf.tone === "hazard" || tf.tone === "attention")) {
     review.push({ id: "terrain", label: bi("Landslide susceptibility", "Susceptibilidad a deslizamientos"), value: bi(`${tf.value?.en ?? ""} at the pin`, `${tf.value?.es ?? ""} en el pin`), phrase: bi(`${(tf.value?.en ?? "").toLowerCase()} landslide susceptibility is mapped at the pin`, `hay susceptibilidad ${(tf.value?.es ?? "").toLowerCase()} a deslizamientos en el pin`), finding_ids: ["terrain"] });
     act(60, { id: "terrain", issue: bi("Landslide susceptibility", "Susceptibilidad a deslizamientos"), action: bi("Consider slope stability in site design; confirm whether a geotechnical evaluation is expected for the proposed work.", "Considere la estabilidad de pendientes en el diseño; confirme si se espera una evaluación geotécnica para la obra propuesta."), why: tf.plain ?? null, sources: tf.sources });
-  } else if (tf?.state === "sourced" || tf?.state === "none_mapped") clear.push({ id: "terrain", label: bi("Landslide susceptibility", "Susceptibilidad a deslizamientos"), value: tf.state === "sourced" ? tf.value! : bi("None mapped", "Nada mapeado"), finding_ids: ["terrain"] });
+  } else if (tf?.state === "sourced") mapped.push({ id: "terrain", label: bi("Landslide susceptibility", "Susceptibilidad a deslizamientos"), value: tf.value!, finding_ids: ["terrain"] });
+  else if (tf?.state === "none_mapped") clear.push({ id: "terrain", label: bi("Landslide susceptibility", "Susceptibilidad a deslizamientos"), value: bi("None mapped", "Nada mapeado"), finding_ids: ["terrain"] });
   else if (tf) unable.push({ id: "terrain", label: bi("Landslide susceptibility", "Susceptibilidad a deslizamientos"), value: unableValue(tf), finding_ids: ["terrain"] });
   const so = F("soils");
   if (so && !answered(so)) unable.push({ id: "soils", label: bi("Soils", "Suelos"), value: unableValue(so), finding_ids: ["soils"] });
@@ -313,7 +324,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   const tail = unable.length ? bi(` ${unable.length === 1 ? "One check" : `${cap(String(unable.length))} checks`} could not be verified because the source did not respond or was not checked.`, ` ${unable.length === 1 ? "Una verificación" : `${unable.length} verificaciones`} no se ${unable.length === 1 ? "pudo" : "pudieron"} confirmar porque la fuente no respondió o no se consultó.`) : bi("");
   const pre = noParcel ? bi("Preliminary, point-only review. ", "Revisión preliminar, solo del punto. ") : bi("");
   // Items stay qualified by the scope and dataset they rest on.
-  for (const x of [...review, ...clear, ...unable]) {
+  for (const x of [...review, ...mapped, ...clear, ...unable]) {
     const f = x.finding_ids[0] ? F(x.finding_ids[0]) : undefined;
     if (!f) continue;
     x.scope ??= f.scope;
@@ -323,7 +334,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   return {
     conclusion: bi(`${pre.en}${lead.en}${tail.en}`, `${pre.es}${lead.es}${tail.es}`),
     review: review.sort((a, b) => Number(!!b.severe) - Number(!!a.severe)),
-    clear, unable,
+    mapped, clear, unable,
     actions: actions.sort((a, b) => a.rank - b.rank).map((x) => ({ id: x.id, issue: x.issue, action: x.action, why: x.why, sources: x.sources })),
     still_needed: still,
   };

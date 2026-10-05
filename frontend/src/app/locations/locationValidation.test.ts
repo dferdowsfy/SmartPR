@@ -98,7 +98,7 @@ test("Guayama/Machete: no parcel + VIAL at the pin → point-only, roadway warni
   assert.equal(F(r, "flood_zone").pill!.en, "FEMA Zone X");
   assert.match(F(r, "flood_zone").plain!.en, /^FEMA Zone X — Area of Minimal Flood Hazard \(FEMA NFHL zone subtype\)/);
   assert.equal(F(r, "flood_zone").scope, "point");
-  const fl = a.clear.find((x) => x.id === "flood_zone")!;
+  const fl = a.mapped.find((x) => x.id === "flood_zone")!;
   assert.match(fl.value.en, /^FEMA Zone X — Area of Minimal Flood Hazard/);
   assert.equal(fl.scope, "point");
   assert.doesNotMatch(JSON.stringify(a), /Low flood risk/);

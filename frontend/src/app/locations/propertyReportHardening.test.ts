@@ -298,7 +298,7 @@ test("reviewer: conclusion, three status groups and ranked actions come only fro
   assert.equal(a.review.find((x) => x.id === "zoning_conservation")!.value.en, "CR conservation zoning affects approximately 2.0% of the parcel");
   assert.equal(a.review.find((x) => x.id === "compatibility")!.value.en, "Proposed activity required before compatibility can be evaluated (zoning: R-G 98.0% · CR 2.0%)");
   assert.ok(a.clear.some((x) => x.id === "coastal_zone" && x.value.en === "Outside mapped boundary"));
-  assert.ok(a.clear.some((x) => x.id === "terrain" && x.value.en === "Low"));
+  assert.ok(a.mapped.some((x) => x.id === "terrain" && x.value.en === "Low"));
   // Unable to verify is never clear, and clear is never unable.
   const ids = (xs: typeof a.clear) => new Set(xs.map((x) => x.id));
   for (const id of ids(a.unable)) assert.ok(!ids(a.clear).has(id), id);
