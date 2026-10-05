@@ -8,6 +8,10 @@
 
 import { readFileSync } from "node:fs";
 import { ROUTE_TEXT, type DriftItem, type DriftRoute } from "./drift.ts";
+import { parseReadiness, type CaseReadiness, type ReadinessLabel } from "./readiness.ts";
+
+/** Readiness display order: what needs a person first. */
+export const READINESS_ORDER: ReadinessLabel[] = ["needs_professional_review", "ready_for_internal_screening", "ready_for_client_delivery"];
 
 export const DEFAULT_DRIFT_PATH = "/tmp/geo-drift.json";
 
@@ -30,7 +34,7 @@ export interface ReviewGroup {
 export type ReviewQueue =
   | { status: "missing"; path: string }
   | { status: "invalid"; path: string; reason: string }
-  | { status: "ok"; path: string; checked_at: string | null; cases: string[]; total: number; dropped: number; groups: ReviewGroup[] };
+  | { status: "ok"; path: string; checked_at: string | null; cases: string[]; total: number; dropped: number; groups: ReviewGroup[]; readiness: CaseReadiness[] };
 
 const str = (v: unknown): v is string => typeof v === "string";
 
@@ -58,6 +62,7 @@ export function buildReviewQueue(raw: unknown, path = DEFAULT_DRIFT_PATH): Revie
     checked_at: str(doc.checked_at) ? doc.checked_at : null,
     cases: Array.isArray(doc.cases) ? (doc.cases as unknown[]).filter(str) : [],
     total: items.length, dropped: all.length - items.length, groups,
+    readiness: parseReadiness(doc.readiness).sort((a, b) => READINESS_ORDER.indexOf(a.label) - READINESS_ORDER.indexOf(b.label) || a.case_label.localeCompare(b.case_label)),
   };
 }
 

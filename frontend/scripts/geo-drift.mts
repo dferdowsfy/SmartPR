@@ -10,7 +10,8 @@
  * evidence, the recommended action, and who should review it).
  *
  * It never writes fixtures, changes rules, or deploys anything. Items are also
- * written to $GEO_DRIFT_OUT (default /tmp/geo-drift.json) for the review queue.
+ * written to $GEO_DRIFT_OUT (default /tmp/geo-drift.json) for the review queue,
+ * together with each case's readiness label (siteCases/readiness.ts).
  * Exit 0 always: drift is a review item, not a build failure.
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -20,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import { SITE_CASES } from "../src/app/locations/siteCases/cases.ts";
 import { officialFacts } from "../src/app/locations/siteCases/officialFacts.ts";
 import { checkCase, runCase } from "../src/app/locations/siteCases/consistency.ts";
+import { assessCase, LABEL_TEXT, type CaseReadiness } from "../src/app/locations/siteCases/readiness.ts";
 import { diffOfficialFacts, engineeringItems, ROUTE_TEXT, type DriftItem } from "../src/app/locations/siteCases/drift.ts";
 import { isLandslideTile, landslidePixelIndex, runSitePipeline, type RecordedGet, type SiteFixture } from "../src/app/locations/siteCases/pipeline.ts";
 import type { FetchLike } from "../src/app/locations/layerService.ts";
@@ -87,26 +89,40 @@ async function liveFixture(c: (typeof SITE_CASES)[number], recorded: SiteFixture
 }
 
 const items: DriftItem[] = [];
+const readiness: CaseReadiness[] = [];
+/** Readiness from the live run when it built, otherwise from the recorded fixture (replay, no network). */
+async function readinessFor(c: (typeof SITE_CASES)[number], fx: SiteFixture, drift: DriftItem[], issues?: Awaited<ReturnType<typeof checkCase>>) {
+  try {
+    const run = await runCase(c, fx);
+    readiness.push(assessCase({ case: c, facts: run.official, layers: run.pipeline.layers.results, issues: issues ?? checkCase(run), drift }));
+  } catch (err) {
+    readiness.push({ case_id: c.id, case_label: c.label, label: "needs_professional_review", gaps: [{ id: "report_not_built", severity: "needs_professional_review", owner: "engineering", explanation: `The report could not be built for this case (${String((err as Error)?.message ?? err).slice(0, 120)}).` }] });
+  }
+}
 for (const c of cases) {
   const recorded = JSON.parse(readFileSync(path.join(FX, `${c.id}.json`), "utf8")) as SiteFixture;
   let live: SiteFixture;
   try { live = await liveFixture(c, recorded); } catch (err) {
     items.push({ case_id: c.id, case_label: c.label, route: "auto_resolve", what_changed: `The live lookup for this location stopped early (${(err as Error)?.message ?? "error"}).`, affects: "Nothing yet", evidence: { source: "live lookup", recorded: "answered", live: "stopped", recorded_at: recorded.captured_at, checked_at: new Date().toISOString() }, recommended_action: "No action now. The next scheduled check retries it; if it keeps failing, it moves to engineering." });
+    await readinessFor(c, recorded, items.filter((i) => i.case_id === c.id));
     continue;
   }
   const found = diffOfficialFacts(c, officialFacts(recorded), officialFacts(live));
-  try { found.push(...engineeringItems(c, checkCase(await runCase(c, live)), live.captured_at, recorded.captured_at)); } catch (err) {
+  let liveIssues: ReturnType<typeof checkCase> | undefined;
+  try { liveIssues = checkCase(await runCase(c, live)); found.push(...engineeringItems(c, liveIssues, live.captured_at, recorded.captured_at)); } catch (err) {
     found.push(...engineeringItems(c, [{ case: c.id, output: "report", fact: "report could be built from live answers", expected: "built", actual: String((err as Error)?.message ?? err).slice(0, 200) }], live.captured_at, recorded.captured_at));
   }
   items.push(...found);
+  await readinessFor(c, liveIssues ? live : recorded, found, liveIssues);
   if (!json) console.log(`${c.id}: ${found.length ? `${found.length} item(s)` : "no change"}`);
   await new Promise((r) => setTimeout(r, 1500)); // stay gentle on JP / CRIM
 }
 
 const out = process.env.GEO_DRIFT_OUT ?? "/tmp/geo-drift.json";
-writeFileSync(out, JSON.stringify({ checked_at: new Date().toISOString(), cases: cases.map((c) => c.id), items }, null, 2) + "\n");
+writeFileSync(out, JSON.stringify({ checked_at: new Date().toISOString(), cases: cases.map((c) => c.id), items, readiness }, null, 2) + "\n");
 if (json) console.log(JSON.stringify(items, null, 2));
 else {
   for (const i of items) console.log(`\n[${ROUTE_TEXT[i.route]}] ${i.case_label}\n  ${i.what_changed}\n  May affect: ${i.affects}\n  Evidence: ${i.evidence.source}: recorded ${i.evidence.recorded} (${i.evidence.recorded_at}) vs live ${i.evidence.live} (${i.evidence.checked_at})\n  Recommended: ${i.recommended_action}`);
+  for (const r of readiness) console.log(`\n${LABEL_TEXT[r.label]}: ${r.case_label}${r.gaps.map((g) => `\n  - ${g.explanation}`).join("")}`);
   console.log(`\n${items.length} review item(s) across ${cases.length} case(s). Written to ${out}. Nothing was changed.`);
 }
