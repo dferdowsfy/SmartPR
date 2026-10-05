@@ -33,6 +33,7 @@
     "test:dos:e2e": "tsx tests/dept-state-corporation.e2e.mts",
     "test:teach:e2e": "tsx tests/teach-clara-workspace.e2e.mts",
     "test:teach:real-worker": "tsx tests/teach-clara-real-worker.e2e.mts",
+    "test:chatgpt": "tsx --test src/lib/chatgpt/chatgpt.test.ts",
     "test:billing": "tsx --test src/lib/billing/*.test.ts",
     "test:report-outputs": "tsx tests/report-outputs.mts report-outputs",
     "test:locations": "tsx --test src/app/locations/geo.test.ts src/app/locations/intakeLocation.test.ts src/app/locations/locationContext.test.ts src/app/locations/schemaSync.test.ts src/app/locations/store.db.test.ts src/app/locations/requirements.test.ts src/app/locations/layers.test.ts src/app/locations/geoResilience.test.ts src/app/locations/siteIntelligence.test.ts src/app/locations/propertyReport.test.ts src/app/locations/propertyReview.test.ts src/app/locations/landUse.test.ts src/app/locations/parcelCoverage.test.ts src/app/locations/propertyReportHardening.test.ts src/app/locations/locationValidation.test.ts src/app/locations/projectDecision.test.ts src/app/locations/reportOutputs.test.ts src/app/locations/locationState.test.ts src/app/locations/siteAddress.test.ts src/lib/geocoding/geocoding.test.ts src/app/locations/floodZones.test.ts src/app/locations/siteConsistency.test.ts src/app/locations/reviewQueue.test.ts src/app/locations/readiness.test.ts src/app/locations/siteConnectionHardening.test.ts",
