@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite } from "./assessment";
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
 import { handleChatgptMcp, TOOLS, widgetResourceMeta } from "./mcp";
-import { WIDGET_URI, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM } from "./widget";
+import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM } from "./widget";
 import { PR_MUNICIPIO_SHAPES } from "./prMapShapes";
 import { municipioFocus } from "../../app/locations/boundaries";
 import { restoreIntakeSite } from "../../app/locations/intakeLocation";
@@ -87,6 +87,10 @@ test("MCP: initialize, tools/list, resources, tools/call", () => {
   const tools = (rpc("tools/list").body as Body).result.tools;
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
+  assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v4.html");
+  const listed = (rpc("resources/list").body as Body).result.resources.map((r: any) => r.uri);
+  assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
   assert.equal(res.mimeType, WIDGET_MIME);
   assert.ok(!/<script[^>]+src=|<link|<img|https?:\/\/(?!www\.w3\.org\/2000\/svg)/.test(widgetHtml()), "widget loads nothing external (no URLs except the SVG namespace)");
@@ -301,4 +305,35 @@ test("widget map: visible after assess — size-changed, muni question embeds ma
   const withMuni = (rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } }).body as Body).result;
   assert.ok(withMuni.structuredContent.map_focus);
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
+});
+
+test("widget URI aliases: resources/read serves current HTML + empty CSP for v1–v4; tools advertise v4 only", () => {
+  assert.deepEqual([...WIDGET_URI_ALIASES], [
+    "ui://smartpr/requirements-v1.html",
+    "ui://smartpr/requirements-v2.html",
+    "ui://smartpr/requirements-v3.html",
+    "ui://smartpr/requirements-v4.html",
+  ]);
+  assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
+  // tools/list stays on the canonical v4 pointer — do not advertise older URIs there.
+  for (const t of TOOLS.slice(0, 2)) {
+    const meta = t._meta as Record<string, unknown>;
+    assert.equal((meta.ui as { resourceUri: string }).resourceUri, WIDGET_URI);
+    assert.equal(meta["openai/outputTemplate"], WIDGET_URI);
+  }
+  const current = widgetHtml();
+  const emptyCsp = widgetResourceMeta(SITE.siteUrl);
+  for (const uri of WIDGET_URI_ALIASES) {
+    const out = rpc("resources/read", { uri }).body as Body;
+    assert.ok(!out.error, `resources/read ${uri}`);
+    const c = out.result.contents[0];
+    assert.equal(c.uri, uri, "echo requested alias so cached template_pointer binds");
+    assert.equal(c.mimeType, WIDGET_MIME);
+    assert.equal(c.text, current, `${uri} serves current widget HTML`);
+    assert.deepEqual(c._meta.ui.csp, emptyCsp.ui.csp);
+    assert.deepEqual(c._meta["openai/widgetCSP"].connect_domains, []);
+    assert.deepEqual(c._meta["openai/widgetCSP"].resource_domains, []);
+  }
+  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" }).body as Body).error?.code, -32602);
+  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v5.html" }).body as Body).error?.code, -32602);
 });
