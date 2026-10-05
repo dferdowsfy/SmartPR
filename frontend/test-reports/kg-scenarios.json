@@ -1,10 +1,10 @@
 {
   "summary": {
-    "scenarios": 50,
-    "pass": 46,
+    "scenarios": 52,
+    "pass": 48,
     "fail": 4,
-    "expectations": 741,
-    "verified": 678,
+    "expectations": 762,
+    "verified": 699,
     "lint": []
   },
   "results": [
@@ -5776,6 +5776,201 @@
         }
       ],
       "testName": "KG50 kg-scenario: car_wash / new_business_existing_building / urban_industrial_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG51",
+      "title": "Tattoo studio, new business in an existing leased storefront — Aguadilla, zone X inland",
+      "matrix": {
+        "businessType": "tattoo_studio",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Aguadilla"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [
+        {
+          "field": "projectContext.existing_building",
+          "reason": "evidence is not a quote from the description"
+        }
+      ],
+      "testName": "KG51 kg-scenario: tattoo_studio / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG52",
+      "title": "Day spa, new business in an existing leased space, no construction — Rincón, coastal zone (zone X)",
+      "matrix": {
+        "businessType": "spa",
+        "projectType": "new_business_existing_building",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 7,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 9,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [
+        {
+          "field": "projectContext.existing_building",
+          "reason": "evidence is not a quote from the description"
+        }
+      ],
+      "testName": "KG52 kg-scenario: spa / new_business_existing_building / coastal_zone_x",
       "findingsClassified": []
     }
   ]

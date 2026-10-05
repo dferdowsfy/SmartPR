@@ -1,0 +1,99 @@
+{
+  "id": "KG52",
+  "title": "Day spa, new business in an existing leased space, no construction — Rincón, coastal zone (zone X)",
+  "matrix": {
+    "businessType": "spa",
+    "projectType": "new_business_existing_building",
+    "locationContext": "coastal_zone_x"
+  },
+  "description": "We are opening a day spa with three massage therapists in an existing leased commercial space near the beach in Rincón. The space is already finished; no construction or exterior work.",
+  "profile": {
+    "business_type": "Spa",
+    "municipality": "Rincón",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 3,
+    "industry": "Personal Care",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_PHYSICAL_LOCATION": true,
+    "Q_CUSTOMERS_RECEIVE_SERVICES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased commercial space, already finished"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased"
+    }
+  },
+  "site": {
+    "municipality": "Rincón",
+    "geo": "coastal_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643/0644 need a construction / renovation project type."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706 needs location.flood_zone.sfha."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Occupying an existing finished space with no physical work is not a coastal-zone development; RULE_0708 needs a construction or renovation basis.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol stated."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-05 by the scenario loop: first spa scenario and first Rincón scenario. The spa health-permit card (RULE_0158, no statutory basis identified) is deliberately not asserted."
+}
