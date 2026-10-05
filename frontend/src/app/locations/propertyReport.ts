@@ -501,7 +501,9 @@ export function buildPropertyReport(input: {
     : !parcel ? "not_looked_up"
     : parcel.boundary.status === "unavailable" ? "unavailable" : "not_identified";
   const roadwayAtPin = !!zPin && (/^VIAL$/i.test(zPin.code ?? "") || zPin.tags.includes("road") || /sistema vial/i.test(zPin.name ?? ""));
-  const roadway = !parcelVerified && (roadwayAtPin || parcel?.boundary.reason === "only_right_of_way_polygon_at_point");
+  // A pin on a mapped water body (JP "AGUA" / Cuerpo de agua) is not a roadway, even when CRIM only has right-of-way polygons there.
+  const waterAtPin = !parcelVerified && !!zPin && (/^AGUA$/i.test(zPin.code ?? "") || zPin.tags.includes("water") || /cuerpo de agua/i.test(zPin.name ?? ""));
+  const roadway = !parcelVerified && !waterAtPin && (roadwayAtPin || parcel?.boundary.reason === "only_right_of_way_polygon_at_point");
   const pointConfirmed = !!input.pointConfirmed;
   const zCovRaw = zParcel?.status === "sourced" ? (zParcel.coverage ?? (parcel?.areas_reliable?.zoning ? legacyCoverage(zParcel.districts.map((d) => ({ key: d.code, area_m2: d.area_m2, share: d.share })), parcelArea) : null)) : null;
   const districtName = (code: string) => zParcel?.districts.find((d) => d.code === code)?.name ?? null;
@@ -688,7 +690,7 @@ export function buildPropertyReport(input: {
       notes: [bi("Municipal-wide record (not a parcel finding). The PT is separate from the island-wide PUT.", "Registro de todo el municipio (no es un hallazgo de la parcela). El PT es distinto del PUT de todo Puerto Rico.")],
     } : {});
   // Use rules are never evaluated on a roadway point (VIAL is not a developable district).
-  const lu = roadway ? null : input.landUse ?? null;
+  const lu = roadway || waterAtPin ? null : input.landUse ?? null;
   const usesScope: ReportScope = parcelVerified && zParcel?.status === "sourced" ? "parcel" : "point";
   const rulesVersion = bi(
     `Rules: ${RC_2023.name}, version ${RC_2023.version} (dated ${RC_2023.dataset_date}), as recorded in SmartPR's knowledge graph. SmartPR has not confirmed whether later amendments apply.${ptE?.status === "verified" ? ` ${site.municipality.name} has an approved Plan Territorial; its own provisions may also apply.` : ""}`,
@@ -717,8 +719,11 @@ export function buildPropertyReport(input: {
     add({
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
-      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)") : null,
-      detail: roadway
+      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)")
+        : waterAtPin ? bi("Not evaluated — selected point is a water body", "No evaluado — el punto seleccionado es un cuerpo de agua") : null,
+      detail: waterAtPin
+        ? bi("Not evaluated: the selected point is mapped as a water body (AGUA / Cuerpo de agua), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como cuerpo de agua (AGUA / Cuerpo de agua), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
+        : roadway
         ? bi("Not evaluated: the selected point is mapped as a roadway (VIAL / Sistema vial), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como vía (VIAL / Sistema vial), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
         : bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
       state: "not_evaluated", tone: "unknown", scope: "not_evaluated", sources: [RC_2023], looked_up_at: null, key: false,
@@ -1184,6 +1189,7 @@ export function buildPropertyReport(input: {
   if (parcelStatus === "not_identified") locationNotices.push(bi("No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.", "No se identificó una parcela catastral. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela."));
   if (parcelStatus === "unavailable") locationNotices.push(bi(`The CRIM parcel source did not respond (${reasonText(boundary?.reason).en}). Findings describe the selected point only; parcel-wide checks have not been performed.`, `La fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es}). Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela.`));
   if (roadway) locationNotices.push(bi("This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements.", "Este punto puede estar sobre una vía y no en su propiedad. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
+  if (waterAtPin) locationNotices.push(bi("This point is on a mapped water body, not on a land parcel. Move or confirm the pin before evaluating site-specific requirements.", "Este punto está sobre un cuerpo de agua mapeado y no sobre una parcela de terreno. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
   if (pointConfirmed && !parcelVerified) locationNotices.push(bi("You confirmed this point as your property. That confirms the location you intend, not a parcel boundary: parcel-wide checks remain not performed.", "Usted confirmó este punto como su propiedad. Eso confirma la ubicación que indica, no un límite de parcela: las verificaciones de toda la parcela siguen sin realizarse."));
 
   const all = [...findings.flatMap((f) => f.sources), ...steps.flatMap((s) => s.sources), ...(catSource ? [catSource] : [])];
