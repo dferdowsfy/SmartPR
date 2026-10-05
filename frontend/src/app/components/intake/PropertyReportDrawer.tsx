@@ -83,6 +83,13 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
         </table>
       )}
       {f.detail && !(f.coverage && f.coverage.parts.length > 0) && <p className="spr-prd-finding-detail">{f.detail[lang]}</p>}
+      {f.currency?.status === "unresolved" && (
+        <div className="spr-prd-ambiguity" role="note" data-testid="put-currency">
+          <strong>{lang === "es" ? "Vigencia de la fuente sin resolver" : "Source currency unresolved"}</strong>
+          <p>{f.currency.reason[lang]}</p>
+          <ul>{f.currency.evidence.map((d, i) => <li key={i}><a href={d.url} target="_blank" rel="noreferrer">{d.title}</a>{d.checked_on ? ` · ${lang === "es" ? "consultado" : "checked"} ${d.checked_on}` : ""}{d.note ? ` — ${d.note}` : ""}</li>)}</ul>
+        </div>
+      )}
       {(f.notes?.length ?? 0) > 0 && <ul className="spr-prd-notes" data-testid="finding-notes">{f.notes!.map((n, i) => <li key={i}>{n[lang]}</li>)}</ul>}
       {(f.ambiguities?.length ?? 0) > 0 && (
         <div className="spr-prd-ambiguity" role="note" data-testid="finding-ambiguities">
@@ -368,6 +375,8 @@ export function PropertyReportDrawer({
                 <PassportMap
                   point={{ latitude: p.latitude, longitude: p.longitude }}
                   parcel={p.boundary.geometry}
+                  neighbors={(p.map?.neighbors ?? []).map((n) => n.geometry)}
+                  highlights={(p.map?.partials ?? []).map((h) => ({ id: h.id, geometry: h.geometry, color: h.tone === "hazard" ? "#c2410c" : "#d98c12" }))}
                   layerControls
                   navigable
                   layerLabels={{ streets: L("Map", "Mapa", lang), satellite: L("Satellite", "Satélite", lang), flood: L("Flood zones (FEMA)", "Zonas inundables (FEMA)", lang), zoning: L("Zoning (JP)", "Calificación (JP)", lang), parcel: L("Parcel", "Parcela", lang), layers: L("Map layers", "Capas del mapa", lang) }}
@@ -376,6 +385,15 @@ export function PropertyReportDrawer({
                   errorText={L("The map could not load.", "El mapa no pudo cargar.", lang)}
                   className="spr-prd-map-canvas"
                 />
+                {!!p.boundary.geometry && (
+                  <ul className="spr-map-legend" data-testid="map-legend">
+                    <li><span className="spr-map-key spr-map-key-parcel" aria-hidden="true" />{L("Selected parcel", "Parcela seleccionada", lang)}{p.catastro.value ? ` ${p.catastro.value}` : ""}</li>
+                    {(p.map?.neighbors.length ?? 0) > 0 && <li><span className="spr-map-key spr-map-key-neighbor" aria-hidden="true" />{L("Neighbouring parcels (CRIM)", "Parcelas vecinas (CRIM)", lang)}</li>}
+                    {(p.map?.partials ?? []).map((h) => (
+                      <li key={h.id} data-partial={h.layer}><span className="spr-map-key" style={{ background: h.tone === "hazard" ? "#c2410c" : "#d98c12", opacity: 0.6 }} aria-hidden="true" />{h.label[lang]} — {L(`part of the parcel (${h.share_text})`, `parte de la parcela (${h.share_text})`, lang)}</li>
+                    ))}
+                  </ul>
+                )}
                 <p className="spr-prd-caption">{p.boundary.geometry ? L("Parcel boundary from the CRIM digital cadastre — not a survey.", "Límite de parcela del catastro digital del CRIM — no es una mensura.", lang) : L("No parcel boundary determined — showing the pin only.", "No se determinó el límite de la parcela — se muestra solo el pin.", lang)}</p>
               </div>
               <dl className="spr-prd-facts">

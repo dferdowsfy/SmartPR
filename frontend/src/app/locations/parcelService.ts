@@ -13,6 +13,8 @@ import {
   type ExtraFinding, type ExtraId, type ParcelBoundary, type ParcelFindings,
 } from "./parcel.ts";
 import { computeCoverage, parcelPlanarArea, type CoverageFeature } from "./coverage.ts";
+import polygonClipping from "polygon-clipping";
+import { ringsToGeoJson } from "./parcel.ts";
 
 const TIMEOUT_MS = 12000;
 /** The JP / MIPR ArcGIS servers time out when hit with ~10 parallel queries. */
@@ -211,6 +213,34 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
       flood.zones.sort((a, b) => (b.area_m2 ?? 0) - (a.area_m2 ?? 0));
     }
   }
+  // ---- Map context: neighbouring parcels + partial-coverage shapes -----------
+  let neighbors: ParcelFindings["neighbors"] = undefined;
+  let partials: ParcelFindings["partials"] = undefined;
+  if (g && boundary.value) {
+    const [x0, y0, x1, y1] = boundary.value.bbox;
+    const pad = 0.0006; // ~60 m
+    const env = JSON.stringify({ xmin: x0 - pad, ymin: y0 - pad, xmax: x1 + pad, ymax: y1 + pad, spatialReference: { wkid: 4326 } });
+    const nResp = await q("crim_parcels", { geometry: env, geometryType: "esriGeometryEnvelope", outFields: "NUM_CATASTRO", returnGeometry: "true", outSR: "4326", geometryPrecision: "6", maxAllowableOffset: "0.00001", resultRecordCount: "80" });
+    if (typeof nResp !== "string") {
+      neighbors = (((nResp as { features?: Array<{ attributes?: Record<string, unknown>; geometry?: { rings?: number[][][] } }> }).features) ?? [])
+        .map((f) => ({ catastro: s(f.attributes?.NUM_CATASTRO), geo: f.geometry?.rings ? ringsToGeoJson(f.geometry.rings) : null }))
+        .filter((f) => f.geo && f.catastro !== boundary.value!.catastro)
+        .slice(0, 60)
+        .map((f) => ({ catastro: f.catastro, geometry: f.geo!.geometry }));
+    }
+    partials = [];
+    const addPartials = (layer: "zoning" | "flood" | "put", resp: ArcGisQueryResponse | string, keyOf: (a: Record<string, unknown>) => string | null, cov: { parts: Array<{ key: string; share: number }> } | null | undefined) => {
+      if (!cov || cov.parts.length < 2) return;
+      for (const part of cov.parts) {
+        if (part.share >= 0.999) continue;
+        const shape = displayShape(g, feats(resp, (a) => { const k = keyOf(a); return k === part.key ? [k] : []; }));
+        if (shape) partials!.push({ layer, key: part.key, share: part.share, geometry: shape });
+      }
+    };
+    addPartials("zoning", zoningResp, (a) => s(a.cali), zoning.coverage);
+    addPartials("flood", floodResp, (a) => (s(a.FLD_ZONE) ? `${s(a.FLD_ZONE)}|${s(a.ZONE_SUBTY) ?? ""}` : null), flood.coverage);
+    addPartials("put", putAnswer, (a) => s(a.CLASIPUT), put.coverage);
+  }
   const value: ParcelFindings = {
     latitude,
     longitude,
@@ -220,6 +250,8 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
     flood,
     areas_reliable,
     extras,
+    ...(neighbors ? { neighbors } : {}),
+    ...(partials?.length ? { partials } : {}),
   };
   // Only cache complete answers: a failed source is asked again next time.
   if (value.boundary.status !== "unavailable" && value.zoning.status !== "unavailable" && value.flood.status !== "unavailable") {
@@ -262,3 +294,21 @@ const defaultPostJson: PostJson = async (url, body, timeoutMs) => {
     clearTimeout(timer);
   }
 };
+
+
+/** Display-only shape (lon/lat) of features clipped to the parcel; null when it cannot be built. */
+function displayShape(parcel: ParcelBoundary["geometry"], features: CoverageFeature[]): { type: "MultiPolygon"; coordinates: number[][][][] } | null {
+  try {
+    const subj = (parcel.type === "Polygon" ? [parcel.coordinates] : parcel.coordinates) as unknown as Parameters<typeof polygonClipping.intersection>[0];
+    let acc: ReturnType<typeof polygonClipping.union> = [];
+    for (const f of features) {
+      if (!("rings" in f)) continue;
+      let shape: ReturnType<typeof polygonClipping.union> = [];
+      for (const r of f.rings) if (r.length >= 4) shape = polygonClipping.xor(shape, [[r as [number, number][]]]);
+      acc = polygonClipping.union(acc, polygonClipping.intersection(subj, shape));
+    }
+    return acc.length ? { type: "MultiPolygon", coordinates: acc as unknown as number[][][][] } : null;
+  } catch {
+    return null;
+  }
+}

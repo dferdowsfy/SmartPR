@@ -1,0 +1,70 @@
+{
+  "_note": "Curated, cited evidence about which municipal plan and rules apply, and whether SmartPR's map layers reflect them. Each entry records what was checked, where, when, and what remains unresolved. Never a legal determination. Update only with new evidence; old entries are kept in git history.",
+  "municipalities": {
+    "Arroyo": {
+      "plan": {
+        "name": "Plan de Ordenación Territorial de Arroyo (primer POT)",
+        "resolution": "JP-PT-72-03",
+        "executive_order": "OE-2025-039",
+        "effective": "2025-07-01",
+        "documents": [
+          {
+            "title": "JP-PT-72-03 Plan Final 2025 (Memorial · Programa · Reglamentación)",
+            "url": "https://docs.pr.gov/files/JP-Junta%20de%20Planificacion/Planes%20Territoriales/PT/Arroyo/JP-PT-72-03-Plan-Final-2025-1.pdf",
+            "checked_on": "2026-10-05",
+            "note": "345 scanned pages without a text layer; read by OCR (machine reading — quotations below are OCR'd and should be confirmed against the PDF)."
+          },
+          {
+            "title": "JP-PT-72-03 Resolución de adopción",
+            "url": "https://jp.pr.gov/wp-content/uploads/2025/09/JP-PT-72-03-Resolucion.pdf",
+            "checked_on": "2026-10-05",
+            "note": "Returned HTTP 404 (page not found) on 2026-10-05; not reviewed."
+          },
+          {
+            "title": "JP — Municipios Información de PT (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1",
+            "checked_on": "2026-10-05",
+            "note": "Arroyo: pt_aprobado 1-Jul-2025, orden_ejecutiva OE-2025-039, Estatus 'POT aprobados vigentes'."
+          },
+          {
+            "title": "JP — Calificación vigente (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+            "checked_on": "2026-10-05",
+            "note": "Arroyo polygons carry resolucion JP-PT-72-03, vigencia 01-JUL-2025 — the calificación layer reflects the 2025 plan."
+          }
+        ]
+      },
+      "rules": {
+        "status": "identified",
+        "regulation": "Reglamento Conjunto 2023 and subsequent amendments, as adopted by the Arroyo Plan de Ordenación Territorial",
+        "evidence": "Orden Ejecutiva OE-2025-039, reproduced in the Plan Final (p. 9): the first Plan de Ordenación Territorial of Arroyo adopts the Reglamento Conjunto para la Evaluación y Expedición de Permisos … (Reglamento Conjunto 2023) and its subsequent amendments for the related substantive and procedural provisions.",
+        "unresolved": "SmartPR's use rules encode the 2023 text; amendments after 2023 and any plan-specific provisions in the plan's Reglamentación section have not been checked against them."
+      },
+      "put": {
+        "plan_modifies_put": true,
+        "evidence": [
+          "Orden Ejecutiva OE-2025-039 (Plan Final p. 9): the Arroyo Plan Territorial includes minor modifications to the Classification Map of the PUT-PR-2015, under PUT-PR Chapter 4, Section B(4); the municipality also submitted a 'Modificación Menor al Plan de Uso de Terrenos de Puerto Rico'.",
+          "Plan Final p. 33: the final plan annex includes, where applicable, the 'Memorial Justificativo sobre Posible Modificación Menor al PUT-PR'.",
+          "Plan Final p. 40 (work plan): 'mapas propuestos y modificación menor al PUT-PR' presented to the Junta de Comunidad (Sept 2023 – Apr 2024)."
+        ],
+        "layer_check": {
+          "checked_on": "2026-10-05",
+          "layer": "https://sigejp.pr.gov/server/rest/services/MIPR/PUT_v10/MapServer/0",
+          "finding": "Every feature in the island-wide PUT layer (PUT_v10) carries R_PUT = PUT-2014 and V_PUT = 30-nov-2015 (distinct-value query over all features). No feature references JP-PT-72-03 or 2025. The service publishes no edit date.",
+          "incorporated": "no_evidence"
+        },
+        "affected_areas": null,
+        "status": "unresolved",
+        "unresolved": "Whether the 2025 minor modification changed the PUT classification of any given Arroyo parcel cannot be established from the PUT layer (it carries no 2025 version) — the plan's modification map / memorial must be compared to the parcel.",
+        "parcel_check": {
+          "catastro": "420-000-010-29",
+          "checked_on": "2026-10-05",
+          "put_layer": "SU 75.99% (34,757.9 m²), VIAL 24.01% (10,980.5 m²), AGUA 0.1 m² sliver; pin in SU",
+          "pt_calificacion_layer": "R-I, clasificación SU over >99.9% of the parcel, resolución JP-PT-72-03, vigencia 01-JUL-2025",
+          "comparison": "The 2025 PT layer classifies the whole parcel SU, while the 2015 PUT layer shows 24% VIAL. This is consistent with — but does not prove — a 2025 change; it may also be a difference in how road rights-of-way are drawn."
+        },
+        "memorial_search": "OCR of the Plan Final (pages read so far) finds the 'Memorial Justificativo sobre Posible Modificación Menor al PUT-PR' referenced as a separate annex (p. 33); the modification map itself was not found in the Plan Final. Request the memorial/annex from the JP or the Municipio."
+      }
+    }
+  }
+}

@@ -4270,3 +4270,10 @@ section.spr-plc .spr-plc-proposal { margin: 0; padding: 10px 12px; border: 1px s
 .spr-srp-location.road { background: #fdf7ea; border-color: #efd39a; }
 .spr-srp-location p { margin: 0 0 4px; }
 .spr-srp-location div { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Map legend: selected parcel vs neighbours vs partial findings */
+.spr-map-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; color: #183b41; }
+.spr-map-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.spr-map-key { display: inline-block; width: 16px; height: 10px; border-radius: 2px; }
+.spr-map-key-parcel { background: rgba(47,143,131,.15); border: 2.5px solid #0f766e; box-shadow: 0 0 0 1.5px #fff inset; }
+.spr-map-key-neighbor { background: transparent; border: 1px dashed #7b8a90; }

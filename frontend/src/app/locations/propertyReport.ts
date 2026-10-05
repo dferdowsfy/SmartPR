@@ -28,6 +28,11 @@
 // ============================================================================
 
 import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
+import PLAN_CURRENCY from "../../kb/plan_currency.json";
+
+/** V_PUT on every feature of the PUT layer (PUT_v10). */
+const PUT_LAYER_VERSION_DATE = "2015-11-30";
+type PlanCurrencyEntry = { plan: { resolution: string; effective: string; documents: Array<{ title: string; url: string; note?: string; checked_on?: string }> }; put?: { plan_modifies_put?: boolean; status?: string; layer_check?: { layer: string; finding: string; checked_on: string } } };
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
 import { parsePlanTerritorialExtra, ptDateText, PT_FIELDS, toPrStatePlane, type ExtraFinding, type ParcelFindings } from "./parcel.ts";
 import { COVERAGE_METHOD, formatArea, formatShare, SMALL_SHARE, UNMAPPED_WARN_SHARE, type Coverage } from "./coverage.ts";
@@ -170,6 +175,8 @@ export interface ReportFinding {
   retrieval?: RetrievalStatus;
   /** Scope the check would have used, when it was not evaluated. */
   attempted_scope?: Exclude<ReportScope, "not_evaluated"> | null;
+  /** Whether the source layer reflects later plans (e.g. a PT that modified the PUT). */
+  currency?: { status: "current" | "unresolved"; reason: Bi; evidence: Array<{ title: string; url: string; note?: string; checked_on?: string }> } | null;
 }
 
 /** Parcel coverage as reported (from coverage.ts; numbers unrounded). */
@@ -243,6 +250,8 @@ export interface PropertyReport {
      */
     location?: { parcel: "verified" | "not_identified" | "unavailable" | "loading" | "not_looked_up"; roadway: boolean; point_confirmed: boolean; preliminary: boolean; notices: Bi[] };
     boundary: { state: ReportFindingState; geometry: unknown | null; area_m2: number | null; source: ReportSource | null };
+    /** Map context: neighbouring parcels and shapes of findings that cover only part of the parcel (display only). */
+    map?: { neighbors: Array<{ catastro: string | null; geometry: unknown }>; partials: Array<{ id: string; layer: string; label: Bi; share_text: string; tone: ReportTone; geometry: unknown }> };
     /** Approximate area: a number with units, or "Not available" with the reason — never a status label as the value. */
     area?: { m2: number | null; cuerdas: number | null; text: Bi; note: Bi };
     technical: {
@@ -386,6 +395,7 @@ function toReportCoverage(c: Coverage, label: (key: string) => Bi, keyText: KeyT
     if (w.code === "unmapped") warnings.push(bi(`No polygon in this layer covers ${formatShare(w.share, true)} of the parcel (${formatArea(w.area_m2)}). That part is unmapped, not "none".`, `Ningún polígono de esta capa cubre ${formatShare(w.share, true)} de la parcela (${formatArea(w.area_m2)}). Esa parte no está mapeada; no equivale a "ninguno".`));
     if (w.code === "overlap") warnings.push(bi(`Categories in this layer overlap on ${formatArea(w.area_m2)} (${formatShare(w.share, true)} of the parcel). They should not overlap; shares add up to more than 100%. Confirm with the source agency.`, `Las categorías de esta capa se solapan en ${formatArea(w.area_m2)} (${formatShare(w.share, true)} de la parcela). No deberían solaparse; los porcentajes suman más de 100%. Confírmelo con la agencia.`));
     if (w.code === "duplicates_dissolved") warnings.push(bi(`Duplicate or overlapping polygons of the same category (${w.keys.map((k) => keyText(k, "en")).join(", ")}) were merged so their area is counted once.`, `Polígonos duplicados o solapados de la misma categoría (${w.keys.map((k) => keyText(k, "es")).join(", ")}) se unieron para contar su área una sola vez.`));
+    if (w.code === "snapped") warnings.push(bi(`To compute the area of ${w.keys.map((k) => keyText(k, "en")).join(", ")}, vertices were snapped to a ${w.grid_m * 100} cm grid (the exact geometry made the clipping library fail). Rounding effect: under ${w.grid_m * 100} cm along edges.`, `Para calcular el área de ${w.keys.map((k) => keyText(k, "es")).join(", ")}, los vértices se ajustaron a una cuadrícula de ${w.grid_m * 100} cm (la geometría exacta hizo fallar la biblioteca de recorte). Efecto de redondeo: menos de ${w.grid_m * 100} cm en los bordes.`));
     if (w.code === "intersection_failed") warnings.push(bi(`The area of ${w.keys.map((k) => keyText(k, "en")).join(", ")} could not be computed; shares are incomplete.`, `No se pudo calcular el área de ${w.keys.map((k) => keyText(k, "es")).join(", ")}; los porcentajes están incompletos.`));
   }
   return {
@@ -687,6 +697,29 @@ export function buildPropertyReport(input: {
       })(),
       notes: [bi("Municipal-wide record (not a parcel finding). The PT is separate from the island-wide PUT.", "Registro de todo el municipio (no es un hallazgo de la parcela). El PT es distinto del PUT de todo Puerto Rico.")],
     } : {});
+  // PUT currency: a Plan Territorial approved after the PUT version on the layer
+  // may have modified the PUT (PUT-PR Cap. 4, Sec. B(4)). Unless curated evidence
+  // shows the layer incorporates it, the PUT reading is marked unresolved.
+  const putF = findings.find((x) => x.id === "put");
+  const ptApproved = ptE?.status === "verified" && typeof ptE.attributes.approved === "string" ? ptE.attributes.approved : null;
+  if (putF && putF.state === "sourced" && ptApproved && ptApproved > PUT_LAYER_VERSION_DATE) {
+    const cur = (PLAN_CURRENCY.municipalities as Record<string, PlanCurrencyEntry>)[site.municipality.name];
+    const curated = cur?.put;
+    const resolved = curated?.status === "current";
+    putF.currency = {
+      status: resolved ? "current" : "unresolved",
+      reason: curated?.plan_modifies_put
+        ? bi(`${site.municipality.name}'s Plan Territorial (${cur!.plan.resolution}, effective ${cur!.plan.effective}) includes a minor modification to the PUT-PR 2015 classification map. The PUT layer carries only the 2015 version (no ${cur!.plan.resolution} records), so whether this parcel's PUT classification changed is unresolved. Use the plan's own classification map and confirm with the JP.`,
+             `El Plan Territorial de ${site.municipality.name} (${cur!.plan.resolution}, vigente ${cur!.plan.effective}) incluye una modificación menor al mapa de clasificación del PUT-PR 2015. La capa del PUT solo contiene la versión de 2015 (sin registros de ${cur!.plan.resolution}), por lo que no se ha resuelto si la clasificación PUT de esta parcela cambió. Use el mapa de clasificación del propio plan y confirme con la JP.`)
+        : bi(`${site.municipality.name}'s Plan Territorial was approved (${ptApproved}) after the PUT version on this layer (2015-11-30). A PT may modify the PUT; SmartPR has not confirmed whether it did here.`,
+             `El Plan Territorial de ${site.municipality.name} se aprobó (${ptApproved}) después de la versión del PUT de esta capa (2015-11-30). Un PT puede modificar el PUT; SmartPR no ha confirmado si lo hizo aquí.`),
+      evidence: cur ? [...cur.plan.documents, { title: "PUT layer check", url: curated?.layer_check?.layer ?? "", note: curated?.layer_check?.finding, checked_on: curated?.layer_check?.checked_on }].filter((d) => d.url) : [],
+    };
+    if (!resolved) {
+      putF.tone = "attention";
+      putF.notes = [...(putF.notes ?? []), bi("PUT currency unresolved — compatibility conclusions that depend on the PUT class are held back.", "Vigencia del PUT sin resolver — se retienen las conclusiones de compatibilidad que dependen de la clase del PUT.")];
+    }
+  }
   // Use rules are never evaluated on a roadway point (VIAL is not a developable district).
   const lu = roadway ? null : input.landUse ?? null;
   const usesScope: ReportScope = parcelVerified && zParcel?.status === "sourced" ? "parcel" : "point";
@@ -1227,6 +1260,17 @@ export function buildPropertyReport(input: {
         source: boundary ? { name: boundary.source.name, url: boundary.source.url, dataset_date: boundary.source.dataset_date, version: null } : null,
       },
       area,
+      map: parcelVerified ? {
+        neighbors: (parcel?.neighbors ?? []).map((n) => ({ catastro: n.catastro, geometry: n.geometry })),
+        partials: (parcel?.partials ?? []).map((pp, i) => {
+          const isFlood = pp.layer === "flood";
+          const sfhaPart = isFlood && /^(A|V)/.test(pp.key);
+          const label = pp.layer === "zoning" ? bi(`Zoning ${pp.key}${districtName(pp.key) ? ` — ${districtName(pp.key)}` : ""}`, `Calificación ${pp.key}${districtName(pp.key) ? ` — ${districtName(pp.key)}` : ""}`)
+            : isFlood ? bi(`FEMA ${floodZoneText(pp.key, "en")}`, `FEMA ${floodZoneText(pp.key, "es")}`)
+            : bi(`PUT ${pp.key}`);
+          return { id: `${pp.layer}-${i}`, layer: pp.layer, label, share_text: formatShare(pp.share, true), tone: (sfhaPart ? "hazard" : (zParcel?.districts.find((d) => d.code === pp.key)?.family === "conservation" ? "hazard" : "attention")) as ReportTone, geometry: pp.geometry };
+        }),
+      } : undefined,
       technical: {
         nad83_state_plane: {
           x: Math.round(sp.x * 100) / 100,
@@ -1393,7 +1437,7 @@ export function regulatoryFlags(findings: ReportFinding[], lu: LandUseAnalysis |
   };
   const out: NonNullable<PropertyReport["flags"]> = [
     flag("zoning", bi("Zoning", "Calificación"), f("zoning")),
-    flag("land_class", bi("Land classification", "Clasificación del suelo"), f("put")?.state === "sourced" ? f("put") : f("land_class")),
+    flag("land_class", bi("Land classification", "Clasificación del suelo"), f("put")?.state === "sourced" && f("put")?.currency?.status !== "unresolved" ? f("put") : f("land_class") ?? f("put")),
   ];
   if (lu?.activity.use) {
     const o = lu.compatibility.outcome;

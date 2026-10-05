@@ -53,7 +53,8 @@ export type CoverageWarning =
   | { code: "overlap"; share: number; area_m2: number }
   | { code: "duplicates_dissolved"; keys: string[]; area_m2: number }
   | { code: "small_parts"; keys: string[] }
-  | { code: "intersection_failed"; keys: string[] };
+  | { code: "intersection_failed"; keys: string[] }
+  | { code: "snapped"; keys: string[]; grid_m: number };
 
 export interface Coverage {
   method: string;
@@ -138,17 +139,29 @@ export function computeCoverage(
   const byKey = new Map<string, { pieces: PcMulti[]; raw: number; features: number }>();
   const failed = new Set<string>(opts.missingGeometry ?? []);
   const seen = new Set<string>();
+  // polygon-clipping can throw on near-degenerate vertices; retry on a 1 cm,
+  // then 10 cm grid (projected metres) before reporting the area unknown.
+  const snappedSubjects = new Map<number, PcMulti>();
+  const subjectAt = (grid: number) => {
+    if (!grid) return subject;
+    if (!snappedSubjects.has(grid)) snappedSubjects.set(grid, polygonClipping.union(snapMulti(subject, grid)));
+    return snappedSubjects.get(grid)!;
+  };
+  const snapped = new Map<string, number>();
   for (const f of features) {
     seen.add(f.key);
-    let clipped: PcMulti;
-    try {
-      const shape = "rings" in f ? evenOdd(f.rings) : f.polygons.length ? polygonClipping.union(projectMulti(f.polygons)) : [];
-      if (!shape.length) continue;
-      clipped = polygonClipping.intersection(subject, shape);
-    } catch {
-      failed.add(f.key);
-      continue;
+    let clipped: PcMulti | null = null;
+    for (const grid of [0, 0.01, 0.1]) {
+      try {
+        const raw = "rings" in f ? evenOdd(f.rings, grid) : f.polygons.length ? polygonClipping.union(snapMulti(projectMulti(f.polygons), grid)) : [];
+        if (!raw.length) { clipped = []; break; }
+        clipped = polygonClipping.intersection(subjectAt(grid), raw);
+        if (grid) snapped.set(f.key, Math.max(grid, snapped.get(f.key) ?? 0));
+        break;
+      } catch { /* try a coarser grid */ }
     }
+    if (clipped === null) { failed.add(f.key); continue; }
+    if (!clipped.length) continue;
     const a = planarArea(clipped);
     if (a < CONTACT_M2) continue;
     const e = byKey.get(f.key) ?? { pieces: [], raw: 0, features: 0 };
@@ -159,12 +172,31 @@ export function computeCoverage(
   }
   const dissolved: Array<{ key: string; geom: PcMulti; area: number; raw: number; features: number }> = [];
   for (const [key, e] of byKey) {
-    try {
-      const geom = e.pieces.length === 1 ? e.pieces[0]! : polygonClipping.union(e.pieces[0]!, ...e.pieces.slice(1));
-      dissolved.push({ key, geom, area: planarArea(geom), raw: e.raw, features: e.features });
-    } catch {
-      failed.add(key);
+    // Dissolve; on a clipping-library failure retry on a 1 cm then 10 cm grid,
+    // then piece by piece, before reporting the area unknown.
+    let geom: PcMulti | null = null;
+    if (e.pieces.length === 1) geom = e.pieces[0]!;
+    for (const grid of [0, 0.01, 0.1]) {
+      if (geom) break;
+      try {
+        const ps = e.pieces.map((x) => snapMulti(x, grid));
+        geom = polygonClipping.union(ps[0]!, ...ps.slice(1));
+        if (grid) snapped.set(key, Math.max(grid, snapped.get(key) ?? 0));
+      } catch { /* coarser grid */ }
     }
+    if (!geom) {
+      try {
+        let acc: PcMulti = [];
+        for (const x of e.pieces) {
+          try { acc = polygonClipping.union(acc, snapMulti(x, 0.01)); }
+          catch { acc = polygonClipping.union(snapMulti(acc, 0.1), snapMulti(x, 0.1)); }
+        }
+        geom = acc;
+        snapped.set(key, 0.1);
+      } catch { geom = null; }
+    }
+    if (geom) dissolved.push({ key, geom, area: planarArea(geom), raw: e.raw, features: e.features });
+    else failed.add(key);
   }
   let covered = 0;
   let coveredGeom: PcMulti = [];
@@ -195,6 +227,7 @@ export function computeCoverage(
   const small = parts.filter((p) => p.small);
   if (small.length) warnings.push({ code: "small_parts", keys: small.map((p) => p.key) });
   if (failed.size) warnings.push({ code: "intersection_failed", keys: [...failed] });
+  if (snapped.size) warnings.push({ code: "snapped", keys: [...snapped.keys()], grid_m: Math.max(...snapped.values()) });
   return {
     method: COVERAGE_METHOD,
     exclusive: opts.exclusive,
@@ -218,13 +251,19 @@ export function computeCoverage(
  * Independent of ring orientation, which varies between services and after
  * any clipping; for valid ArcGIS polygons it equals outer-minus-holes.
  */
-function evenOdd(rings: number[][][]): PcMulti {
+function evenOdd(rings: number[][][], grid = 0): PcMulti {
   let acc: PcMulti = [];
   for (const r of rings) {
     if (!Array.isArray(r) || r.length < 4 || !r.every((p) => Array.isArray(p) && Number.isFinite(p[0]) && Number.isFinite(p[1]))) continue;
-    acc = polygonClipping.xor(acc, [[r.map(project)]] as PcMulti);
+    acc = polygonClipping.xor(acc, snapMulti([[r.map(project)]] as PcMulti, grid));
   }
   return acc;
+}
+/** Snap projected coordinates to a grid (metres); drops repeated vertices. 0 = unchanged. */
+function snapMulti(mp: PcMulti, grid: number): PcMulti {
+  if (!grid) return mp;
+  const s = (v: number) => Math.round(v / grid) * grid;
+  return mp.map((poly) => poly.map((ring) => ring.map(([x, y]) => [s(x), s(y)] as [number, number]).filter((p, i, a) => i === 0 || p[0] !== a[i - 1]![0] || p[1] !== a[i - 1]![1]))) as PcMulti;
 }
 
 // ---------------------------------------------------------------------------
