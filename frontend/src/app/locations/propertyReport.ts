@@ -33,6 +33,7 @@ import { parsePlanTerritorialExtra, ptDateText, PT_FIELDS, toPrStatePlane, type 
 import { COVERAGE_METHOD, formatArea, formatShare, SMALL_SHARE, UNMAPPED_WARN_SHARE, type Coverage } from "./coverage.ts";
 import { COMPATIBILITY_TEXT, type LandUseAnalysis } from "./landUse.ts";
 import { siteAddressParts } from "./siteAddress.ts";
+import { reviewerAssessment, type ReviewerAssessment } from "./reviewerAssessment.ts";
 import type { exportableReview } from "./propertyReview.ts";
 
 export type Bi = { en: string; es: string };
@@ -60,7 +61,7 @@ export const STATUS_TEXT: Record<FindingStatus, Bi> = {
   no_mapped_constraint: { en: "None mapped", es: "Nada mapeado" },
   unable_to_verify: { en: "Unable to verify", es: "No se pudo verificar" },
   not_checked: { en: "Not checked", es: "No verificado" },
-  not_evaluated: { en: "Not evaluated — describe the proposed activity", es: "No evaluado — describe la actividad propuesta" },
+  not_evaluated: { en: "Pending proposed activity", es: "Pendiente de la actividad propuesta" },
   requires_professional_review: { en: "Requires professional review", es: "Requiere revisión profesional" },
   not_applicable: { en: "Not applicable", es: "No aplica" },
   checking: { en: "Checking…", es: "Verificando…" },
@@ -148,6 +149,8 @@ export interface ReportFinding {
   ambiguities?: Bi[];
   /** Raw source fields behind the value, by official field name. */
   raw?: Record<string, string | null> | null;
+  /** Structured facts for the reviewer assessment (e.g. conservation district codes). */
+  meta?: Record<string, string[]>;
 }
 
 /** Parcel coverage as reported (from coverage.ts; numbers unrounded). */
@@ -155,7 +158,9 @@ export interface ReportCoverage {
   method: string;
   exclusive: boolean;
   parcel_area_m2: number;
-  parts: Array<{ key: string; label: Bi; area_m2: number; share: number; share_text: string; area_text: string; small: boolean; contains_pin: boolean; info?: Bi | null }>;
+  parts: Array<{ key: string; label: Bi; area_m2: number; share: number; share_text: string; area_text: string; small: boolean; contains_pin: boolean; info?: Bi | null; members?: string[] }>;
+  /** Source components before identical classifications were combined (audit). */
+  raw_parts?: ReportCoverage["parts"];
   unmapped_m2: number;
   unmapped_share: number;
   overlap_m2: number;
@@ -251,6 +256,8 @@ export interface PropertyReport {
   versions?: { schema: string; coverage_method: string; rules: string };
   /** Discrepancies between sources, each compared at the same spatial scope. */
   discrepancies?: Bi[];
+  /** Reviewer reading of the findings (reviewerAssessment.ts): conclusion, status groups, ranked actions, still needed. */
+  assessment?: ReviewerAssessment;
   disclaimer: Bi;
 }
 
@@ -305,10 +312,10 @@ const STATE_TEXT: Record<ReportFindingState, Bi> = {
   review: bi("Requires professional review", "Requiere revisión profesional"),
   not_applicable: bi("Not applicable", "No aplica"),
   none_mapped: bi("None mapped — not the same as no constraint on the ground", "Nada mapeado — no equivale a ausencia de restricciones en el terreno"),
-  unavailable: bi("Unable to verify — source did not answer", "No se pudo verificar — la fuente no respondió"),
+  unavailable: bi("Unable to verify — source did not respond", "No se pudo verificar — la fuente no respondió"),
   stale: bi("Unable to verify — refreshing for this location", "No se pudo verificar — actualizando para esta ubicación"),
   not_performed: bi("Not checked — SmartPR did not run this check", "No verificado — SmartPR no realizó esta verificación"),
-  not_evaluated: bi("Not evaluated — describe the proposed activity", "No evaluado — describe la actividad propuesta"),
+  not_evaluated: bi("Pending proposed activity", "Pendiente de la actividad propuesta"),
   loading: bi("Checking…", "Verificando…"),
 };
 export const findingStateText = (s: ReportFindingState) => STATE_TEXT[s] ?? STATE_TEXT.unavailable;
@@ -339,7 +346,7 @@ const pctText = (share: number) => formatShare(share, true);
 
 /** coverage.ts result → report coverage with display strings and plain-language warnings. */
 type KeyText = (key: string, lang?: "en" | "es") => string;
-function toReportCoverage(c: Coverage, label: (key: string) => Bi, keyText: KeyText = (k) => k): ReportCoverage {
+function toReportCoverage(c: Coverage, label: (key: string) => Bi, keyText: KeyText = (k) => k, groupOf?: (key: string) => string, groupLabel?: (group: string, members: string[]) => Bi): ReportCoverage {
   const others = c.parts.length + (c.unmapped_share > UNMAPPED_WARN_SHARE ? 1 : 0) > 1;
   const warnings: Bi[] = [];
   for (const w of c.warnings) {
@@ -352,7 +359,20 @@ function toReportCoverage(c: Coverage, label: (key: string) => Bi, keyText: KeyT
     method: c.method,
     exclusive: c.exclusive,
     parcel_area_m2: c.parcel_area_m2,
-    parts: c.parts.map((p) => ({ key: p.key, label: label(p.key), area_m2: p.area_m2, share: p.share, share_text: formatShare(p.share, others), area_text: formatArea(p.area_m2), small: p.small, contains_pin: c.pin_key === p.key })),
+    ...(() => {
+      const raw = c.parts.map((p) => ({ key: p.key, label: label(p.key), area_m2: p.area_m2, share: p.share, share_text: formatShare(p.share, others), area_text: formatArea(p.area_m2), small: p.small, contains_pin: c.pin_key === p.key }));
+      if (!groupOf) return { parts: raw };
+      // Identical classifications (same display class) are combined; the components stay in raw_parts.
+      const groups = new Map<string, typeof raw>();
+      for (const p of raw) groups.set(groupOf(p.key), [...(groups.get(groupOf(p.key)) ?? []), p]);
+      if ([...groups.values()].every((g) => g.length === 1)) return { parts: raw };
+      const gOthers = groups.size + (c.unmapped_share > UNMAPPED_WARN_SHARE ? 1 : 0) > 1;
+      const parts = [...groups.entries()].map(([g, ms]) => {
+        const area = ms.reduce((s, m) => s + m.area_m2, 0), share = ms.reduce((s, m) => s + m.share, 0);
+        return { key: g, label: groupLabel ? groupLabel(g, ms.map((m) => m.key)) : label(g), area_m2: area, share, share_text: formatShare(share, gOthers), area_text: formatArea(area), small: share < SMALL_SHARE, contains_pin: ms.some((m) => m.contains_pin), members: ms.map((m) => m.key) };
+      }).sort((a, b) => b.area_m2 - a.area_m2);
+      return { parts, raw_parts: raw };
+    })(),
     unmapped_m2: c.unmapped_m2,
     unmapped_share: c.unmapped_share,
     overlap_m2: c.overlap_m2,
@@ -632,7 +652,7 @@ export function buildPropertyReport(input: {
     const hasRule = lu.districts.some((d) => d.permissionId && !d.sliver);
     add({
       id: "permitted_uses", group: "land",
-      title: bi("Permitted uses, conditions & exceptions", "Usos permitidos, condiciones y excepciones"),
+      title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
       value: bi(`${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].en}`, `${lu.activity.useName}: ${COMPATIBILITY_TEXT[c.baseOutcome ?? c.outcome].es}`),
       detail: bi([...lu.districts.filter((d) => !d.sliver && d.conditions.length).flatMap((d) => d.conditions), ...c.reasons].join(" ")),
       state: hasRule ? "sourced" : "review",
@@ -646,9 +666,9 @@ export function buildPropertyReport(input: {
   } else {
     add({
       id: "permitted_uses", group: "land",
-      title: bi("Permitted uses, conditions & exceptions", "Usos permitidos, condiciones y excepciones"),
+      title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
       value: null,
-      detail: bi("Not evaluated — describe what you want to do with this property to check it against the district's use table.", "No evaluado — describe lo que quieres hacer con esta propiedad para verificarlo con la tabla de usos del distrito."),
+      detail: bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
       state: "not_evaluated", tone: "unknown", scope: "parcel", sources: [RC_2023], looked_up_at: null, key: false,
       notes: [rulesVersion],
     });
@@ -660,11 +680,15 @@ export function buildPropertyReport(input: {
   const fParcel = parcel?.flood;
   const parcelZones = fParcel?.status === "sourced" ? fParcel.zones : [];
   const fCovRaw = fParcel?.status === "sourced" ? (fParcel.coverage ?? (parcel?.areas_reliable?.flood ? legacyCoverage(parcelZones.map((z) => ({ key: `${z.zone}|${z.subtype ?? ""}`, area_m2: z.area_m2, share: z.share })), parcelArea) : null)) : null;
-  const fCov = fCovRaw ? toReportCoverage(fCovRaw, (k) => bi(floodZoneText(k, "en"), floodZoneText(k, "es")), floodKeyText) : null;
-  const sfhaParts = fCov ? fCov.parts.filter((p) => parcelZones.find((z) => `${z.zone}|${z.subtype ?? ""}` === p.key)?.sfha) : [];
+  // Same FEMA zone with different subtypes (e.g. AE and AE floodway) is one zone in the summary; shaded X (0.2%) stays distinct.
+  const floodGroup = (k: string) => { const [z, sub] = k.split("|"); return /0\.2/.test(sub ?? "") ? `${z}|0.2` : `${z}|`; };
+  const fCov = fCovRaw ? toReportCoverage(fCovRaw, (k) => bi(floodZoneText(k, "en"), floodZoneText(k, "es")), floodKeyText, floodGroup,
+    (g, ms) => { const fw = ms.filter((m) => /FLOODWAY/i.test(m)); return bi(`${floodZoneText(g, "en")}${fw.length ? " (includes regulatory floodway portion)" : ""}`, `${floodZoneText(g, "es")}${fw.length ? " (incluye porción de cauce mayor)" : ""}`); }) : null;
+  const fRaw = fCov ? (fCov.raw_parts ?? fCov.parts) : [];
+  const sfhaParts = fCov ? fCov.parts.filter((p) => (p.members ?? [p.key]).some((k) => parcelZones.find((z) => `${z.zone}|${z.subtype ?? ""}` === k)?.sfha)) : [];
   const sfhaParcel = parcelZones.some((z) => z.sfha);
   const sfha = sfhaParcel || !!fm?.sfha;
-  const fUnmeasured = fCov ? parcelZones.filter((z) => !fCov.parts.some((p) => p.key === `${z.zone}|${z.subtype ?? ""}`)).map((z) => z.zone) : [];
+  const fUnmeasured = fCov ? parcelZones.filter((z) => !fRaw.some((p) => p.key === `${z.zone}|${z.subtype ?? ""}`)).map((z) => z.zone) : [];
   const fMore = fUnmeasured.length ? bi(` · ${fUnmeasured.map((z) => `${z} (area not measured)`).join(" · ")}`, ` · ${fUnmeasured.map((z) => `${z} (área no medida)`).join(" · ")}`) : bi("", "");
   const floodValue: Bi | null = fCov ? bi(`Zone ${coverageValue(fCov, floodKeyText).en}${fMore.en}`, `Zona ${coverageValue(fCov, floodKeyText).es}${fMore.es}`) : parcelZones.length ? bi(`Zone ${parcelZones.map((z) => z.zone).join(" · ")}`, `Zona ${parcelZones.map((z) => z.zone).join(" · ")}`) : fm ? bi(`Zone ${fm.zone}`, `Zona ${fm.zone}`) : null;
   const floodNotes: Bi[] = [...(fCov?.warnings ?? []), ...(fCov?.parts.some((p) => p.small) ? [SMALL_NOTE] : [])];
@@ -924,6 +948,7 @@ export function buildPropertyReport(input: {
   const protectedLand = lc?.status === "resolved" && current && lc.tags.includes("SREP");
   const classify = (id: string, c: ConstraintClass) => { const f = fid(id); if (f && f.state === "sourced") f.constraint = c; };
   if (conservationDistricts.length || pointConservation) classify("zoning", "protection");
+  { const zf2 = fid("zoning"); if (zf2 && (conservationDistricts.length || pointConservation)) zf2.meta = { conservation: conservationDistricts.length ? conservationDistricts.map((d) => d.code) : [zPoint!.code ?? ""] }; }
   if (protectedLand) classify("land_class", "protection");
   // Protection designations read red everywhere (preview pills, drawer, PDF).
   for (const f of findings) if (f.constraint === "protection") f.tone = "hazard";
@@ -1081,7 +1106,7 @@ export function buildPropertyReport(input: {
     context, findings.map((f) => [f.id, f.state, f.value?.en]),
   ]));
 
-  return {
+  const report: PropertyReport = {
     schema: REPORT_SCHEMA,
     fingerprint,
     location_revision: input.revision,
@@ -1130,8 +1155,10 @@ export function buildPropertyReport(input: {
     versions: { schema: REPORT_SCHEMA, coverage_method: COVERAGE_METHOD, rules: `${RC_2023.name} ${RC_2023.version} (SmartPR knowledge graph)` },
     discrepancies,
     sources,
-    disclaimer: bi("Reference information from official map sources, not a survey or a permit decision. No permission or approval is implied.", "Información de referencia de fuentes cartográficas oficiales; no es una mensura ni una decisión de permiso. No implica permiso ni aprobación."),
+    disclaimer: bi("Reference information from official map sources. This is not a survey, permit decision, or approval.", "Información de referencia de fuentes cartográficas oficiales. No es una mensura, decisión de permiso ni aprobación."),
   };
+  report.assessment = reviewerAssessment(report);
+  return report;
 }
 
 /** Every finding belongs to the report's own (confirmed) location. */
@@ -1171,34 +1198,46 @@ export function basisOf(f: ReportFinding): FindingBasis {
   return f.basis === "official" || !f.basis ? findingBasis(f.state, f.id === "permitted_uses") : f.basis;
 }
 
-/** Plain-text summary for "Copy summary". */
+/** Reviewer assessment — stored on v2 reports, derived for older ones. */
+export function assessmentOf(r: PropertyReport): ReviewerAssessment {
+  return r.assessment ?? reviewerAssessment(r);
+}
+
+export const SCOPE_TEXT = {
+  parcel: bi("Checked across parcel", "Verificado en toda la parcela"),
+  point: bi("At selected point", "En el punto seleccionado"),
+  municipality: bi("Municipality-wide record", "Registro de todo el municipio"),
+} as const;
+
+/** Plain-text summary for "Copy summary": site summary → key findings → next steps → still needed → detailed findings. */
 export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: ReturnType<typeof exportableReview> = null): string {
   const t = (b: Bi | null) => (b ? b[lang] : "—");
   const L = (en: string, es: string) => (lang === "es" ? es : en);
   const area = reportArea(r);
-  const lead = reportLeadSummary(r);
+  const a = assessmentOf(r);
   const nad = r.property.technical.nad83_state_plane;
-  const scope = (f: ReportFinding) => (f.scope === "parcel" ? L("across the parcel", "en toda la parcela") : f.scope === "point" ? L("at the pin", "en el pin") : L("municipality-wide", "en todo el municipio"));
-  const section = (k: keyof typeof SUMMARY_HEADINGS) => ["", t(SUMMARY_HEADINGS[k]).toUpperCase(), ...(lead[k].length ? lead[k].map((x) => `• ${t(x)}`) : [`• ${L("Nothing listed.", "Nada listado.")}`])];
+  const group = (title: string, xs: typeof a.review) => (xs.length ? [title, ...xs.map((x) => `• ${t(x.label)}: ${t(x.value)}`)] : []);
   const lines = [
     `${L("Property & Site Report", "Informe de propiedad y lugar")} — ${r.property.title}`,
     `${r.property.address.primary}, ${r.property.address.secondary}`,
-    `${L("Coordinates (WGS84)", "Coordenadas (WGS84)")}: ${r.property.latitude.toFixed(6)}, ${r.property.longitude.toFixed(6)}`,
-    `${L("Catastro", "Catastro")}: ${r.property.catastro.value ?? t(findingStateText(r.property.catastro.state))}`,
-    `${L("Approximate area", "Área aproximada")}: ${t(area.text)} — ${t(area.note)}`,
-    ...section("mapped"),
-    ...section("may_affect"),
-    ...section("unverified"),
-    ...section("next"),
-    ...(r.land_use?.activity.use && r.land_use.evidence.length ? ["", L("LIKELY EVIDENCE (FROM VERIFIED RULES)", "EVIDENCIA PROBABLE (DE REGLAS VERIFICADAS)"), ...r.land_use.evidence.map((e) => `• ${e}`)] : []),
+    `${L("Coordinates", "Coordenadas")}: ${r.property.latitude.toFixed(6)}, ${r.property.longitude.toFixed(6)} · ${L("Catastro", "Catastro")}: ${r.property.catastro.value ?? t(findingStateText(r.property.catastro.state))} · ${L("Approximate area", "Área aproximada")}: ${t(area.text)} (${t(area.note)})`,
     "",
-    L("FINDINGS", "HALLAZGOS"),
+    t(a.conclusion),
+    "",
+    L("KEY REGULATORY FINDINGS", "HALLAZGOS REGULATORIOS CLAVE"),
+    ...group(L("Review required:", "Requiere revisión:"), a.review),
+    ...group(L("Clear (checked, no mapped constraint):", "Despejado (verificado, sin restricción mapeada):"), a.clear),
+    ...group(L("Unable to verify:", "No se pudo verificar:"), a.unable),
+    "",
+    L("RECOMMENDED NEXT STEPS", "PRÓXIMOS PASOS RECOMENDADOS"),
+    ...(a.actions.length ? a.actions.map((x, i) => `${i + 1}. ${t(x.issue)} — ${t(x.action)}`) : [L("None.", "Ninguno.")]),
+    ...(a.still_needed.length ? ["", L("STILL NEEDED FROM YOU", "AÚN NECESITAMOS DE USTED"), ...a.still_needed.map((x) => `• ${t(x.title)}: ${t(x.text)}`)] : []),
+    "",
+    L("DETAILED SOURCE FINDINGS", "HALLAZGOS DETALLADOS POR FUENTE"),
     ...r.findings.map((f) => {
-      const b = BASIS_TEXT[basisOf(f)];
       const val = f.value && (f.state === "sourced" || f.state === "none_mapped") ? t(f.value) : t(findingStateText(f.state));
-      return `• ${f.constraint === "protection" ? L("[PROTECTION] ", "[PROTECCIÓN] ") : ""}${t(f.title)}: ${val} — ${t(b)}, ${scope(f)}${f.pin ? `; ${L("at the pin", "en el pin")}: ${t(f.pin.value)}` : ""}`;
+      return `• ${t(f.title)}: ${val} — ${t(SCOPE_TEXT[f.scope])}; ${t(BASIS_TEXT[basisOf(f)])}${f.pin ? `; ${L("at the pin", "en el pin")}: ${t(f.pin.value)}` : ""}`;
     }),
-    ...(r.next_steps.steps.length ? ["", L("MAPPED CONSTRAINTS & PREPARATION", "RESTRICCIONES MAPEADAS Y PREPARACIÓN"), ...r.next_steps.steps.map((s) => `- ${t(s.text)} [${s.sources.map((x) => x.name).join("; ")}]`)] : []),
     ...(review ? [
       "",
       `${L("Professional review", "Revisión profesional")}: ${review.status_text[lang]}${review.reviewed_at ? ` (${review.reviewed_by?.name ?? ""} ${review.reviewed_at.slice(0, 10)})` : ""} — ${review.disclaimer[lang]}`,

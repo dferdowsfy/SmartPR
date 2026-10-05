@@ -63,7 +63,7 @@ test("Santurce: previously 'not performed' checks are now verified or no-mapped"
   // No activity → "Not evaluated", never "Not applicable".
   assert.equal(f(r, "permitted_uses").state, "not_evaluated");
   assert.equal(findingStatus(f(r, "permitted_uses").state), "not_evaluated");
-  assert.equal(r.flags!.find((x) => x.id === "compatibility")!.value.en, "Not evaluated — describe the proposed activity");
+  assert.equal(r.flags!.find((x) => x.id === "compatibility")!.value.en, "Pending proposed activity");
 });
 
 const ACTS = {

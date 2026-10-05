@@ -117,6 +117,8 @@ test("no activity: 'Not evaluated', no complexity score, nothing prescribed", as
   assert.equal(r.complexity, null);
   assert.ok(!r.flags!.some((f) => f.id === "complexity"));
   assert.match(r.summary!.may_affect[0]!.en, /^Not evaluated — describe the proposed activity/);
+  assert.equal(F(r, "permitted_uses").title.en, "Permitted-use analysis");
+  assert.match(F(r, "permitted_uses").detail!.en, /^Unable to evaluate until the proposed activity is provided\.$/);
   const said = [...r.next_steps.steps.map((s) => s.text.en), ...r.flags!.map((f) => f.value.en), ...r.findings.map((f) => `${f.plain?.en ?? ""} ${f.detail?.en ?? ""}`)].join(" ");
   assert.doesNotMatch(said, /elevation certificate|plan a geotechnical|budget for|expect coastal|review required|permit is required/i);
   assert.match(F(r, "permitted_uses").notes![0]!.en, /Reglamento Conjunto .* version 2023 .* not confirmed whether later amendments apply/);
@@ -130,12 +132,12 @@ test("summary leads with mapped → may affect → unverified → next; copy/JSO
   assert.ok(r.summary!.next.some((n) => /Describe the proposed activity/.test(n.en)));
   assert.equal(r.property.area!.text.en, "15,152 m² (3.86 cuerdas)");
   const txt = reportSummaryText(r, "en");
-  const order = ["WHAT IS MAPPED ON THIS PROPERTY", "WHAT MAY AFFECT THE PROPOSED PROJECT", "WHAT REMAINS UNVERIFIED", "WHAT TO PROVIDE OR INVESTIGATE NEXT", "FINDINGS", "TECHNICAL"];
+  const order = ["Based on available official map sources", "KEY REGULATORY FINDINGS", "RECOMMENDED NEXT STEPS", "STILL NEEDED FROM YOU", "DETAILED SOURCE FINDINGS", "TECHNICAL"];
   const idx = order.map((h) => txt.indexOf(h));
   assert.ok(idx.every((i, k) => i > 0 && (k === 0 || i > idx[k - 1]!)), JSON.stringify(idx));
-  assert.match(txt, /Approximate area: 15,152 m² \(3\.86 cuerdas\) — From the mapped CRIM boundary/);
+  assert.match(txt, /Approximate area: 15,152 m² \(3\.86 cuerdas\) \(From the mapped CRIM boundary/);
   assert.match(txt, /NAD83 \/ Puerto Rico & Virgin Is\. \(EPSG:32161\): X [\d,.]+ m, Y [\d,.]+ m \(units: metres\)/);
-  assert.match(txt, /Historic zone: Unable to verify — source did not answer — Source unavailable, across the parcel/);
+  assert.match(txt, /• Historic zone: Unable to verify — source did not respond — Checked across parcel; Source unavailable/);
   assert.doesNotMatch(txt, /(^|\s)0(\s|$)/m, "no stray 0");
   assert.equal(r.schema, "smartpr.property-report/v2");
   assert.ok(r.versions!.coverage_method.includes("EPSG:32161"));
@@ -214,7 +216,7 @@ test("no parcel boundary: area is 'Not available' with the reason, never a statu
   const r = buildPropertyReport({ site: site(lat, lng, abLayers(lat, lng)), parcel, revision: 1, context: noActivity, now: new Date(at) });
   assert.equal(r.property.area!.text.en, "Not available");
   assert.equal(r.property.area!.note.en, "no CRIM parcel boundary at the pin");
-  assert.match(reportSummaryText(r, "en"), /Approximate area: Not available — no CRIM parcel boundary at the pin/);
+  assert.match(reportSummaryText(r, "en"), /Approximate area: Not available \(no CRIM parcel boundary at the pin\)/);
   const z = F(r, "zoning");
   assert.equal(z.scope, "point");
   assert.match(z.detail!.en, /Whole-parcel districts not determined \(timed out after 12 s\); other districts may cover part of the lot/);
@@ -237,6 +239,84 @@ test("saved v1 reports still open: area, lead summary and basis are derived, nev
   assert.ok(r);
   assert.equal(reportArea(r).text.en, "Not available");
   assert.equal(basisOf(r.findings[0]!), "source_unavailable");
-  assert.equal(reportLeadSummary(r).may_affect[0]!.en, "Not evaluated — describe the proposed activity");
-  assert.match(reportSummaryText(r, "en"), /Historic zone: Unable to verify — source did not answer — Source unavailable/);
+  assert.equal(reportLeadSummary(r).may_affect[0]!.en, "Pending proposed activity");
+  assert.match(reportSummaryText(r, "en"), /Historic zone: Unable to verify — source did not respond — Checked across parcel; Source unavailable/);
+  // The reviewer assessment is derived for saved v1 reports: unable stays unable.
+  assert.ok(reportSummaryText(r, "en").includes("Unable to verify:\n• Historic zone: Source did not respond"));
+});
+
+// ---------------------------------------------------------------------------
+// Reviewer assessment (presentation layer) — Guayama-like synthetic parcel:
+// regulatory floodway, CR conservation on ~2%, FEMA AE/X split across
+// duplicate components (AE 13.7% + AE floodway 3.7%, X 2.8% + X 79.8%).
+// ---------------------------------------------------------------------------
+function guayama(): PropertyReport {
+  const lat = LAT + D / 2, lng = LNG + 0.5 * D;
+  const boundary = parseParcelBoundary({ features: [{ attributes: { NUM_CATASTRO: "000-000-000-01" }, geometry: { rings: rect(0, 1) } }] } as never, lng, lat);
+  const g = boundary.value!.geometry;
+  const pin = { latitude: lat, longitude: lng };
+  const z = parseZoningDistricts({ features: [{ attributes: { cali: "R-G", descrip: "Rural General" } }, { attributes: { cali: "CR", descrip: "Conservación de Recursos" } }] } as never, "parcel");
+  z.coverage = computeCoverage(g, [{ key: "R-G", rings: rect(0, 0.98) }, { key: "CR", rings: rect(0.98, 1) }], { exclusive: true, pin });
+  applyCoverage(z.districts, (d) => d.code, z.coverage);
+  const fl = parseFloodZones({ features: [
+    { attributes: { FLD_ZONE: "AE", ZONE_SUBTY: null, SFHA_TF: "T" } },
+    { attributes: { FLD_ZONE: "AE", ZONE_SUBTY: "FLOODWAY", SFHA_TF: "T" } },
+    { attributes: { FLD_ZONE: "X", ZONE_SUBTY: "AREA OF MINIMAL FLOOD HAZARD", SFHA_TF: "F" } },
+    { attributes: { FLD_ZONE: "X", ZONE_SUBTY: "AREA WITH REDUCED FLOOD RISK DUE TO LEVEE", SFHA_TF: "F" } },
+  ] } as never, "parcel");
+  fl.coverage = computeCoverage(g, [
+    { key: "AE|", rings: rect(0.826, 0.963) }, { key: "AE|FLOODWAY", rings: rect(0.963, 1) },
+    { key: "X|AREA WITH REDUCED FLOOD RISK DUE TO LEVEE", rings: rect(0, 0.028) }, { key: "X|AREA OF MINIMAL FLOOD HAZARD", rings: rect(0.028, 0.826) },
+  ], { exclusive: true, pin });
+  applyCoverage(fl.zones, (q) => `${q.zone}|${q.subtype ?? ""}`, fl.coverage);
+  const parcel: ParcelFindings = { latitude: lat, longitude: lng, retrieved_at: at, boundary, zoning: z, flood: fl, areas_reliable: { zoning: true, flood: true }, extras: {} };
+  const layers = abLayers(lat, lng, "X");
+  layers.results = layers.results.map((x) => (x.layer === "terrain" ? { ...x, code: "Low", name: "Low", tags: ["LANDSLIDE_LOW"] } : x));
+  return buildPropertyReport({ site: site(lat, lng, layers, "Guayama"), parcel, revision: 1, context: noActivity, now: new Date(at) });
+}
+
+test("reviewer: identical FEMA classes are combined for display (X 82.6% · AE 17.4%); components kept for audit", () => {
+  const f = F(guayama(), "flood_zone");
+  assert.equal(f.value!.en, "Zone X 82.6% · AE 17.4%", "largest first, as everywhere in the report");
+  assert.deepEqual(f.coverage!.parts.map((p) => p.key), ["X|", "AE|"]);
+  assert.equal(f.coverage!.raw_parts!.length, 4, "raw components preserved");
+  assert.match(f.coverage!.parts.find((p) => p.key === "AE|")!.label.en, /includes regulatory floodway portion/);
+  assert.ok(Math.abs(f.coverage!.parts.reduce((s, p) => s + p.share, 0) - 1) < 0.001);
+});
+
+test("reviewer: conclusion, three status groups and ranked actions come only from the findings", () => {
+  const r = guayama();
+  const a = r.assessment!;
+  assert.match(a.conclusion.en, /^Based on available official map sources, site review found \d+ items requiring attention: a regulatory floodway is mapped on the parcel, approximately 17\.4% of the parcel is in a mapped FEMA Special Flood Hazard Area, approximately 2\.0% of the parcel is within CR conservation zoning and land-use compatibility cannot be determined until the proposed activity is provided\. \d+ checks could not be verified because the source did not respond or was not checked\.$/);
+  assert.doesNotMatch(a.conclusion.en, /\b(approved|prohibited|permitted|compliant|rejected)\b/i);
+  const review = a.review.map((x) => x.id);
+  assert.deepEqual(review.slice(0, 1), ["floodway"], "severe items first");
+  assert.ok(review.includes("zoning_conservation") && review.includes("compatibility") && review.includes("flood_sfha"));
+  assert.equal(a.review.find((x) => x.id === "zoning_conservation")!.value.en, "CR conservation zoning affects approximately 2.0% of the parcel");
+  assert.equal(a.review.find((x) => x.id === "compatibility")!.value.en, "Proposed activity required before compatibility can be evaluated (zoning: R-G 98.0% · CR 2.0%)");
+  assert.ok(a.clear.some((x) => x.id === "coastal_zone" && x.value.en === "Outside mapped boundary"));
+  assert.ok(a.clear.some((x) => x.id === "terrain" && x.value.en === "Low"));
+  // Unable to verify is never clear, and clear is never unable.
+  const ids = (xs: typeof a.clear) => new Set(xs.map((x) => x.id));
+  for (const id of ids(a.unable)) assert.ok(!ids(a.clear).has(id), id);
+  assert.ok(a.unable.some((x) => x.id === "flood_advisory" && x.value.en === "Source did not respond"));
+  assert.deepEqual(a.actions.slice(0, 4).map((x) => x.id), ["floodway", "zoning_conservation", "flood_sfha", "compatibility"]);
+  assert.equal(a.actions[0]!.action.en, "Plan development outside the mapped floodway where possible. If encroachment is proposed, confirm whether engineering analysis and no-rise documentation are required.");
+  assert.match(a.actions[3]!.action.en, /^Describe the proposed activity so SmartPR can evaluate compatibility with the R-G and CR zoning districts\./);
+  assert.ok(a.actions.every((x) => !/\(RP-13|44 CFR/.test(x.action.en)), "citations live behind Why?, not in the action");
+  // Still needed = user input only.
+  assert.deepEqual(a.still_needed.map((x) => x.id), ["activity"]);
+  assert.equal(r.disclaimer.en, "Reference information from official map sources. This is not a survey, permit decision, or approval.");
+});
+
+test("reviewer: with no review items the conclusion says so without claiming a clearance", () => {
+  const p = synthParcel(0.5, [{ zone: "X", x0: 0, x1: 1 }]);
+  const lu = { activity: { use: "LU_X", useName: "Shop", raw: "shop" }, compatibility: { outcome: "permitted", reasons: [], confidence: "high", baseOutcome: "permitted", path: [] }, approvals: [], evidence: [], unresolved: [], districts: [], standards: [], questions: [], coverageGaps: [], rulesEvaluated: [], complexity: { level: "low", score: 0, factors: [] } } as never;
+  const layers = abLayers(p.latitude, p.longitude);
+  layers.results = layers.results.filter((x) => x.layer !== "terrain" && x.layer !== "flood_advisory");
+  const r = buildPropertyReport({ site: site(p.latitude, p.longitude, layers), parcel: p, revision: 1, context: noActivity, landUse: lu, now: new Date(at) });
+  const a = r.assessment!;
+  assert.equal(a.review.length, 0, JSON.stringify(a.review.map((x) => x.id)));
+  assert.match(a.conclusion.en, /no mapped constraint requiring review was identified among the checks that responded\. This is not a clearance\./);
+  assert.match(a.clear.find((x) => x.id === "compatibility")!.value.en, /under the mapped district rules \(conditions may still apply\)/);
 });

@@ -7,7 +7,7 @@
 // ============================================================================
 
 import type { jsPDF as JsPDF } from "jspdf";
-import { BASIS_TEXT, basisOf, findingStateText, reportArea, reportLeadSummary, SUMMARY_HEADINGS, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
+import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportTone } from "./propertyReport";
 import { COMPATIBILITY_TEXT } from "./landUse";
 import type { exportableReview } from "./propertyReview";
 
@@ -113,47 +113,41 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
   y += boxH + 2;
   para(`${L("Area", "Área")}: ${area.note[lang]}`, 7.5, "italic", MUTED);
 
-  // ---- Lead summary ------------------------------------------------------------
-  const lead = reportLeadSummary(report);
-  for (const k of Object.keys(SUMMARY_HEADINGS) as Array<keyof typeof SUMMARY_HEADINGS>) {
-    heading(SUMMARY_HEADINGS[k][lang]);
-    if (!lead[k].length) para(L("Nothing listed.", "Nada listado."), 9, "italic", MUTED);
-    for (const x of lead[k]) para(`• ${x[lang]}`, 9, "normal", k === "unverified" ? TONE.attention.fg : INK, M + 2, CW - 2);
+  // ---- Reviewer conclusion ----------------------------------------------------------
+  const A = assessmentOf(report);
+  ensure(20);
+  color([243, 248, 247], "fill");
+  const concl = lines(A.conclusion[lang], CW - 10);
+  const ch = concl.length * lh(10.5) + 6;
+  doc.roundedRect(M, y - 2, CW, ch, 2, 2, "F");
+  color(TEAL, "fill"); doc.rect(M, y - 2, 1.4, ch, "F");
+  font(10.5, "normal", INK); concl.forEach((ln, i) => doc.text(ln, M + 5, y + 3 + i * lh(10.5)));
+  y += ch + 2;
+
+  // ---- Key regulatory findings -------------------------------------------------------
+  heading(L("Key regulatory findings", "Hallazgos regulatorios clave"));
+  const GROUP: Array<["review" | "clear" | "unable", string, string, ReportTone]> = [["review", "REVIEW REQUIRED", "REQUIERE REVISIÓN", "attention"], ["clear", "CLEAR", "DESPEJADO", "ok"], ["unable", "UNABLE TO VERIFY", "NO SE PUDO VERIFICAR", "unknown"]];
+  for (const [k, en, es, tone] of GROUP) {
+    if (!A[k].length) continue;
+    ensure(10);
+    pill(M, y, L(en, es), tone);
+    y += 6;
+    for (const x of A[k]) para(`• ${x.label[lang]}: ${x.value[lang]}`, 9.5, x.severe ? "bold" : "normal", x.severe ? TONE.hazard.fg : INK, M + 3, CW - 3);
+    y += 2;
   }
 
-  // ---- At a glance -----------------------------------------------------------
-  heading(L("At a glance", "Resumen"));
-  const glance = report.findings.filter((f) => f.pill && (f.state === "sourced" || f.state === "none_mapped"));
-  let x = M;
-  ensure(10);
-  for (const f of glance) {
-    font(8.5, "bold");
-    const w = doc.getTextWidth(safe(f.pill![lang])) + 8;
-    if (x + w > W - M) { x = M; y += 8.5; ensure(9); }
-    x += pill(x, y, f.pill![lang], f.tone) + 3;
-  }
-  y += 8;
-
-  // ---- Protection constraints -------------------------------------------------
-  const prot = report.next_steps.steps.filter((s) => s.constraint === "protection");
-  if (prot.length) {
-    ensure(24);
-    const startY = y;
-    const textW = CW - 12;
-    const body = prot.flatMap((s) => lines(`• ${s.text[lang]}`, textW));
-    const note = lines(prot[0]!.because[lang], textW);
-    const h = 10 + body.length * lh(9.5) + 2 + note.length * lh(8);
-    color(TONE.hazard.bg, "fill");
-    color([243, 195, 178], "draw");
-    doc.roundedRect(M, startY, CW, h, 2.5, 2.5, "FD");
-    color(TONE.hazard.dot, "fill");
-    doc.rect(M, startY, 1.6, h, "F");
-    y = startY + 7;
-    font(11, "bold", TONE.hazard.fg); doc.text(L("Protection constraints", "Restricciones de protección"), M + 6, y); y += 6;
-    font(9.5, "normal", INK); for (const ln of body) { doc.text(ln, M + 6, y); y += lh(9.5); }
-    y += 1;
-    font(8, "italic", TONE.hazard.fg); for (const ln of note) { doc.text(ln, M + 6, y); y += lh(8); }
-    y = startY + h + 4;
+  // ---- Recommended next steps ---------------------------------------------------------
+  heading(L("Recommended next steps", "Próximos pasos recomendados"));
+  if (!A.actions.length) para(L("No actions identified from the available map sources.", "No se identificaron acciones con las fuentes disponibles."), 9.5, "italic", MUTED);
+  A.actions.forEach((x, i) => {
+    para(`${i + 1}. ${x.issue[lang]}`, 10, "bold", INK);
+    para(x.action[lang], 9.5, "normal", INK, M + 5, CW - 5);
+    if (x.sources.length) para(`${L("Sources", "Fuentes")}: ${x.sources.map((s) => s.name).join("; ")}`, 7.5, "normal", MUTED, M + 5, CW - 5);
+    y += 1.5;
+  });
+  if (A.still_needed.length) {
+    heading(L("Still needed", "Aún falta"));
+    for (const x of A.still_needed) para(`• ${x.title[lang]}: ${x.text[lang]}`, 9.5, "normal", INK, M + 3, CW - 3);
   }
 
   // ---- Findings ----------------------------------------------------------------
@@ -165,7 +159,7 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     const sub = [
       f.value && answered && f.plain ? f.value[lang] : null,
       BASIS_TEXT[basisOf(f)][lang],
-      f.state === "sourced" ? (f.scope === "parcel" ? L("across the parcel", "en toda la parcela") : f.scope === "point" ? L("at the pin", "en el pin") : L("municipality-wide", "en todo el municipio")) : null,
+      f.state === "sourced" || f.state === "none_mapped" ? SCOPE_TEXT[f.scope][lang] : null,
       f.pin ? `${L("at the pin", "en el pin")}: ${f.pin.value[lang]}` : null,
       f.constraint === "protection" ? L("PROTECTION", "PROTECCIÓN") : f.constraint === "documentation" ? L("mapped constraint", "restricción mapeada") : null,
     ].filter(Boolean).join(" · ");
@@ -194,27 +188,17 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     color([240, 236, 228], "draw"); doc.setLineWidth(0.2); doc.line(M, y - 1, W - M, y - 1);
     y += 2.5;
   };
+  heading(L("Detailed site findings", "Hallazgos detallados del lugar"));
   for (const [g, en, es] of groups) {
-    heading(L(en, es));
+    para(L(en, es), 11, "bold", TEAL);
+    y += 1;
     for (const f of report.findings.filter((x) => x.group === g)) row(f);
   }
 
   // ---- Regulatory flags + land use -------------------------------------------------
-  if (report.flags?.length) {
-    heading(L("Regulatory flags", "Alertas regulatorias"));
-    let fx = M;
-    for (const f of report.flags) {
-      const text = `${f.label[lang]}: ${f.value[lang]}`;
-      font(8.5, "bold");
-      const w = doc.getTextWidth(safe(text)) + 8;
-      if (fx + w > W - M) { fx = M; y += 8.5; ensure(9); }
-      fx += pill(fx, y, text, f.tone) + 3;
-    }
-    y += 8;
-  }
   const lu = report.land_use;
   if (lu?.activity.use) {
-    heading(L("Proposed activity & land-use compatibility", "Actividad propuesta y compatibilidad de uso"));
+    heading(L("Land-use evaluation details", "Detalles de la evaluación de uso"));
     para(`"${lu.activity.raw}" — ${lu.activity.useName}`, 10, "italic", MUTED);
     const o = lu.compatibility.outcome;
     const tone: ReportTone = o === "permitted" ? "ok" : o === "potentially_prohibited" ? "hazard" : o === "insufficient" ? "unknown" : "attention";
@@ -241,25 +225,6 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     }
   }
 
-  // ---- Next steps --------------------------------------------------------------
-  heading(L("Next steps", "Próximos pasos"));
-  para(report.next_steps.activity[lang], 9.5, "italic", MUTED);
-  y += 1;
-  for (const [c, en, es] of [["documentation", "Mapped constraints (what the maps show — nothing prescribed)", "Restricciones mapeadas (lo que muestran los mapas — nada prescrito)"], ["information", "Preparation", "Preparación"]] as const) {
-    const list = report.next_steps.steps.filter((s) => s.constraint === c);
-    if (!list.length) continue;
-    para(L(en, es), 10, "bold", TEAL);
-    list.forEach((s, i) => {
-      para(`${i + 1}. ${s.text[lang]}`, 9.5, "normal", INK, M + 3, CW - 3);
-      para(`${L("Why", "Por qué")}: ${s.because[lang]} — ${s.sources.map((x) => x.name).join("; ")}`, 7.5, "normal", MUTED, M + 7, CW - 7);
-      y += 1;
-    });
-  }
-  if (report.next_steps.location_requirements.length) {
-    para(L("Requirements that depend on this location", "Requisitos que dependen de esta ubicación"), 10, "bold", TEAL);
-    for (const r of report.next_steps.location_requirements) para(`• ${r.title}`, 9.5, "normal", INK, M + 3, CW - 3);
-  }
-
   // ---- Professional review ------------------------------------------------------
   if (review && (review.notes.length || review.open_questions.length || review.resolved_questions.length || review.status !== "draft")) {
     heading(L("Professional review", "Revisión profesional"));
@@ -268,13 +233,6 @@ export async function downloadPropertyReportPdf(report: PropertyReport, lang: La
     for (const n of review.notes) para(`• ${L("Note", "Nota")}${n.finding_id ? ` [${n.finding_id}]` : ""}: ${n.text}${n.author ? ` — ${n.author}` : ""}`, 9.5, "normal", INK, M + 3, CW - 3);
     for (const q of review.open_questions) para(`• ${L("Open question", "Pregunta pendiente")}: ${q.text}`, 9.5, "bold", TONE.attention.fg, M + 3, CW - 3);
     for (const q of review.resolved_questions) para(`• ${L("Resolved", "Resuelta")}: ${q.text} -> ${q.resolution}`, 9.5, "normal", INK, M + 3, CW - 3);
-  }
-
-  // ---- Gaps ------------------------------------------------------------------------
-  const gaps = [...report.next_steps.missing, ...report.next_steps.unresolved];
-  if (gaps.length) {
-    heading(L("Missing information, checks not completed & discrepancies", "Información faltante, verificaciones pendientes y discrepancias"));
-    for (const g of gaps) para(`• ${g[lang]}`, 9, "normal", MUTED, M + 3, CW - 3);
   }
 
   // ---- Sources -----------------------------------------------------------------------
