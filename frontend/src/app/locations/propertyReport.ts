@@ -29,7 +29,7 @@
 
 import { CATASTRO_RE } from "./layers.ts";
 import { addressMunicipio, sameMunicipio } from "./municipios.ts";
-import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
+import { floodMapSummary, floodZoneList, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
 import { parsePlanTerritorialExtra, ptDateText, PT_FIELDS, toPrStatePlane, type ExtraFinding, type ParcelFindings } from "./parcel.ts";
 import { COVERAGE_METHOD, formatArea, formatShare, SMALL_SHARE, UNMAPPED_WARN_SHARE, type Coverage } from "./coverage.ts";
@@ -747,9 +747,11 @@ export function buildPropertyReport(input: {
   const sfhaParts = fCov ? fCov.parts.filter((p) => (p.members ?? [p.key]).some((k) => parcelZones.find((z) => `${z.zone}|${z.subtype ?? ""}` === k)?.sfha)) : [];
   const sfhaParcel = parcelZones.some((z) => z.sfha);
   const sfha = sfhaParcel || !!fm?.sfha;
-  const fUnmeasured = fCov ? parcelZones.filter((z) => !fRaw.some((p) => p.key === `${z.zone}|${z.subtype ?? ""}`)).map((z) => z.zone) : [];
+  const fUnmeasured = fCov ? parcelZones.filter((z) => !fRaw.some((p) => p.key === `${z.zone}|${z.subtype ?? ""}`)).map((z) => z.zone).filter((z, i, all) => all.indexOf(z) === i) : [];
   const fMore = fUnmeasured.length ? bi(` · ${fUnmeasured.map((z) => `${z} (area not measured)`).join(" · ")}`, ` · ${fUnmeasured.map((z) => `${z} (área no medida)`).join(" · ")}`) : bi("", "");
-  const floodValue: Bi | null = fCov ? bi(`Zone ${coverageValue(fCov, floodKeyText).en}${fMore.en}`, `Zona ${coverageValue(fCov, floodKeyText).es}${fMore.es}`) : parcelZones.length ? bi(`Zone ${parcelZones.map((z) => z.zone).join(" · ")}`, `Zona ${parcelZones.map((z) => z.zone).join(" · ")}`) : fm ? bi(`Zone ${fm.zone}`, `Zona ${fm.zone}`) : null;
+  // Governing (most hazardous) zone first, then each other distinct zone once.
+  const parcelZoneText = floodZoneList(parcelZones.map((z) => ({ zone: z.zone, sub: z.subtype }))).join(" · ");
+  const floodValue: Bi | null = fCov ? bi(`Zone ${coverageValue(fCov, floodKeyText).en}${fMore.en}`, `Zona ${coverageValue(fCov, floodKeyText).es}${fMore.es}`) : parcelZones.length ? bi(`Zone ${parcelZoneText}`, `Zona ${parcelZoneText}`) : fm ? bi(`Zone ${fm.zones.join(" · ")}`, `Zona ${fm.zones.join(" · ")}`) : null;
   const floodNotes: Bi[] = [...(fCov?.warnings ?? []), ...(fCov?.parts.some((p) => p.small) ? [SMALL_NOTE] : [])];
   if (fm && parcelZones.length && !fm.sfha && sfhaParcel) {
     const where = sfhaParts.length ? sfhaParts.map((p) => `${floodKeyText(p.key)} on ${p.share_text}`).join(", ") : parcelZones.filter((z) => z.sfha).map((z) => z.zone).join(", ");
