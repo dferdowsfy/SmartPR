@@ -3,18 +3,9 @@
 import { saveGuestDraft } from "../../../lib/guestDraft";
 import type { NormalizedScenario } from "../../../lib/chatgpt/assessment";
 import type { HandoffIntent } from "../../../lib/chatgpt/handoff";
+import { HANDOFF_INTAKE_PATH, handoffActions, scenarioToGuestDraft } from "../../../lib/chatgpt/handoffActions";
 
-export function scenarioToGuestDraft(s: NormalizedScenario) {
-  const profile: Record<string, unknown> = {};
-  if (s.business_type) profile.business_type = s.business_type;
-  if (s.municipality) profile.municipality = s.municipality;
-  if (s.business_status !== "unknown") profile.business_stage = s.business_status;
-  if (s.employees != null) profile.number_of_employees = s.employees;
-  if (s.activity_description) profile.description = s.activity_description;
-  return { profile, discoveryAnswers: { ...s.answers }, potentialDecisions: {}, currentStep: 1, language: "en" };
-}
-
-export default function HandoffReview({ scenario, intent, expiresAt, selfPath }: { scenario: NormalizedScenario; intent: HandoffIntent; expiresAt: string; selfPath: string }) {
+export default function HandoffReview({ scenario, intent, expiresAt, selfPath, signedIn = false }: { scenario: NormalizedScenario; intent: HandoffIntent; expiresAt: string; selfPath: string; signedIn?: boolean }) {
   const rows: Array<[string, string]> = [
     ["Activity", scenario.business_type || (scenario.business_type_input ? `${scenario.business_type_input} (to confirm)` : "Not provided")],
     ["Municipality", scenario.municipality || "Not provided"],
@@ -26,9 +17,13 @@ export default function HandoffReview({ scenario, intent, expiresAt, selfPath }:
   const answered = Object.keys(scenario.answers || {}).length;
   function proceed() {
     saveGuestDraft(scenarioToGuestDraft(scenario));
-    window.location.assign("/?entry=new-business&source=chatgpt");
+    window.location.assign(HANDOFF_INTAKE_PATH);
   }
+  const { primary, signIn } = handoffActions(intent, signedIn);
+  const loginHref = `/auth/login?next=${encodeURIComponent(selfPath)}`;
   const btn = { borderRadius: 8, padding: "10px 16px", fontWeight: 600, cursor: "pointer", fontSize: 15 } as const;
+  const solid = { ...btn, background: "#0f766e", color: "#fff", border: "1px solid #0f766e", textDecoration: "none" } as const;
+  const outline = { ...btn, background: "#fff", color: "#115e59", border: "1px solid #0f766e", textDecoration: "none" } as const;
   return (
     <section>
       <p style={{ color: "#64748b" }}>
@@ -41,14 +36,12 @@ export default function HandoffReview({ scenario, intent, expiresAt, selfPath }:
         <dt style={{ color: "#64748b" }}>Clarifying answers</dt><dd style={{ margin: 0 }}>{answered}</dd>
       </dl>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
-        <button type="button" onClick={proceed} style={{ ...btn, background: "#0f766e", color: "#fff", border: "1px solid #0f766e" }}>Review in SmartPR intake</button>
-        {intent !== "continue" && (
-          <a href={`/auth/login?next=${encodeURIComponent(selfPath)}`} style={{ ...btn, color: "#115e59", border: "1px solid #0f766e", textDecoration: "none" }}>Sign in to use my plan</a>
-        )}
-        {intent === "unlock" && (
-          <a href="/pricing" style={{ ...btn, color: "#115e59", border: "1px solid #0f766e", textDecoration: "none" }}>See plans</a>
-        )}
+        {signIn === "primary" && <a href={loginHref} style={solid}>Sign in to use my plan</a>}
+        <button type="button" onClick={proceed} style={signIn === "primary" ? outline : solid}>{primary}</button>
+        {signIn === "secondary" && <a href={loginHref} style={outline}>Sign in or create an account</a>}
+        {intent === "unlock" && <a href="/pricing" style={outline}>See plans</a>}
       </div>
+      {signedIn && <p style={{ color: "#64748b", fontSize: 13, marginTop: 10 }}>You&apos;re signed in — the scenario will open in your account&apos;s intake.</p>}
       <p style={{ color: "#64748b", fontSize: 12, marginTop: 16 }}>Link expires {new Date(expiresAt).toLocaleString()}. Preliminary triage, not legal advice.</p>
     </section>
   );

@@ -6,7 +6,7 @@
 
 import { handleChatgptMcp } from "../../../../lib/chatgpt/mcp";
 import { rateLimitAllow } from "../../../../lib/rateLimit";
-import { getSiteUrl } from "../../../../lib/siteUrl";
+import { portalUrlForRequest } from "../../../../lib/chatgpt/portalUrl";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     }
     let body: unknown;
     try { body = await request.json(); } catch { return rpcError(-32700, "Parse error.", 400); }
-    const result = handleChatgptMcp(body, { siteUrl: getSiteUrl() });
+    const result = handleChatgptMcp(body, { siteUrl: portalUrlForRequest(request) }); // public portal, never localhost/tunnel
     if (result.body === null) return new Response(null, { status: result.status });
     return Response.json(result.body, { status: result.status });
   } catch (e) {
