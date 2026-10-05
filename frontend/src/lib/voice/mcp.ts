@@ -496,6 +496,53 @@ export const MCP_TOOLS: McpToolDef[] = [
 
 export const MCP_TOOL_MAP = new Map(MCP_TOOLS.map((t) => [t.name, t]));
 
+/* ------------------------------------------------------------------ */
+/* Tool annotations (OpenAI Apps SDK / MCP review)                     */
+/*                                                                     */
+/* Every public tool carries explicit readOnlyHint / destructiveHint /  */
+/* openWorldHint booleans, per the plugin submission guidelines.       */
+/* Semantics:                                                          */
+/* - readOnlyHint true  = retrieval/computation with no state change.  */
+/* - destructiveHint true = deletion, overwriting, cancellation, or    */
+/*   other irreversible effects. Additive/pending writes are false.     */
+/* - openWorldHint false = every tool is confined to the bounded       */
+/*   SmartPR workspace/regulatory catalog (no open-web actions), even   */
+/*   though the server is externally hosted.                           */
+/* ------------------------------------------------------------------ */
+
+export interface McpToolAnnotations {
+  readOnlyHint: boolean;
+  destructiveHint: boolean;
+  openWorldHint: boolean;
+}
+
+const RO: McpToolAnnotations = { readOnlyHint: true, destructiveHint: false, openWorldHint: false };
+const WRITE: McpToolAnnotations = { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
+const WRITE_DESTRUCTIVE: McpToolAnnotations = { readOnlyHint: false, destructiveHint: true, openWorldHint: false };
+
+export const MCP_TOOL_ANNOTATIONS: Record<string, McpToolAnnotations> = {
+  get_general_requirements: RO,
+  verify_voice_pin: WRITE, // starts a stateful auth session; not destructive
+  get_account_context: RO,
+  list_my_businesses: RO,
+  get_business_summary: RO,
+  get_requirements: RO,
+  get_missing_items: RO,
+  get_readiness: RO,
+  get_deadlines: RO,
+  get_evidence_status: RO,
+  email_my_summary: WRITE, // outbound email to the caller's own verified address
+  create_draft_project: WRITE, // persists a draft proposal; nothing is submitted
+  propose_project_fact_update: WRITE, // creates a pending proposal; nothing is applied
+  confirm_pending_action: WRITE, // executes a pending non-destructive action
+  cancel_pending_action: WRITE_DESTRUCTIVE, // cancellation of a pending action
+  send_secure_upload_link: WRITE, // outbound email to the caller's own verified address
+  generate_deliverable: WRITE, // generates a PDF artifact for the caller's business
+  email_deliverable: WRITE, // outbound email to the caller's own verified address
+  add_note: WRITE, // proposes a note; nothing is saved until confirmed
+  send_secure_action_link: WRITE, // outbound email to the caller's own verified address
+};
+
 /**
  * Strip every argument the tool did not declare. Identity override attempts
  * (userId, workspaceId, role, plan, email, to, recipient, …) are dropped
@@ -1294,6 +1341,11 @@ export async function handleMcpRequest(
               name: t.name,
               description: t.description,
               inputSchema: t.inputSchema,
+              annotations: MCP_TOOL_ANNOTATIONS[t.name] ?? {
+                readOnlyHint: false,
+                destructiveHint: false,
+                openWorldHint: false,
+              },
             })),
           },
         },

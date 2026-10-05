@@ -381,6 +381,30 @@ describe("handleMcpRequest", () => {
     assert.equal(body.result.tools.length, 20);
     assert.ok(body.result.tools.every((t) => t.inputSchema));
   });
+  it("every listed tool carries explicit boolean OpenAI annotations", async () => {
+    // Plugin submission guidelines require readOnlyHint / destructiveHint /
+    // openWorldHint as explicit booleans on each tool.
+    const res = await handleMcpRequest(db, { jsonrpc: "2.0", id: 6, method: "tools/list" }, null);
+    const body = res.body as {
+      result: {
+        tools: Array<{
+          name: string;
+          annotations?: { readOnlyHint?: unknown; destructiveHint?: unknown; openWorldHint?: unknown };
+        }>;
+      };
+    };
+    assert.equal(body.result.tools.length, 20);
+    for (const t of body.result.tools) {
+      assert.equal(typeof t.annotations?.readOnlyHint, "boolean", `${t.name} readOnlyHint`);
+      assert.equal(typeof t.annotations?.destructiveHint, "boolean", `${t.name} destructiveHint`);
+      assert.equal(typeof t.annotations?.openWorldHint, "boolean", `${t.name} openWorldHint`);
+    }
+    // Spot-check semantics: pure retrievals are read-only, outbound email is not.
+    const byName = new Map(body.result.tools.map((t) => [t.name, t.annotations!]));
+    assert.equal(byName.get("get_general_requirements")!.readOnlyHint, true);
+    assert.equal(byName.get("email_my_summary")!.readOnlyHint, false);
+    assert.equal(byName.get("cancel_pending_action")!.destructiveHint, true);
+  });
   it("lists only the anonymous tools for the pre-auth marker", async () => {
     const res = await handleMcpRequest(
       db,
