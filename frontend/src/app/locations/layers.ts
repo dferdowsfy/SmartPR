@@ -1090,7 +1090,9 @@ export function parsePresence(
     status: "resolved",
     code: name ?? layer.toUpperCase(),
     name,
-    tags: [],
+    // REG-HISTORIC-ICP-001: the primary code is the zone's name (unique per
+    // zone), so rules key on this tag — `location.<layer>.inside` — instead.
+    tags: ["INSIDE"],
     attributes: Object.fromEntries(nameFields.map((f) => [f, str(a[f])])),
     source: ref(src, src.dataset_date, null),
     retrieval: "live",

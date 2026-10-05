@@ -126,7 +126,8 @@
     ],
     "citation": "Art. 8.4A, Ley 161-2009 (23 L.P.R.A. § 9018c-1), añadido por Ley 19-2017",
     "citation_url": "https://www.permisos.pr.gov/",
-    "citation_confidence": "page"
+    "citation_confidence": "page",
+    "municipal_delegation": true
   },
   {
     "id": "DOC_OCCUPANCY",
@@ -140,7 +141,8 @@
     "download_note": "Use/occupancy handled inside the OGPe Single Business Portal; no standalone form.",
     "citation": "Art. 8.4A, Ley 161-2009 — permiso de uso integrado al Permiso Único",
     "citation_url": "https://www.permisos.pr.gov/",
-    "citation_confidence": "statute"
+    "citation_confidence": "statute",
+    "municipal_delegation": true
   },
   {
     "id": "DOC_PATENTE_MUNICIPAL",
@@ -721,7 +723,9 @@
     "download_note": "Construction permits are filed 100% electronically via OGPe's Single Business Portal.",
     "citation": "Ley 161-2009, Ley para la Reforma del Proceso de Permisos (23 L.P.R.A. § 9011 et seq.)",
     "citation_url": "https://www.permisos.pr.gov/",
-    "citation_confidence": "statute"
+    "citation_confidence": "statute",
+    "municipal_delegation": true,
+    "delegated_name": "Construction Permit (Permiso de Construcción)"
   },
   {
     "id": "DOC_OWNER_AFFIDAVIT",
@@ -876,7 +880,8 @@
     "citation": "OGPe, Regulación de Profesionales ante la Oficina de Gerencia de Permisos (MO-OGPe-001, septiembre 2025), Regla 2.4.A.3 — Permisos Únicos, incluyendo los domiciliarios y temporeros, según lo establecido en el Reglamento Conjunto",
     "citation_url": "https://docs.pr.gov/files/DDEC/Aviso%20Pu%CC%81blico/Revisi%C3%B3n-III%20FOMB-(9.4.2025)Reglamento%20Regulaci%C3%B3n%20Profesional-FINAL%20aceptado%20OGPe.pdf",
     "citation_confidence": "official",
-    "citation_note": "Modeled as the home-business pathway of the OGPe Permiso Único process (validated permit model REG-HOME-PHYSICAL-001 / G04), not an independent permit alongside the standard commercial Permiso Único."
+    "citation_note": "Modeled as the home-business pathway of the OGPe Permiso Único process (validated permit model REG-HOME-PHYSICAL-001 / G04), not an independent permit alongside the standard commercial Permiso Único.",
+    "municipal_delegation": true
   },
   {
     "id": "DOC_AMBULANT_BUSINESS_LICENSE",
@@ -1039,14 +1044,14 @@
     "name": "Air Permit / Minor-Source Determination",
     "agency": "DRNA",
     "category": "Regulatory",
-    "agency_url": null,
+    "agency_url": "https://www.drna.pr.gov/acai/permisos/",
     "agency_canonical": "DRNA",
-    "download_url": null,
-    "download_kind": null,
-    "download_note": null,
-    "citation": "Equipment with air emissions may need a DRNA air permit or minor-source determination",
-    "citation_url": null,
-    "citation_confidence": "page"
+    "download_url": "https://www.drna.pr.gov/acai/permisos/",
+    "download_kind": "form_page",
+    "download_note": "DRNA's air-permits page has the permit forms and filing instructions. A minor source may qualify for an exemption or a general permit; document the determination either way.",
+    "citation": "Reglamento para el Control de la Contaminación Atmosférica (DRNA), Reglas 201–204; Ley Núm. 416-2004",
+    "citation_url": "https://www.drna.pr.gov/acai/permisos/",
+    "citation_confidence": "regulation"
   },
   {
     "id": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
@@ -1249,5 +1254,241 @@
     "citation": "Ley Núm. 247-2004 (Ley de Farmacia de Puerto Rico), Art. 5.05(b) — la obtención de la licencia de farmacia requiere cumplir las normas y procedimientos que por reglamento el Secretario de Salud determine; la farmacia debe contar con los servicios de por lo menos un (1) farmacéutico mientras esté abierta al público y designar al farmacéutico regente",
     "citation_url": "https://www.salud.pr.gov/CMS/DOWNLOAD/6279",
     "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_ICP_HISTORIC_RECOMMENDATION",
+    "name": "Historic-Zone Recommendation (Instituto de Cultura Puertorriqueña)",
+    "agency": "Instituto de Cultura Puertorriqueña (ICP)",
+    "category": "Regulatory",
+    "agency_url": "https://www.icp.pr.gov/",
+    "agency_canonical": "Instituto de Cultura Puertorriqueña",
+    "download_url": "https://www.sbp.pr.gov/",
+    "download_kind": "filing_portal",
+    "download_note": "Requested through OGPe's Single Business Portal as part of the construction or use permit file; OGPe (or the autonomous municipality's permits office) cannot issue the permit until the ICP's written recommendation is in the file. Applies to zones and sites on the Junta de Planificación's Registro de Sitios y Zonas Históricas, buildings on the National Register of Historic Places, and the plaza and surrounding blocks of a town's founding center. Signs, awnings, exterior paint, demolition and alcohol sales in a historic zone each need their own ICP recommendation.",
+    "citation": "Ley Núm. 374 de 14 de mayo de 1949 (Ley de Zonas Históricas, Antiguas o de Interés Turístico), Art. 1 (23 L.P.R.A. § 161), según enmendada; Reglamento Conjunto 2023, Regla 10.2.11, Secs. 10.2.11.2 y 10.2.11.5",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Turismo/374-1949/374-1949.pdf",
+    "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_SHPO_SECTION106_REVIEW",
+    "name": "Federal Historic-Preservation Review (Section 106, State Historic Preservation Office)",
+    "agency": "Oficina Estatal de Conservación Histórica (SHPO)",
+    "category": "Federal",
+    "agency_url": "https://www.oech.pr.gov/",
+    "agency_canonical": "Oficina Estatal de Conservación Histórica",
+    "download_url": "https://www.oech.pr.gov/",
+    "download_kind": "guidance_page",
+    "download_note": "Applies only when the work is a federal undertaking — federal funding (for example FEMA, HUD/CDBG-DR or SBA), a federal permit (for example a U.S. Army Corps of Engineers permit) or a federal license. The federal agency starts the consultation and the State Historic Preservation Office reviews effects on historic properties before the federal approval is issued.",
+    "citation": "National Historic Preservation Act, Sec. 106 (54 U.S.C. § 306108); 36 C.F.R. Part 800 (Protection of Historic Properties)",
+    "citation_url": "https://www.ecfr.gov/current/title-36/chapter-VIII/part-800",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+    "name": "Floodway No-Rise Certification (Hydrologic-Hydraulic Study)",
+    "agency": "DRNA / Junta de Planificación",
+    "category": "Regulatory",
+    "agency_url": "https://portaldeinundacion.jp.pr.gov/",
+    "agency_canonical": "DRNA",
+    "download_url": "https://docs.pr.gov/files/JP-Junta%20de%20Planificacion/Enlaces%20de%20Interes/No-Rise-Certificate-2025-.pdf",
+    "download_kind": "form_pdf",
+    "download_note": "Development in a regulatory floodway (cauce mayor) is prohibited unless a hydrologic-hydraulic study, prepared by a licensed engineer under the Junta de Planificación's H-H guidelines and evaluated by DRNA, shows the work causes no rise in the base flood level. The engineer signs the Junta de Planificación's No-Rise Certificate, which is filed with the flood-zone review and the construction permit.",
+    "citation": "Reglamento de Planificación Núm. 13 (Octava Revisión, vigencia 9 de enero de 2021), Sec. 6.01 — desarrollos en el cauce mayor; 44 C.F.R. § 60.3(d)(3)",
+    "citation_url": "https://portaldeinundacion.jp.pr.gov/uploads/Documentos/Reglamento-Num-13-Octava-Revision-Vigencia-9-Enero-2021-1.pdf",
+    "citation_confidence": "regulation",
+    "depends_on_document_ids": [
+      "DOC_JP_FLOOD_REG13"
+    ]
+  },
+  {
+    "id": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
+    "name": "Puerto Rico Controlled-Substances Registration (Certificado de Registro de Sustancias Controladas)",
+    "agency": "Departamento de Salud",
+    "category": "Health",
+    "agency_url": "https://www.salud.pr.gov/",
+    "agency_canonical": "Departamento de Salud",
+    "download_url": "https://www.salud.pr.gov/CMS/DOWNLOAD/2563",
+    "download_kind": "form_pdf",
+    "download_note": "Filed with the Departamento de Salud (Secretaría Auxiliar de Reglamentación y Acreditación de Facilidades de Salud, Controlled Substances Division) on its official application form; a pharmacy pays the pharmacy registration fee. Renew it before it expires and keep it posted at the establishment.",
+    "citation": "Ley Núm. 4 de 23 de junio de 1971 (Ley de Sustancias Controladas de Puerto Rico), Arts. 302–304 (24 L.P.R.A. §§ 2302–2304); Departamento de Salud, Formulario DS-DI-016",
+    "citation_url": "https://www.salud.pr.gov/CMS/DOWNLOAD/2563",
+    "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_DEA_REGISTRATION",
+    "name": "DEA Controlled-Substances Registration (Form 224)",
+    "agency": "U.S. Drug Enforcement Administration (DEA)",
+    "category": "Federal",
+    "agency_url": "https://www.deadiversion.usdoj.gov/",
+    "agency_canonical": "U.S. DEA",
+    "download_url": "https://www.deadiversion.usdoj.gov/",
+    "download_kind": "filing_portal",
+    "download_note": "Filed online with the DEA Diversion Control Division (Form 224 for pharmacies and practitioners). The DEA registers a location only after the state-level controlled-substances registration is in place, and the registration renews every three years.",
+    "citation": "Controlled Substances Act, 21 U.S.C. §§ 822–823; 21 C.F.R. §§ 1301.11 and 1301.13",
+    "citation_url": "https://www.ecfr.gov/current/title-21/chapter-II/part-1301",
+    "citation_confidence": "regulation",
+    "depends_on_document_ids": [
+      "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION"
+    ]
+  },
+  {
+    "id": "DOC_CANNABIS_DISPENSARY_LICENSE",
+    "name": "Medical Cannabis Dispensary License (Junta Reglamentadora del Cannabis Medicinal)",
+    "agency": "Junta Reglamentadora del Cannabis Medicinal (Departamento de Salud)",
+    "category": "Health",
+    "agency_url": "https://www.salud.pr.gov/",
+    "agency_canonical": "Departamento de Salud",
+    "download_url": "https://www.salud.pr.gov/menuInst/download/375",
+    "download_kind": "form_pdf",
+    "download_note": "Filed with the Junta Reglamentadora del Cannabis Medicinal on its dispensary application form. Only licensed establishments may dispense medical cannabis, entry to the dispensary is limited to patients and authorized adults 21 or older, and every owner, director and employee also needs the Junta's occupational identification.",
+    "citation": "Ley Núm. 42-2017 (Ley para Manejar el Estudio, Desarrollo e Investigación del Cannabis para la Innovación, Normas Aplicables y Límites — Ley Medicinal), Arts. 2(m), 4 y 10; Formulario CM-D-01",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Sustancias/42-2017.pdf",
+    "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_TELECOM_TOWER_SITING",
+    "name": "Telecommunications Tower Siting Approval (Ley 89-2000)",
+    "agency": "OGPe / Junta de Planificación",
+    "category": "Regulatory",
+    "agency_url": "https://www.permisos.pr.gov/",
+    "agency_canonical": "OGPe",
+    "download_url": "https://www.sbp.pr.gov/",
+    "download_kind": "filing_portal",
+    "download_note": "Filed through OGPe's Single Business Portal with the tower's construction permit. The file must show the tower meets the statutory setback (in residential or rural districts, a distance from the nearest residence equal to the tower's height plus 10%), include the sworn statement on co-location, and prove written notice to the neighbors within 100 meters.",
+    "citation": "Ley Núm. 89 de 6 de junio de 2000 (Ley sobre la Ubicación de Torres de Telecomunicaciones), Arts. 5, 7 y 8; Reglamento Conjunto 2023",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Telecomunicaciones/89-2000.pdf",
+    "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_FAA_7460_NOTICE",
+    "name": "FAA Notice of Proposed Construction (Form 7460-1)",
+    "agency": "Federal Aviation Administration (FAA)",
+    "category": "Federal",
+    "agency_url": "https://oeaaa.faa.gov/oeaaa/external/portal.jsp",
+    "agency_canonical": "FAA",
+    "download_url": "https://oeaaa.faa.gov/oeaaa/external/portal.jsp",
+    "download_kind": "filing_portal",
+    "download_note": "Filed online in the FAA's obstruction-evaluation portal at least 45 days before construction starts. Required for any structure taller than 200 feet above ground level, and for shorter structures near an airport or heliport that cross the FAA's notice slope.",
+    "citation": "14 C.F.R. § 77.9 (construction or alteration requiring notice)",
+    "citation_url": "https://www.ecfr.gov/current/title-14/chapter-I/subchapter-E/part-77",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_FCC_ASR",
+    "name": "FCC Antenna Structure Registration",
+    "agency": "Federal Communications Commission (FCC)",
+    "category": "Federal",
+    "agency_url": "https://www.fcc.gov/wireless/systems-utilities/antenna-structure-registration",
+    "agency_canonical": "FCC",
+    "download_url": "https://www.fcc.gov/wireless/systems-utilities/antenna-structure-registration",
+    "download_kind": "filing_portal",
+    "download_note": "The tower owner registers the structure with the FCC after the FAA issues a no-hazard determination, when the structure needs FAA notice (for example, taller than 200 feet). The registration number must be posted at the tower base.",
+    "citation": "47 C.F.R. § 17.4 (antenna structure registration)",
+    "citation_url": "https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-17",
+    "citation_confidence": "regulation",
+    "depends_on_document_ids": [
+      "DOC_FAA_7460_NOTICE"
+    ]
+  },
+  {
+    "id": "DOC_NET_TOWER_REGISTRY",
+    "name": "Telecommunications Tower Registry (Negociado de Telecomunicaciones)",
+    "agency": "Negociado de Telecomunicaciones (Junta Reglamentadora de Servicio Público)",
+    "category": "Regulatory",
+    "agency_url": "https://jrsp.pr.gov/",
+    "agency_canonical": "Negociado de Telecomunicaciones",
+    "download_url": "https://wifi.jrtpr.pr.gov/towersapp/torres.aspx",
+    "download_kind": "filing_portal",
+    "download_note": "The Negociado de Telecomunicaciones keeps an online registry of telecommunications towers in Puerto Rico. Confirm with the Negociado whether a new tower must be entered before it begins service.",
+    "citation": "Negociado de Telecomunicaciones de Puerto Rico — registro de torres de telecomunicaciones (orden administrativa); Ley Núm. 213-1996, según enmendada",
+    "citation_url": "https://wifi.jrtpr.pr.gov/towersapp/torres.aspx",
+    "citation_confidence": "review"
+  },
+  {
+    "id": "DOC_DRNA_VESSEL_REGISTRATION",
+    "name": "DRNA Vessel & Watercraft Registration (Ley 430-2000)",
+    "agency": "DRNA — Cuerpo de Vigilantes / Comisionado de Navegación",
+    "category": "Regulatory",
+    "agency_url": "https://www.drna.pr.gov/",
+    "agency_canonical": "DRNA",
+    "download_url": "https://www.drna.pr.gov/",
+    "download_kind": "guidance_page",
+    "download_note": "Every boat, jet ski and other motorized vessel used in Puerto Rico waters is registered with the DRNA, which issues the registration certificate and the numbers displayed on the hull. Rental fleets register each unit and renew the registration on schedule.",
+    "citation": "Ley Núm. 430-2000 (Ley de Navegación y Seguridad Acuática de Puerto Rico), Art. 9 (12 L.P.R.A. § 1406)",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2/0430-2000.pdf",
+    "citation_confidence": "statute"
+  },
+  {
+    "id": "DOC_DRNA_BOAT_RENTAL_LICENSE",
+    "name": "DRNA Rental-Vessel Owner License (Boats & Jet Skis for Hire)",
+    "agency": "DRNA — Cuerpo de Vigilantes / Comisionado de Navegación",
+    "category": "Regulatory",
+    "agency_url": "https://www.drna.pr.gov/",
+    "agency_canonical": "DRNA",
+    "download_url": "https://www.drna.pr.gov/documentos/formularios/cp-10-solicitud-de-licencia-para-duenos-de-bote-de-alquiler/",
+    "download_kind": "form_page",
+    "download_note": "Filed with the DRNA on its rental-boat owner license application. The licensee must keep a rental log, accredit lifesaving training for its staff, have a licensed instructor brief each renter, and follow the statute's minimum ages for renters and riders.",
+    "citation": "Ley Núm. 430-2000 (Ley de Navegación y Seguridad Acuática de Puerto Rico), Art. 9(6)(g); DRNA Formulario CP-10 (Solicitud de Licencia para Dueños de Bote de Alquiler)",
+    "citation_url": "https://www.drna.pr.gov/documentos/formularios/cp-10-solicitud-de-licencia-para-duenos-de-bote-de-alquiler/",
+    "citation_confidence": "statute",
+    "depends_on_document_ids": [
+      "DOC_DRNA_VESSEL_REGISTRATION"
+    ]
+  },
+  {
+    "id": "DOC_DRNA_MARITIME_CONCESSION",
+    "name": "DRNA Maritime-Terrestrial Zone & Submerged-Lands Concession / Authorization",
+    "agency": "DRNA",
+    "category": "Regulatory",
+    "agency_url": "https://www.drna.pr.gov/",
+    "agency_canonical": "DRNA",
+    "download_url": "https://www.drna.pr.gov/wp-content/uploads/2015/10/REGLAMENTO-4860-Version-Completa-y-enmiendas-Agosto-2015.pdf",
+    "download_kind": "form_pdf",
+    "download_note": "Docks, piers, moorings, slips and other permanent works — and commercial activities — on the maritime-terrestrial zone (zona marítimo-terrestre) or on submerged lands belong to the public domain and need a DRNA concession or authorization before they are built or operated. The DRNA charges a use fee under the concession.",
+    "citation": "Reglamento Núm. 4860 (Reglamento para el Aprovechamiento, Vigilancia, Conservación y Administración de las Aguas Territoriales, los Terrenos Sumergidos bajo éstas y la Zona Marítimo-Terrestre), Arts. 4.1–4.3; Ley Núm. 23 de 20 de junio de 1972, Art. 5(h)",
+    "citation_url": "https://www.drna.pr.gov/wp-content/uploads/2015/10/REGLAMENTO-4860-Version-Completa-y-enmiendas-Agosto-2015.pdf",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_USACE_SECTION10",
+    "name": "U.S. Army Corps of Engineers Permit for Structures in Navigable Waters (Section 10)",
+    "agency": "U.S. Army Corps of Engineers (Jacksonville District, Antilles Section)",
+    "category": "Federal",
+    "agency_url": "https://www.saj.usace.army.mil/Missions/Regulatory/",
+    "agency_canonical": "U.S. Army Corps of Engineers",
+    "download_url": "https://www.saj.usace.army.mil/Missions/Regulatory/",
+    "download_kind": "guidance_page",
+    "download_note": "Building or modifying a dock, pier, piling, mooring or bulkhead in navigable waters needs a Corps permit before work starts; the Corps' Antilles Regulatory Section handles Puerto Rico. Dredging or fill also brings Clean Water Act Section 404 review.",
+    "citation": "Rivers and Harbors Act of 1899, Sec. 10 (33 U.S.C. § 403); 33 C.F.R. Part 322",
+    "citation_url": "https://www.ecfr.gov/current/title-33/chapter-II/part-322",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT",
+    "name": "Recycling Facility Endorsement (DRNA Solid Waste Program)",
+    "agency": "DRNA — Área de Control de Contaminación de Terrenos (antigua Autoridad de Desperdicios Sólidos)",
+    "category": "Regulatory",
+    "agency_url": "https://www.drna.pr.gov/",
+    "agency_canonical": "DRNA",
+    "download_url": "https://www.drna.pr.gov/wp-content/uploads/2019/09/ReglamentoReciclaje.pdf",
+    "download_kind": "form_pdf",
+    "download_note": "No recycling or materials-recovery facility may operate without the DRNA's endorsement under the recycling regulation. The endorsement is valid for two years and must be renewed; the facility also reports the materials it recovers.",
+    "citation": "Ley Núm. 70 de 18 de septiembre de 1992 (Ley para la Reducción y el Reciclaje de Desperdicios Sólidos), según enmendada; Reglamento para la Reducción, Reutilización y el Reciclaje de los Desperdicios Sólidos en Puerto Rico, Cap. VIII, Reglas 2 y 4",
+    "citation_url": "https://www.drna.pr.gov/wp-content/uploads/2019/09/ReglamentoReciclaje.pdf",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_EPA_AUTOBODY_NESHAP_NOTICE",
+    "name": "EPA Auto-Body Spray-Coating Initial Notification (Paint Booth Rule)",
+    "agency": "U.S. EPA (Region 2) / DRNA",
+    "category": "Federal",
+    "agency_url": "https://www.epa.gov/stationary-sources-air-pollution",
+    "agency_canonical": "U.S. EPA / DRNA",
+    "download_url": "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-C/part-63/subpart-HHHHHH",
+    "download_kind": "guidance_page",
+    "download_note": "Shops that spray-apply paints or coatings to motor vehicles must paint in a filtered spray booth, use high-efficiency spray guns, train and certify painters, and file an initial notification with EPA (and DRNA as the delegated agency) followed by a notification of compliance.",
+    "citation": "40 C.F.R. Part 63, Subpart HHHHHH (National Emission Standards for Paint Stripping and Miscellaneous Surface Coating at Area Sources), §§ 63.11169, 63.11173 and 63.11175",
+    "citation_url": "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-C/part-63/subpart-HHHHHH",
+    "citation_confidence": "regulation"
   }
 ]

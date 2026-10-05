@@ -77,9 +77,14 @@
         "rationale": "RULE_0095: pharmacy -> Salud establishment license. (KB: RULE_0017, RULE_0095)"
       },
       {
-        "key": "gap:pharmacy_controlled_substance_registrations",
+        "key": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
         "confidence": "needs-expert-review",
-        "rationale": "A PR pharmacy needs a Salud pharmacy-establishment license (Ley 247-2004), a PR controlled-substances registration (Ley 4-1971) and a DEA registration; the KB only has a generic DOC_PROFESSIONAL_LICENSE."
+        "rationale": "A pharmacy dispensing controlled substances needs the Departamento de Salud controlled-substances registration (Ley 4-1971 Arts. 302-304; form DS-DI-016). Issued by Salud, not ASSMCA. (KB: RULE_0733)"
+      },
+      {
+        "key": "DOC_DEA_REGISTRATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Dispensing controlled substances also needs a DEA registration per location (21 U.S.C. 822; 21 CFR 1301.11/1301.13, Form 224). (KB: RULE_0734)"
       }
     ],
     "mustNotInclude": [

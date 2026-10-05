@@ -1,0 +1,104 @@
+{
+  "id": "KG44",
+  "title": "Medical office dispensing controlled substances, new business — Carolina (autonomous), urban zone X",
+  "matrix": {
+    "businessType": "medical_office",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "We are opening a pain-management clinic in a leased office in Carolina. Our physicians will store and dispense controlled medications on site.",
+  "profile": {
+    "business_type": "Medical Office",
+    "municipality": "Carolina",
+    "location_type": "Office",
+    "number_of_employees": 8,
+    "industry": "Healthcare",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_HEALTHCARE_SERVICES": true,
+    "Q_CONTROLLED_SUBSTANCES": true,
+    "Q_PROFESSIONAL_LICENSES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased office"
+    }
+  },
+  "site": {
+    "municipality": "Carolina",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Storing / dispensing controlled substances needs the Departamento de Salud registration (Ley 4-1971 Arts. 302-304), not only in pharmacies. (KB: RULE_0733)"
+      },
+      {
+        "key": "DOC_DEA_REGISTRATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Practitioners who dispense controlled substances register with the DEA per location (21 CFR 1301.11). (KB: RULE_0734)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated."
+      },
+      {
+        "key": "DOC_CANNABIS_DISPENSARY_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Not a cannabis dispensary: RULE_0735 is keyed to the dispensary business type."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-04 (KB gaps): the controlled-substances registrations are question-driven, so they reach any business that dispenses controlled substances, not only pharmacies."
+}

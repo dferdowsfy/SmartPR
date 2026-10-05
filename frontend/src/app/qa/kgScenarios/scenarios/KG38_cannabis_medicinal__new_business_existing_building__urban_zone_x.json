@@ -8,7 +8,7 @@
   },
   "description": "We want to open a medical cannabis dispensary in Humacao in an existing leased retail space. No construction.",
   "profile": {
-    "business_type": "Pharmacy",
+    "business_type": "Medical Cannabis Dispensary",
     "municipality": "Humacao",
     "location_type": "Retail Storefront",
     "number_of_employees": 4,
@@ -65,9 +65,9 @@
         "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
       },
       {
-        "key": "gap:medical_cannabis_license",
+        "key": "DOC_CANNABIS_DISPENSARY_LICENSE",
         "confidence": "needs-expert-review",
-        "rationale": "Medical cannabis dispensaries need a Junta Reglamentadora del Cannabis Medicinal license (Ley 42-2017, Reglamento 9038); the KB has no cannabis business type (modeled here as Pharmacy) or document."
+        "rationale": "Ley 42-2017 Arts. 4 and 10: only establishments licensed by the Junta Reglamentadora del Cannabis Medicinal may dispense medical cannabis (form CM-D-01). (KB: RULE_0735)"
       }
     ],
     "mustNotInclude": [
@@ -110,6 +110,16 @@
         "key": "DOC_ALCOHOL_LICENSE",
         "confidence": "verified-in-code",
         "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_DEA_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "The DEA does not register state medical-cannabis dispensaries; the controlled-substances rules exclude the dispensary business type."
+      },
+      {
+        "key": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Medical cannabis is licensed under Ley 42-2017, not through the Ley 4-1971 pharmacy registration; the rule excludes the dispensary business type."
       }
     ],
     "ordering": [
@@ -120,5 +130,6 @@
         "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
       }
     ]
-  }
+  },
+  "notes": "2026-10-04: profile moved from the Pharmacy proxy to the new Medical Cannabis Dispensary business type; the gap key became the license document."
 }

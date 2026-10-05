@@ -131,12 +131,17 @@ const FOREIGN_CORP_GATED = new Set(["DOC_FOREIGN_CORPORATION_AUTHORIZATION"]);
 // provisional for it (correct — MATCH_TRACE_MISSING, not a placeholder).
 // Added with the tobacco-retail fix (REG-TOBACCO-RETAIL-001, 2026-09-28).
 const TOBACCO_GATED = new Set(["DOC_TOBACCO_RETAIL_LICENSE", "DOC_TOBACCO_SALES_PROJECTION"]);
+// REG-KB-GAPS-001 (2026-10-04): concepts for historic-zone, floodway,
+// controlled-substance, cannabis, telecom, marine, recycling and auto-body
+// documents. The Bayamón bar profile triggers none of them, so they stay
+// provisional for it (MATCH_TRACE_MISSING, never a placeholder).
+const KB_GAPS_GATED = new Set(["DOC_ICP_HISTORIC_RECOMMENDATION", "DOC_SHPO_SECTION106_REVIEW", "DOC_FLOODWAY_NO_RISE_CERTIFICATION", "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION", "DOC_DEA_REGISTRATION", "DOC_CANNABIS_DISPENSARY_LICENSE", "DOC_TELECOM_TOWER_SITING", "DOC_FAA_7460_NOTICE", "DOC_FCC_ASR", "DOC_NET_TOWER_REGISTRY", "DOC_DRNA_VESSEL_REGISTRATION", "DOC_DRNA_BOAT_RENTAL_LICENSE", "DOC_DRNA_MARITIME_CONCESSION", "DOC_USACE_SECTION10", "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT", "DOC_EPA_AUTOBODY_NESHAP_NOTICE"]);
 
-test("same Bayamón bar: all forty-six source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all sixty-two source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId) || FOREIGN_CORP_GATED.has(g.requirementId) || TOBACCO_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId) || FOREIGN_CORP_GATED.has(g.requirementId) || TOBACCO_GATED.has(g.requirementId) || KB_GAPS_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -152,7 +157,7 @@ test("same Bayamón bar: all forty-six source-backed explanations are distinct a
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 46);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 62);
   }
 });
 

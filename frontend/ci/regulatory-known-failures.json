@@ -1,7 +1,7 @@
 {
   "recordedAt": "2026-09-29",
   "recordedAtCommit": "0da0866",
-  "minimumTests": 397,
+  "minimumTests": 401,
   "knownFailures": [
     {
       "id": "G13",
@@ -20,16 +20,8 @@
       "name": "KG07 kg-scenario: retail_store / expansion / flood_ae"
     },
     {
-      "id": "KG08",
-      "name": "KG08 kg-scenario: pharmacy / new_business_existing_building / urban_zone_x"
-    },
-    {
       "id": "KG10",
       "name": "KG10 kg-scenario: medical_office / renovation / coastal_zone_x"
-    },
-    {
-      "id": "KG14",
-      "name": "KG14 kg-scenario: guesthouse / renovation / historic_zone"
     },
     {
       "id": "KG16",
@@ -60,10 +52,6 @@
       "name": "KG25 kg-scenario: marina_water_sports / new_business_existing_building / coastal_ve"
     },
     {
-      "id": "KG27",
-      "name": "KG27 kg-scenario: telecom_tower / new_construction / rural_src"
-    },
-    {
       "id": "KG29",
       "name": "KG29 kg-scenario: rooftop_solar_battery / new_business_existing_building / flood_ae"
     },
@@ -76,28 +64,12 @@
       "name": "KG33 kg-scenario: utility_scale_solar / new_construction / floodway"
     },
     {
-      "id": "KG34",
-      "name": "KG34 kg-scenario: cafe_no_alcohol / new_construction / road_pin_residential"
-    },
-    {
       "id": "KG35",
       "name": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin"
     },
     {
-      "id": "KG37",
-      "name": "KG37 kg-scenario: medical_office / new_construction / floodway"
-    },
-    {
-      "id": "KG38",
-      "name": "KG38 kg-scenario: cannabis_medicinal / new_business_existing_building / urban_zone_x"
-    },
-    {
       "id": "KG39",
       "name": "KG39 kg-scenario: restaurant_with_alcohol / expansion / coastal_zone_x"
-    },
-    {
-      "id": "KG40",
-      "name": "KG40 kg-scenario: auto_repair / new_construction / coastal_zone_x"
     }
   ],
   "kgScenariosRecordedAt": "2026-10-04",

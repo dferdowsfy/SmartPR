@@ -93,9 +93,9 @@
         "agencyMatches": "ogpe"
       },
       {
-        "key": "gap:floodway_no_rise_certification",
+        "key": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
         "confidence": "needs-expert-review",
-        "rationale": "New construction in a regulatory floodway is prohibited unless a no-rise (encroachment) certification is approved (44 CFR 60.3(d)(3); Reg. 13 s.7); the card should state this, not just 'flood review'."
+        "rationale": "New construction in a regulatory floodway is prohibited unless a hydrologic-hydraulic study shows no rise (Reg. 13 Sec. 6.01; 44 CFR 60.3(d)(3)); the JP No-Rise Certificate is its own deliverable. (KB: RULE_0732)"
       }
     ],
     "mustNotInclude": [
