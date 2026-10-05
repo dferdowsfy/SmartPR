@@ -443,8 +443,16 @@ export function classifyEngineRequirements(
     // still wins over every heuristic basis. REG-MFK-ANSWERED-001: a basis
     // whose named facts are all already answered is not blocked — it must
     // not force needs_more_information over an answered question.
+    // REG-ELECTIVE-STATUS-001 (2026-10-04, validated golden G20): an
+    // is_conditional basis is an ELECTIVE status the applicant chooses to
+    // seek (e.g. a 501(c) or Hacienda Sec. 1101.01 tax-exemption
+    // determination), not a legal obligation whose trigger is unknown. Its
+    // named facts ("will you seek it?") stay on the card so the UI can ask,
+    // but they never turn the row into needs_more_information — the
+    // documented is_conditional contract ("always conditional") wins.
+    const basisElective = basisRules.map((r) => !!r?.is_conditional);
     const basisNeedsInfo = basisRules.map(
-      (r, i) => basisHeuristic[i] && stillMissing(r?.missing_fact_keys).length > 0
+      (r, i) => basisHeuristic[i] && !basisElective[i] && stillMissing(r?.missing_fact_keys).length > 0
     );
     if (basisStates.includes("required")) applicability = recommended ? "recommended" : "required";
     else if (basisNeedsInfo.some(Boolean)) applicability = "needs_more_information";
@@ -453,7 +461,9 @@ export function classifyEngineRequirements(
       // An undecided heuristic basis that names its missing facts becomes
       // "needs more information" so the UI asks for them instead of
       // guessing; other undecided bases stay conditional.
-      applicability = anyHeuristic && missingFacts.length ? "needs_more_information" : "conditional";
+      // Elective-only bases (REG-ELECTIVE-STATUS-001) stay conditional.
+      const allElective = basisElective.length > 0 && basisElective.every(Boolean);
+      applicability = anyHeuristic && missingFacts.length && !allElective ? "needs_more_information" : "conditional";
     }
     else applicability = "not_applicable";
 
