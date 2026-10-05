@@ -27,6 +27,7 @@
 // same place.
 // ============================================================================
 
+import { CATASTRO_RE } from "./layers.ts";
 import { addressMunicipio, sameMunicipio } from "./municipios.ts";
 import { floodMapSummary, layerAnswered, type SiteLayerId, type SiteLayerResult } from "./layers.ts";
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
@@ -905,6 +906,12 @@ export function buildPropertyReport(input: {
   const crim = layer("parcel");
   const boundary = parcel?.boundary;
   const catastroValue = boundary?.value?.catastro ?? (crim?.status === "resolved" && current ? crim.code : null);
+  // CRIM and the JP zoning map each label the lot; when they disagree, say so without deciding which is right.
+  const jpCatastro = typeof zPin?.attributes?.num_catast === "string" ? zPin.attributes.num_catast.trim() : null;
+  if (catastroValue && crim?.retrieval !== "derived" && jpCatastro && CATASTRO_RE.test(jpCatastro) && jpCatastro !== catastroValue) {
+    discrepancies.push(bi(`Parcel number: the CRIM parcel map gives ${catastroValue} at the pin, while the JP zoning-map polygon there is labelled ${jpCatastro}. The two records may come from different editions, or the zoning polygon may cover a different or larger lot; this report uses the CRIM number and does not determine which is correct. Confirm the catastro with CRIM before relying on it.`,
+      `Número de catastro: el mapa de parcelas del CRIM indica ${catastroValue} en el pin, mientras que el polígono del mapa de calificación de la JP allí tiene ${jpCatastro}. Los dos registros pueden provenir de ediciones distintas, o el polígono de calificación puede abarcar otro solar o uno mayor; este informe usa el número del CRIM y no determina cuál es correcto. Confirme el catastro con el CRIM antes de depender de él.`));
+  }
   const catSource: ReportSource | null = boundary?.value ? { name: boundary.source.name, url: boundary.source.url, dataset_date: boundary.source.dataset_date, version: null } : crim ? sourceOf(crim) : null;
   const sp = toPrStatePlane(site.latitude, site.longitude);
   const areaM2 = boundary?.value ? fmtArea(boundary.value.area_m2) : null;
