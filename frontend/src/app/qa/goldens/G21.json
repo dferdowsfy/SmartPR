@@ -86,7 +86,42 @@
       "document_id": "DOC_UST_OPERATING_PERMIT",
       "name": "Underground storage tank operating permit/compliance",
       "applicability": "needs_more_information"
+    },
+    {
+      "document_id": "DOC_TOBACCO_RETAIL_LICENSE",
+      "name": "Retail Cigarette License (Licencia de Detallista de Cigarrillos)",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_ASUME_CLEARANCE",
+      "name": "ASUME Child Support Clearance Certification",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_CRIM_CLEARANCE",
+      "name": "CRIM Property Tax Clearance",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_BACKGROUND_CHECK",
+      "name": "Background Check Documentation (Certificado de Antecedentes Penales)",
+      "applicability": "required"
+    },
+    {
+      "document_id": "DOC_TOBACCO_SALES_PROJECTION",
+      "name": "Tobacco Sales Projection (Proyección de Ventas de Tabaco)",
+      "applicability": "required"
     }
   ],
-  "expectedAbsent": []
+  "expectedAbsent": [],
+  "amendments": [
+    {
+      "date": "2026-10-04",
+      "status": "proposed — requires Darius approval (PR review)",
+      "change": "Added DOC_TOBACCO_RETAIL_LICENSE + its four Hacienda prerequisites (ASUME, CRIM, Certificado de Antecedentes Penales, Proyección o Volumen de Ventas) as required.",
+      "why": "This scenario answers Q_TOBACCO_SOLD=true, but when it was validated (2026-09-16) Q_TOBACCO_SOLD was orphaned (zero rules), so the reviewed set could not contain the cigarette license. REG-TOBACCO-RETAIL-001 (RULE_0701-0705, 2026-09-28) closed that false negative. Hacienda's official 'Requisitos para cada tipo de Licencia de Rentas Internas' page lists, for the Licencia de Detallista / Mayorista de Cigarrillos: SC 2309, ASUME, CRIM negative-debt certification, Proyección o Volumen de Ventas and Certificado de Antecedentes Penales, with no exception (unlike the alcohol retail license, whose sales projection 'no aplica a las licencias de tiempo limitado' and is therefore needs_more_information in G01/G03). Mirrors the validated alcohol pattern in G01/G03 (license + ASUME + CRIM + background check required).",
+      "source": "https://hacienda.pr.gov/comerciantes/licencias-de-rentas-internas/requisitos-para-cada-tipo-de-licencia-de-rentas-internas",
+      "confidence": "verified (official agency page, re-read 2026-10-04)"
+    }
+  ]
 }

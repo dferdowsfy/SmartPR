@@ -2652,14 +2652,14 @@
         {
           "key": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
           "group": "conditional",
-          "applicability": "needs_more_information",
+          "applicability": "conditional",
           "position": 9,
           "agency": "Internal Revenue Service"
         },
         {
           "key": "DOC_HACIENDA_PR_TAX_EXEMPTION",
           "group": "conditional",
-          "applicability": "needs_more_information",
+          "applicability": "conditional",
           "position": 10,
           "agency": "Department of the Treasury (Hacienda)"
         },
