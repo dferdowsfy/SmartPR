@@ -106,14 +106,11 @@ export async function runGeoHealth(opts: { fetchImpl?: FetchLike; now?: () => Da
   // old sige.pr.gov Reglamentario_va2 path before they burn live traffic.
   const metaJobs: Promise<void>[] = [];
   const metaSeen = new Set<string>();
-  const sourceKeyOf = new Map(Object.entries(LAYER_SOURCES).map(([k, v]) => [v, k]));
-  for (const src of Object.values(LAYER_SOURCES)) {
-    for (const ep of [src.url, ...(src.fallback_urls ?? [])]) {
+  for (const [key, spec] of Object.entries(LAYER_QUERIES)) {
+    for (const ep of sourceEndpoints(spec.source)) {
       if (metaSeen.has(ep)) continue;
       metaSeen.add(ep);
       if (!/\/(Map|Feature)Server\/\d+$/i.test(ep)) continue;
-      const key = sourceKeyOf.get(src);
-      const spec = key ? Object.values(LAYER_QUERIES).find((s) => s.source === key) : undefined;
       metaJobs.push((async () => {
         const t0 = Date.now();
         try {
@@ -126,9 +123,9 @@ export async function runGeoHealth(opts: { fetchImpl?: FetchLike; now?: () => Da
             else if (body.name || body.type || body.fields || body.layers) { ok = true; detail = `name=${body.name ?? body.type ?? "ok"}`; }
             else detail = "missing_layer_metadata";
           }
-          checks.push({ kind: "endpoint", id: `exists ${ep}`, required: !!spec && !spec.optional, ok, detail, latency_ms: Date.now() - t0 });
+          checks.push({ kind: "endpoint", id: `exists ${key} ${ep}`, required: !spec.optional && ep === LAYER_SOURCES[spec.source].url, ok, detail, latency_ms: Date.now() - t0 });
         } catch (err) {
-          checks.push({ kind: "endpoint", id: `exists ${ep}`, required: !!spec && !spec.optional, ok: false, detail: `network_error: ${(err as Error)?.message ?? "error"}`.slice(0, 160), latency_ms: Date.now() - t0 });
+          checks.push({ kind: "endpoint", id: `exists ${key} ${ep}`, required: !spec.optional && ep === LAYER_SOURCES[spec.source].url, ok: false, detail: `network_error: ${(err as Error)?.message ?? "error"}`.slice(0, 160), latency_ms: Date.now() - t0 });
         }
       })());
     }

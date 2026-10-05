@@ -3989,9 +3989,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     intakeLayersAbortRef.current?.abort();
     const ctrl = new AbortController();
     intakeLayersAbortRef.current = ctrl;
-    // ~15 s client cap matches the layers route maxDuration; supersede aborts stay silent.
-    let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, 15_000);
     fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store', signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
       .then((data: { layers?: SiteLayers | null; reason?: string }) => {
@@ -4000,14 +3997,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           : unavailableSiteLayers(site.latitude, site.longitude, data.reason ?? 'no_layers'));
       })
       .catch((err: unknown) => {
-        if ((err as Error)?.name === 'AbortError') {
-          if (intakeLayersAbortRef.current !== ctrl) return; // superseded
-          if (timedOut) apply(unavailableSiteLayers(site.latitude, site.longitude, 'layers_client_timeout'));
-          return;
-        }
+        if ((err as Error)?.name === 'AbortError') return;
         apply(unavailableSiteLayers(site.latitude, site.longitude, `layers_service_unreachable: ${(err as Error)?.message ?? 'error'}`));
-      })
-      .finally(() => clearTimeout(timer));
+      });
   }, [intakeSite]);
 
   // Location revision: every confirmed-site change (confirm, edit, clear,
@@ -4041,9 +4033,6 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     parcelAbortRef.current = ctrl;
     const refresh = parcelRefreshRef.current;
     parcelRefreshRef.current = false;
-    // ~25 s client cap matches the parcel route maxDuration.
-    let timedOut = false;
-    const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, 25_000);
     fetch(`/api/locations/parcel?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store', signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
       .then((d: { parcel?: ParcelFindings | null }) => {
@@ -4053,11 +4042,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         setParcelState({ revision, data, loading: false });
       })
       .catch((err: unknown) => {
-        if (locStateRef.current.revision !== revision) return;
-        if ((err as Error)?.name === 'AbortError' && !timedOut) return; // superseded
+        if ((err as Error)?.name === 'AbortError' || locStateRef.current.revision !== revision) return;
         setParcelState({ revision, data: null, loading: false });
-      })
-      .finally(() => clearTimeout(timer));
+      });
     setParcelRetry(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the confirmed site
   }, [confirmedSiteKey, parcelRetry]);
