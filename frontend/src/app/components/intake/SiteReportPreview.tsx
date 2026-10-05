@@ -14,7 +14,7 @@ const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
 export function FindingValue({ f, lang }: { f: ReportFinding; lang: Lang }) {
   if (f.state === "loading") return <span className="spr-srp-muted"><Loader2 className="spr-loc-spin" aria-hidden="true" /> {findingStateText("loading")[lang]}</span>;
-  if (f.value && (f.state === "sourced" || f.state === "none_mapped")) return <span>{f.value[lang]}</span>;
+  if (f.value && (f.state === "sourced" || f.state === "none_mapped" || f.state === "not_evaluated")) return <span>{f.value[lang]}</span>;
   return <span className="spr-srp-muted">{findingStateText(f.state)[lang]}</span>;
 }
 

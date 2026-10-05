@@ -76,7 +76,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
       value: roadway ? bi("Selected point mapped as a roadway (VIAL); no cadastral parcel identified — findings are point-only", "Punto seleccionado mapeado como vía (VIAL); no se identificó parcela catastral — hallazgos solo del punto")
         : loc!.parcel === "unavailable" ? bi("Parcel source did not respond — findings are point-only", "La fuente de parcelas no respondió — hallazgos solo del punto")
         : bi("No cadastral parcel identified — findings are point-only", "No se identificó parcela catastral — hallazgos solo del punto"),
-      phrase: roadway ? bi("the selected point appears to be on a roadway (VIAL) and no cadastral parcel was identified", "el punto seleccionado parece estar sobre una vía (VIAL) y no se identificó parcela catastral")
+      phrase: roadway ? bi("the selected point appears to be on a roadway (VIAL), with no cadastral parcel identified", "el punto seleccionado parece estar sobre una vía (VIAL), sin parcela catastral identificada")
         : bi("no cadastral parcel was identified, so parcel-wide checks have not been performed", "no se identificó parcela catastral, así que no se realizaron verificaciones de toda la parcela"),
       finding_ids: [], scope: "point" });
     act(1, { id: "location", issue: bi("Confirm the exact property", "Confirme la propiedad exacta"),
@@ -148,6 +148,7 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   if (roadway) {
     review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
       value: bi("Not evaluated — the selected point is mapped as a roadway (VIAL), not a developable district; confirm the property first", "No evaluado — el punto seleccionado está mapeado como vía (VIAL), no como distrito desarrollable; confirme primero la propiedad"),
+      phrase: bi("land-use compatibility was not evaluated on the roadway point", "la compatibilidad de uso no se evaluó en el punto de vía"),
       finding_ids: ["permitted_uses"] });
   } else if (!lu) {
     review.push({ id: "compatibility", label: bi("Land-use compatibility", "Compatibilidad de uso"),
@@ -186,11 +187,18 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
     review.push({ id: "land_class", label: bi("Land classification", "Clasificación del suelo"), value: bi("Specially protected rustic land (SREP) at the pin", "Suelo rústico especialmente protegido (SREP) en el pin"), severe: true, phrase: bi("the pin is on specially protected rustic land", "el pin está en suelo rústico especialmente protegido"), finding_ids: ["land_class"] });
     const s = step("protection_land_class");
     act(12, { id: "land_class", issue: bi("Specially protected rustic land", "Suelo rústico especialmente protegido"), action: bi("Confirm with the Junta de Planificación what, if anything, the classification allows before planning work.", "Confirme con la Junta de Planificación qué permite la clasificación, si algo, antes de planificar obras."), why: s?.because ?? null, sources: s?.sources ?? lc.sources });
+  } else if (lc?.state === "sourced" && roadway && /\bvial\b/i.test(lc.value?.en ?? "")) {
+    // A roadway classification corroborates the location issue; it is not a cleared check.
+    const li = review.find((x) => x.id === "location");
+    if (li) li.value = bi(`${li.value.en}; land classification at the pin is also VIAL`, `${li.value.es}; la clasificación del suelo en el pin también es VIAL`);
   } else if (lc?.state === "sourced") {
     clear.push({ id: "land_class", label: bi("Land classification", "Clasificación del suelo"), value: bi(`${lc.value?.en ?? ""} (no protection classification at the pin)`, `${lc.value?.es ?? ""} (sin clasificación de protección en el pin)`), finding_ids: ["land_class"] });
   } else if (lc) unable.push({ id: "land_class", label: bi("Land classification", "Clasificación del suelo"), value: unableValue(lc), finding_ids: ["land_class"] });
   const put = F("put");
-  if (put?.state === "sourced") clear.push({ id: "put", label: bi("PUT classification", "Clasificación del PUT"), value: put.value!, finding_ids: ["put"] });
+  if (put?.state === "sourced" && roadway && /\bvial\b/i.test(put.value?.en ?? "")) {
+    const li = review.find((x) => x.id === "location");
+    if (li) li.value = bi(`${li.value.en}; PUT classification at the pin is VIAL`, `${li.value.es}; la clasificación del PUT en el pin es VIAL`);
+  } else if (put?.state === "sourced") clear.push({ id: "put", label: bi("PUT classification", "Clasificación del PUT"), value: put.value!, finding_ids: ["put"] });
   else if (put && put.state !== "none_mapped") unable.push({ id: "put", label: bi("PUT classification", "Clasificación del PUT"), value: unableValue(put), finding_ids: ["put"] });
 
   // ---- Environment & terrain ----------------------------------------------------------
@@ -252,8 +260,8 @@ export function reviewerAssessment(r: PropertyReport): ReviewerAssessment {
   const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const n = review.length;
   const lead = n
-    ? bi(`Based on available official map sources, site review found ${n === 1 ? "one item" : `${n} items`} requiring attention: ${joinList(phrases.map((p) => p.en), "and")}.`,
-         `Según las fuentes cartográficas oficiales disponibles, la revisión encontró ${n === 1 ? "un punto" : `${n} puntos`} que requieren atención: ${joinList(phrases.map((p) => p.es), "y")}.`)
+    ? bi(`Based on available official map sources, site review found ${n === 1 ? "one item" : `${n} items`} requiring attention: ${phrases.some((p) => /,| and /.test(p.en)) ? phrases.map((p) => p.en).join("; ") : joinList(phrases.map((p) => p.en), "and")}.`,
+         `Según las fuentes cartográficas oficiales disponibles, la revisión encontró ${n === 1 ? "un punto" : `${n} puntos`} que requieren atención: ${phrases.some((p) => /,| y /.test(p.es)) ? phrases.map((p) => p.es).join("; ") : joinList(phrases.map((p) => p.es), "y")}.`)
     : bi("Based on available official map sources, no mapped constraint requiring review was identified among the checks that responded. This is not a clearance.", "Según las fuentes cartográficas oficiales disponibles, no se identificó una restricción mapeada que requiera revisión entre las verificaciones que respondieron. Esto no es una autorización.");
   const tail = unable.length ? bi(` ${unable.length === 1 ? "One check" : `${cap(String(unable.length))} checks`} could not be verified because the source did not respond or was not checked.`, ` ${unable.length === 1 ? "Una verificación" : `${unable.length} verificaciones`} no se ${unable.length === 1 ? "pudo" : "pudieron"} confirmar porque la fuente no respondió o no se consultó.`) : bi("");
   const pre = noParcel ? bi("Preliminary, point-only review. ", "Revisión preliminar, solo del punto. ") : bi("");

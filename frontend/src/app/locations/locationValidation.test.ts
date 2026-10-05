@@ -223,3 +223,56 @@ test("exports agree: copy summary, JSON and assessment carry the same location s
   const v2 = { ...json, schema: "smartpr.property-report/v2" as const };
   assert.equal(restorePropertyReport(JSON.parse(JSON.stringify(v2)))!.schema, "smartpr.property-report/v2");
 });
+
+// ---------------------------------------------------------------------------
+// The supplied pre-fix report (Guayama · Machete, 17.954768, -66.118912,
+// generated 2026-10-05T02:22:14Z as v2): no CRIM parcel, VIAL zoning, VIAL
+// land class and PUT at the pin, coastal zone inside. Every defect it had
+// must be gone.
+// ---------------------------------------------------------------------------
+test("supplied Guayama/Machete report: every defect of the pre-fix version is gone", () => {
+  const lat = 17.954768, lng = -66.118912, when = "2026-10-05T02:22:14.577Z";
+  const vial = { code: "VIAL", name: "Sistema vial", family: "road" };
+  const L = layers(lat, lng, vial, [
+    { ...base, layer: "land_class", status: "resolved", code: "VIAL", name: "Sistema vial", tags: ["VIAL", "NOT_A_LOT"], source: { ...src("jp_calificacion"), dataset_date: "03/19/2008" } },
+  ]);
+  L.results = L.results.map((x) => (x.layer === "coastal_zone" ? { ...x, status: "resolved", code: "CZM", name: "Coastal zone" } : x.layer === "zoning" ? { ...x, source: { ...x.source, dataset_date: "03/19/2008" } } : x)) as typeof L.results;
+  const parcel = noParcel(lat, lng, vial);
+  parcel.extras = {
+    put: { ...pointExtra("put", "verified", "VIAL — Vial"), attributes: { resolution: "PUT-2014", effective: "30-nov-2015" } },
+    historic_zone: pointExtra("historic_zone", "no_mapped", null), historic_site: pointExtra("historic_site", "no_mapped", null), archaeology: pointExtra("archaeology", "no_mapped", null),
+    protected_area: pointExtra("protected_area", "no_mapped", null), natural_reserve: pointExtra("natural_reserve", "no_mapped", null), wetlands: pointExtra("wetlands", "no_mapped", null),
+    soils: pointExtra("soils", "verified", "Vives clay, 0 to 2 percent slopes (VvA)"),
+  };
+  const r = buildPropertyReport({ site: site(lat, lng, L, "Guayama", "Machete"), parcel, revision: 1, context: ctx, now: new Date(when) });
+  const txt = reportSummaryText(r, "en");
+  // Old: "Catastro: None mapped — not the same as no constraint on the ground"
+  assert.match(txt, /Catastro: No cadastral parcel identified at the selected point/);
+  assert.doesNotMatch(txt, /Catastro: None mapped/);
+  // Old: no location warning; activity asked for a VIAL "zoning district".
+  assert.ok(txt.includes(NO_PARCEL) && txt.includes(ROADWAY));
+  assert.doesNotMatch(txt, /compatibility with the VIAL zoning district/);
+  assert.equal(r.assessment!.actions[0]!.id, "location");
+  assert.ok(!r.assessment!.still_needed.some((x) => x.id === "activity"), "no use evaluation asked for on a roadway point");
+  assert.match(txt, /• Permitted-use analysis: Not evaluated — selected point is a roadway \(VIAL\) — Not evaluated; Check not performed/);
+  // Old: "Clear" list incl. "Land classification: VIAL…" and "PUT classification: VIAL…", "Low flood risk".
+  assert.doesNotMatch(txt, /Clear \(checked/);
+  const clearIds = r.assessment!.clear.map((x) => x.id);
+  assert.ok(!clearIds.includes("land_class") && !clearIds.includes("put"), "roadway classifications are not cleared checks");
+  assert.match(r.assessment!.review.find((x) => x.id === "location")!.value.en, /land classification at the pin is also VIAL; PUT classification at the pin is VIAL/);
+  assert.doesNotMatch(txt, /Low flood risk/);
+  assert.match(txt, /FEMA Zone X — Area of Minimal Flood Hazard/);
+  // Coastal zone (a real finding) is kept.
+  assert.ok(r.assessment!.review.some((x) => x.id === "coastal_zone"));
+  // Old: "Checked across parcel" on permitted uses / FEMA / floodway; clipping claim; "about 1 m".
+  assert.doesNotMatch(txt, /Checked across (verified )?parcel/i);
+  assert.doesNotMatch(txt, /clipped to the CRIM parcel/);
+  assert.match(txt, /Area method: Parcel calculations not performed/);
+  assert.doesNotMatch(txt, /about 1 m/);
+  // Old: duplicate calificación source in two date formats; "data" label; v2.
+  assert.equal((txt.match(/Calificación vigente \(Mapas de Calificación de Suelos\) \(dataset date/g) ?? []).length, 1);
+  assert.doesNotMatch(txt, /03\/19\/2008|\(data /);
+  assert.match(txt, /smartpr\.property-report\/v3/);
+  // Conclusion reads cleanly.
+  assert.equal(r.assessment!.conclusion.en, "Preliminary, point-only review. Based on available official map sources, site review found 3 items requiring attention: the selected point appears to be on a roadway (VIAL), with no cadastral parcel identified; land-use compatibility was not evaluated on the roadway point; the site is inside the mapped coastal zone. One check could not be verified because the source did not respond or was not checked.");
+});

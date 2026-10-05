@@ -312,8 +312,14 @@ const PMZC: ReportSource = {
   version: null,
 };
 
+/** "03/19/2008" → "2008-03-19" so one dataset date is never shown in two formats. */
+export function normalizeDatasetDate(d: string | null | undefined): string | null {
+  if (!d) return null;
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(d.trim());
+  return m ? `${m[3]}-${m[1]!.padStart(2, "0")}-${m[2]!.padStart(2, "0")}` : d;
+}
 function sourceOf(r: SiteLayerResult): ReportSource {
-  return { name: r.source.name, url: r.source.url ?? null, dataset_date: r.source.dataset_date ?? null, version: r.source.version ?? null };
+  return { name: r.source.name, url: r.source.url ?? null, dataset_date: normalizeDatasetDate(r.source.dataset_date), version: r.source.version ?? null };
 }
 
 function layerState(r: SiteLayerResult | undefined, current: boolean, loading: boolean): ReportFindingState {
@@ -711,7 +717,7 @@ export function buildPropertyReport(input: {
     add({
       id: "permitted_uses", group: "land",
       title: bi("Permitted-use analysis", "Análisis de usos permitidos"),
-      value: null,
+      value: roadway ? bi("Not evaluated — selected point is a roadway (VIAL)", "No evaluado — el punto seleccionado es una vía (VIAL)") : null,
       detail: roadway
         ? bi("Not evaluated: the selected point is mapped as a roadway (VIAL / Sistema vial), which is not a developable zoning district. Confirm the exact property first.", "No evaluado: el punto seleccionado está mapeado como vía (VIAL / Sistema vial), que no es un distrito de calificación desarrollable. Confirme primero la propiedad exacta.")
         : bi("Unable to evaluate until the proposed activity is provided.", "No se puede evaluar hasta que se indique la actividad propuesta."),
@@ -1181,7 +1187,8 @@ export function buildPropertyReport(input: {
   if (pointConfirmed && !parcelVerified) locationNotices.push(bi("You confirmed this point as your property. That confirms the location you intend, not a parcel boundary: parcel-wide checks remain not performed.", "Usted confirmó este punto como su propiedad. Eso confirma la ubicación que indica, no un límite de parcela: las verificaciones de toda la parcela siguen sin realizarse."));
 
   const all = [...findings.flatMap((f) => f.sources), ...steps.flatMap((s) => s.sources), ...(catSource ? [catSource] : [])];
-  const sources = all.filter((s, i) => all.findIndex((o) => o.name === s.name && o.dataset_date === s.dataset_date) === i);
+  const normed = all.map((s) => ({ ...s, dataset_date: normalizeDatasetDate(s.dataset_date) }));
+  const sources = normed.filter((s, i) => normed.findIndex((o) => o.name === s.name && o.dataset_date === s.dataset_date) === i && !(s.dataset_date === null && normed.some((o) => o.name === s.name && o.dataset_date)));
 
   const fingerprint = hash(JSON.stringify([
     REPORT_SCHEMA, site.latitude.toFixed(7), site.longitude.toFixed(7), current ? site.layers!.resolved_at : null, parcel?.retrieved_at ?? null,
@@ -1337,10 +1344,12 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     "",
     L("DETAILED SOURCE FINDINGS", "HALLAZGOS DETALLADOS POR FUENTE"),
     ...r.findings.map((f) => {
-      const val = f.value && (f.state === "sourced" || f.state === "none_mapped") ? t(f.value) : t(findingStateText(f.state));
+      const val = f.value && (f.state === "sourced" || f.state === "none_mapped" || f.state === "not_evaluated") ? t(f.value) : t(findingStateText(f.state));
       const src = f.sources[0];
       const scopeLabel = r.schema !== REPORT_SCHEMA ? L(`${f.scope} (as saved; not re-verified)`, `${f.scope} (según se guardó; no reverificado)`) : t((SCOPE_TEXT as Record<string, Bi>)[f.scope] ?? SCOPE_TEXT.not_evaluated);
-      return `• ${t(f.title)}: ${val} — ${scopeLabel}; ${t(BASIS_TEXT[basisOf(f)])}${f.retrieval ? `; ${t(RETRIEVAL_TEXT[f.retrieval])}` : ""}${f.pin ? `; ${L("at the pin", "en el pin")}: ${t(f.pin.value)}` : ""}${src ? ` [${src.name}${src.dataset_date ? `, ${L("dataset date", "fecha de datos")} ${src.dataset_date}` : ""}${src.url ? ` ${src.url}` : ""}${f.looked_up_at ? `, ${L("looked up", "consultado")} ${f.looked_up_at}` : ""}]` : ""}`;
+      const basisT = t(BASIS_TEXT[basisOf(f)]);
+      const retr = f.retrieval ? t(RETRIEVAL_TEXT[f.retrieval]) : null;
+      return `• ${t(f.title)}: ${val} — ${scopeLabel}; ${basisT}${retr && retr !== basisT ? `; ${retr}` : ""}${f.pin ? `; ${L("at the pin", "en el pin")}: ${t(f.pin.value)}` : ""}${src ? ` [${src.name}${src.dataset_date ? `, ${L("dataset date", "fecha de datos")} ${src.dataset_date}` : ""}${src.url ? ` ${src.url}` : ""}${f.looked_up_at ? `, ${L("looked up", "consultado")} ${f.looked_up_at}` : ""}]` : ""}`;
     }),
     ...(review ? [
       "",
@@ -1355,7 +1364,7 @@ export function reportSummaryText(r: PropertyReport, lang: "en" | "es", review: 
     ...(r.versions ? [`${L("Area method", "Método de áreas")}: ${r.versions.coverage_method}`, `${L("Rules", "Reglas")}: ${r.versions.rules}`] : []),
     ...(r.regulation ? [`${L("Regulation for use rules", "Reglamento para reglas de uso")}: ${r.regulation.name}${r.regulation.publication_date ? ` (${L("publication date", "fecha de publicación")} ${r.regulation.publication_date})` : ""} — ${L("applicability to this site", "aplicabilidad a este lugar")}: ${r.regulation.applicability === "verified" ? L("verified", "verificada") : L("not verified", "no verificada")}. ${t(r.regulation.note)}`] : []),
     ...(r.schema !== REPORT_SCHEMA ? [L(`Saved with an earlier report format (${r.schema}); shown as saved, not re-evaluated.`, `Guardado con un formato anterior (${r.schema}); se muestra tal como se guardó, sin reevaluar.`)] : []),
-    `${L("Sources", "Fuentes")}: ${r.sources.map((s) => `${s.name}${s.dataset_date ? ` (${L("data", "datos")} ${s.dataset_date})` : ""}`).join("; ")}`,
+    `${L("Sources", "Fuentes")}: ${r.sources.map((s) => `${s.name}${s.dataset_date ? ` (${L("dataset date", "fecha de datos")} ${s.dataset_date})` : ""}`).join("; ")}`,
     `${L("Report", "Informe")} ${r.fingerprint} · ${r.schema} · ${L("location revision", "revisión de ubicación")} ${r.location_revision} · ${L("generated", "generado")} ${r.generated_at}`,
     t(r.disclaimer),
   ];
