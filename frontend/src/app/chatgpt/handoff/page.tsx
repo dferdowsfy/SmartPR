@@ -7,6 +7,7 @@
 // (/auth/login?next=/chatgpt/handoff?t=…) until it expires.
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { verifyHandoffToken, HandoffError } from "../../../lib/chatgpt/handoff";
 import HandoffReview from "./HandoffReview";
 
@@ -36,7 +37,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       {error || !payload ? (
         <div role="alert" style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: 14, marginTop: 16 }}>
           {error}{" "}
-          <a href="/?entry=new-business" style={{ color: "#0f766e", fontWeight: 600 }}>Start a new assessment</a>
+          <Link href="/?entry=new-business" style={{ color: "#0f766e", fontWeight: 600 }}>Start a new assessment</Link>
         </div>
       ) : (
         <HandoffReview scenario={payload.scenario} intent={payload.intent} expiresAt={new Date(payload.exp * 1000).toISOString()} selfPath={selfPath} />

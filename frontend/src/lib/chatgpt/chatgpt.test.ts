@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- JSON-RPC test payloads */
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT } from "./assessment";
@@ -79,7 +80,7 @@ test("MCP: initialize, tools/list, resources, tools/call", () => {
   assert.equal(init.result.protocolVersion, "2025-06-18");
   const tools = (rpc("tools/list").body as Body).result.tools;
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
-  assert.equal(TOOLS[0]._meta.ui.resourceUri, WIDGET_URI);
+  assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
   assert.equal(res.mimeType, WIDGET_MIME);
   assert.ok(!/<script[^>]+src=|https?:\/\/(?!www\.w3\.org)/.test(widgetHtml()), "widget has no external loads");
