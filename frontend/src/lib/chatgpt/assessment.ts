@@ -395,7 +395,7 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
   }
   if (!scenario.municipality) {
     unresolved_facts.push("municipality");
-    questions.push({ id: "municipality", kind: "scenario", question: "Which municipality will the business operate in? (or drop a pin on the map)", why: "Municipal licenses (patente) and permit offices depend on it.", options: [] });
+    questions.push({ id: "municipality", kind: "scenario", question: "Pin the site on the map (or type a municipality)", why: "Municipal licenses (patente) and permit offices depend on it.", options: [] });
   }
   if (scenario.business_status === "unknown") {
     unresolved_facts.push("existing registrations");

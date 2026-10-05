@@ -42,8 +42,10 @@ const resultSchema = {
     scenario: { type: "object" }, assumptions: { type: "array" }, unresolved_facts: { type: "array" },
     clarifying_questions: { type: "array" }, requirements: { type: "array" }, gated: { type: "object" },
     counts: { type: "object" }, coverage_limits: { type: "array" }, versions: { type: "object" }, message: { type: "string" },
+    map_focus: { type: "object", description: "Where the widget map should open (lat/lng/zoom).", properties: { latitude: { type: "number" }, longitude: { type: "number" }, zoom: { type: "number" } } },
+    dropped_answers: { type: "array" }, tier: { type: "string" },
   },
-  required: ["status", "scenario", "requirements", "versions"],
+  required: ["status", "scenario", "requirements", "versions", "map_focus"],
 };
 
 const uiMeta = (invoking: string, invoked: string) => ({
