@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { ReviewQueue } from "../../locations/siteCases/reviewQueue";
+import { LABEL_TEXT, READINESS_CRITERIA, type ReadinessLabel } from "../../locations/siteCases/readiness";
+
+const PILL: Record<ReadinessLabel, string> = {
+  needs_professional_review: "bg-amber-100 text-amber-900",
+  ready_for_internal_screening: "bg-sky-100 text-sky-900",
+  ready_for_client_delivery: "bg-emerald-100 text-emerald-900",
+};
 
 const when = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleString() : "unknown");
 
@@ -76,6 +83,31 @@ export function ReviewQueueClient() {
               </ul>
             </section>
           ))}
+          {data.readiness.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold">Case readiness ({data.readiness.length})</h2>
+              <ul className="mb-3 space-y-1 text-sm text-[#5a5a5a]">
+                {(Object.keys(READINESS_CRITERIA) as ReadinessLabel[]).map((l) => (
+                  <li key={l}><span className="font-medium text-[#161616]">{LABEL_TEXT[l]}:</span> {READINESS_CRITERIA[l]}</li>
+                ))}
+              </ul>
+              <ul className="space-y-3">
+                {data.readiness.map((r) => (
+                  <li key={r.case_id} className="rounded-xl border border-[#161616]/15 bg-white p-4 text-sm">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">{r.case_label}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${PILL[r.label]}`}>{LABEL_TEXT[r.label]}</span>
+                    </div>
+                    {r.gaps.length > 0 && (
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        {r.gaps.map((g) => <li key={g.id}>{g.explanation}</li>)}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       )}
     </div>
