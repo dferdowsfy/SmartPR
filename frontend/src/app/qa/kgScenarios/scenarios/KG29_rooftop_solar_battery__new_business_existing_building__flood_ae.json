@@ -1,0 +1,161 @@
+{
+  "id": "KG29",
+  "title": "Existing warehouse adds 400 kW rooftop solar + battery — Caguas, FEMA AE pin (E01 variant)",
+  "matrix": {
+    "businessType": "rooftop_solar_battery",
+    "projectType": "new_business_existing_building",
+    "locationContext": "flood_ae"
+  },
+  "description": "We run a distribution warehouse in Caguas and want to install a 400 kW rooftop solar system with battery storage. It will stay connected to the LUMA grid.",
+  "profile": {
+    "business_type": "Warehouse Distributor",
+    "municipality": "Caguas",
+    "location_type": "Industrial Space",
+    "number_of_employees": 20,
+    "industry": "Wholesale & Distribution",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_RENEWABLE_INSTALL": true,
+    "Q_SOLAR_BATTERY": true,
+    "Q_SOLAR_MOUNTING": "Roof-mounted",
+    "Q_PHYSICAL_LOCATION": true
+  },
+  "projectIntent": "existing_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "We run a distribution warehouse"
+    },
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.9,
+      "evidence": "rooftop solar system"
+    },
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "with battery storage"
+    },
+    "generation_capacity_kw": {
+      "value": "400 kW",
+      "confidence": 0.9,
+      "evidence": "400 kW"
+    },
+    "mounting_type": {
+      "value": "roof",
+      "confidence": 0.9,
+      "evidence": "rooftop"
+    },
+    "parallel_operation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "stay connected to the LUMA grid"
+    },
+    "customer_class": {
+      "value": "commercial",
+      "confidence": 0.9,
+      "evidence": "distribution warehouse"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "want to install"
+    },
+    "energy_applicant_role": {
+      "value": "end_use_customer",
+      "confidence": 0.9,
+      "evidence": "We run a distribution warehouse"
+    }
+  },
+  "site": {
+    "municipality": "Caguas",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts B / E07: grid-parallel rooftop DG -> LUMA interconnection (Reg. 8915)."
+      },
+      {
+        "key": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts B: commercial DG <=1 MW -> net metering (Ley 114-2007)."
+      },
+      {
+        "key": "process:PR_ENERGY_BESS_FIRE_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Battery storage -> Bomberos BESS fire review (NFPA 855 in the process graph)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid wording: projectContext drops microgrid claims (MICROGRID_STATED_RE); energy.test.ts 'not assumed to be a microgrid'."
+      },
+      {
+        "key": "process:PR_ENERGY_ESC_CERTIFICATION",
+        "confidence": "verified-in-code",
+        "rationale": "No energy sale / services: energy.test.ts 'no energy-company certification assumed'."
+      },
+      {
+        "key": "process:PR_UTILITY_PPOA_APPROVAL",
+        "confidence": "verified-in-code",
+        "rationale": "Behind-the-meter, no sale to LUMA: utility PPOA path cannot apply."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_DG_INTERCONNECTION renders, the legacy LUMA card must be suppressed (no duplicate card).",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_NET_METERING renders, the legacy net-metering card must be suppressed.",
+        "cardOnly": true
+      },
+      {
+        "anyOf": [
+          "DOC_CERT_ORGANIZATION",
+          "DOC_CERT_INCORPORATION"
+        ],
+        "confidence": "verified-in-code",
+        "rationale": "Existing business: normalizeEntityFormationRequirements never adds formation steps for existing_business / project_only, and entityNotFormed is false."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "projectContext.ts newConstructionClaimed: an equipment install on an existing building is not new construction (E01 regression); may-apply via the energy construction-approval process is acceptable.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "needs-expert-review",
+        "rationale": "Rooftop equipment on an existing building is not 'development' that adds floodplain fill or substantial improvement (44 CFR 60.3 / Reg. 13); Reg. 13 review should not attach.",
+        "applicabilityIn": [
+          "required"
+        ]
+      }
+    ],
+    "ordering": [
+      {
+        "before": "process:PR_ENERGY_DG_INTERCONNECTION",
+        "after": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "energy.test.ts: net metering has a blocking prerequisite on DG interconnection."
+      }
+    ]
+  }
+}

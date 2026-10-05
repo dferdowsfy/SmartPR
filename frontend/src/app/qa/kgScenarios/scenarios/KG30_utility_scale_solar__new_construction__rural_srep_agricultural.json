@@ -1,0 +1,154 @@
+{
+  "id": "KG30",
+  "title": "Utility-scale 20 MW solar + 40 MWh BESS selling to LUMA — Salinas, SREP agricultural",
+  "matrix": {
+    "businessType": "utility_scale_solar",
+    "projectType": "new_construction",
+    "locationContext": "rural_srep_agricultural"
+  },
+  "description": "We're developing a 20 MW solar farm with 40 MWh of batteries in Salinas to sell power to LUMA under a PPA. It will be built on rural land we lease.",
+  "profile": {
+    "business_type": "Renewable Energy Company",
+    "municipality": "Salinas",
+    "location_type": "Industrial Space",
+    "number_of_employees": 0,
+    "industry": "Energy & Utilities",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_RENEWABLE_INSTALL": true,
+    "Q_SOLAR_BATTERY": true,
+    "Q_SOLAR_MOUNTING": "Ground-mounted",
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "project_only",
+  "modelProjectContext": {
+    "generation_technology": {
+      "value": "solar",
+      "confidence": 0.9,
+      "evidence": "solar farm"
+    },
+    "battery_storage": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "40 MWh of batteries"
+    },
+    "generation_capacity_kw": {
+      "value": "20 MW",
+      "confidence": 0.9,
+      "evidence": "20 MW solar farm"
+    },
+    "energy_facility_type": {
+      "value": "standalone_plant",
+      "confidence": 0.9,
+      "evidence": "solar farm"
+    },
+    "power_offtaker": {
+      "value": "luma_prepa",
+      "confidence": 0.9,
+      "evidence": "sell power to LUMA"
+    },
+    "sells_to_utility_under_ppa": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "under a PPA"
+    },
+    "energy_project_status": {
+      "value": "proposed",
+      "confidence": 0.9,
+      "evidence": "We're developing"
+    },
+    "energy_applicant_role": {
+      "value": "developer",
+      "confidence": 0.9,
+      "evidence": "We're developing"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "rural land we lease"
+    }
+  },
+  "site": {
+    "municipality": "Salinas",
+    "geo": "rural_srep_agricultural"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "process:PR_UTILITY_PPOA_APPROVAL",
+        "confidence": "verified-in-code",
+        "rationale": "utilityScale.golden E02: utility-scale sale to LUMA -> PREB PPOA approval."
+      },
+      {
+        "key": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+        "confidence": "verified-in-code",
+        "rationale": "utilityScale.golden E02: LUMA interconnection studies."
+      },
+      {
+        "key": "process:PR_LAND_USE_CONSULTA_UBICACION",
+        "confidence": "needs-expert-review",
+        "rationale": "A 20 MW plant on SREP agricultural land needs a JP consulta de ubicacion (RC-2023; Ley 550-2004 SREP)."
+      },
+      {
+        "key": "process:PR_ENV_COMPLIANCE_DETERMINATION",
+        "confidence": "verified-in-code",
+        "rationale": "utilityScale.golden: environmental compliance determination (Ley 416-2004 s.4(B)(3))."
+      },
+      {
+        "key": "process:PR_UTILITY_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "utilityScale.golden: OGPe construction permit for the plant."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "process:PR_ENERGY_NET_METERING",
+        "confidence": "verified-in-code",
+        "rationale": "Utility-scale seller is not a net-metering customer (Ley 114-2007 <=1 MW)."
+      },
+      {
+        "key": "process:PR_ENERGY_DG_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "Transmission-level plant uses utility interconnection, not the DG (Reg. 8915) path."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_DG_INTERCONNECTION renders, the legacy LUMA card must be suppressed (no duplicate card).",
+        "cardOnly": true
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "supersededLegacyCards: when PR_ENERGY_NET_METERING renders, the legacy net-metering card must be suppressed.",
+        "cardOnly": true
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid wording: projectContext drops microgrid claims (MICROGRID_STATED_RE); energy.test.ts 'not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Duplicate: the land-use consulta is rendered by process PR_LAND_USE_CONSULTA_UBICACION, the legacy card must be absorbed.",
+        "cardOnly": true
+      }
+    ],
+    "ordering": [
+      {
+        "before": "process:PR_LAND_USE_CONSULTA_UBICACION",
+        "after": "process:PR_UTILITY_CONSTRUCTION_PERMIT",
+        "confidence": "needs-expert-review",
+        "rationale": "RC-2023: siting consulta precedes the construction permit."
+      },
+      {
+        "before": "process:PR_UTILITY_INTERCONNECTION_STUDIES",
+        "after": "process:PR_UTILITY_INTERCONNECTION_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "utilityScale.golden: studies precede the interconnection agreement."
+      }
+    ]
+  }
+}

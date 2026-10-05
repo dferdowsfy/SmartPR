@@ -1,0 +1,140 @@
+{
+  "id": "KG26",
+  "title": "Event venue: change of use of a farmhouse in a conservation district — Toa Baja",
+  "matrix": {
+    "businessType": "event_venue",
+    "projectType": "change_of_use",
+    "locationContext": "conservation_coastal"
+  },
+  "description": "We want to convert an old coastal farmhouse in Toa Baja into an event venue for weddings. This is a change of use from residence to event venue, with a new parking area.",
+  "profile": {
+    "business_type": "Event Venue",
+    "municipality": "Toa Baja",
+    "location_type": "Commercial Space",
+    "number_of_employees": 6,
+    "industry": "Entertainment",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_OWNS_PROPERTY": true,
+    "Q_LIVE_ENTERTAINMENT": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "change_of_use": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use from residence to event venue"
+    },
+    "occupancy_change": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use"
+    },
+    "existing_use": {
+      "value": "residence",
+      "confidence": 0.9,
+      "evidence": "from residence"
+    },
+    "proposed_use": {
+      "value": "event venue",
+      "confidence": 0.9,
+      "evidence": "to event venue"
+    },
+    "parking_changes": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new parking area"
+    },
+    "site_work": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new parking area"
+    }
+  },
+  "site": {
+    "municipality": "Toa Baja",
+    "geo": "conservation_coastal"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0699: confirmed change of use -> new Permiso Unico for the new use. (KB: RULE_0007, RULE_0699)"
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0711: change of use at a pin in a conservation district (location.zoning.conservation) -> consulta de ubicacion. (KB: RULE_0709, RULE_0710, RULE_0711, RULE_0712)"
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0708: construction-type work at a pin in the coastal zone (location.czm) -> coastal-zone review (the rule itself flags EXPERT VALIDATION NEEDED). (KB: RULE_0708)"
+      },
+      {
+        "key": "DOC_ENTERTAINMENT_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "Q_LIVE_ENTERTAINMENT -> public-entertainment permit. (KB: RULE_0032, RULE_0246)"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true; energy.test.ts: 'a rooftop system is not assumed to be a microgrid'."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; the business-type alcohol rules exist only for Bar / Juice Bar."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_CONSULTA_UBICACION",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "RC-2023: the consulta de ubicacion (land-use siting) is decided before the Permiso Unico for the new use (no KB edge)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  }
+}
