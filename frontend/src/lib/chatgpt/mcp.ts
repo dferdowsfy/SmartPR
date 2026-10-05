@@ -7,7 +7,7 @@
 
 import { assessScenario, normalizeScenario, CHATGPT_SERVER_VERSION, type NormalizedScenario, type ScenarioInput } from "./assessment";
 import { createHandoffToken, HandoffError, type HandoffIntent } from "./handoff";
-import { WIDGET_URI, WIDGET_MIME, widgetHtml, MAP_TILE_ORIGIN } from "./widget";
+import { WIDGET_URI, WIDGET_MIME, widgetHtml } from "./widget";
 
 export const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 export const SERVER_NAME = "smartpr-chatgpt";
@@ -140,15 +140,19 @@ export function callTool(name: string, args: Record<string, unknown>, opts: { si
 }
 
 /**
- * Widget CSP: map tiles are plain <img> raster tiles (resource/img-src only —
- * no fetch, so no connect domains; ChatGPT ignores connect_domains anyway).
- * The only redirect target is the SmartPR portal that handoff links use.
+ * Widget CSP: strict and empty. The widget is fully self-contained (inline
+ * CSS/JS, inline-SVG vector map of the municipios — no remote tiles, fonts or
+ * images, no fetch), so there is nothing for ChatGPT's sandbox CSP to block.
+ * v3 loaded Esri raster tiles via resource_domains and ChatGPT showed
+ * "Couldn't open …" (CSP off) instead of the widget; v4 removed every external
+ * load. The only non-empty entry is redirect_domains (the SmartPR portal that
+ * handoff links open via openExternal) — `_meta.ui.csp` has no redirect field.
  */
 export function widgetResourceMeta(siteUrl: string) {
   const portal = new URL(siteUrl).origin;
   return {
-    ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [MAP_TILE_ORIGIN] } },
-    "openai/widgetCSP": { connect_domains: [], resource_domains: [MAP_TILE_ORIGIN], redirect_domains: [portal] },
+    ui: { prefersBorder: true, csp: { connectDomains: [] as string[], resourceDomains: [] as string[] } },
+    "openai/widgetCSP": { connect_domains: [] as string[], resource_domains: [] as string[], redirect_domains: [portal] },
     "openai/widgetDescription": "SmartPR preliminary Puerto Rico requirements with a site map pin and refine controls.",
     "openai/widgetPrefersBorder": true,
   };
