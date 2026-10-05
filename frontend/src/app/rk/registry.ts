@@ -883,6 +883,54 @@ export const NODE_TYPE_CONFIGS: Record<NodeType, NodeTypeConfig> = {
       return out;
     },
   },
+  district_equivalence: {
+    type: "district_equivalence",
+    label: "District Equivalence (municipal POT code → RC district)",
+    plural: "District Equivalences",
+    color: "#38bdf8",
+    labelOf: (d) => `${s(d.municipality)}: ${s(d.map_code)} → ${s(d.rc_code)}`,
+    fields: [
+      { key: "municipality", label: "Municipality", kind: "text", required: true },
+      { key: "map_code", label: "Map code (POT / plan)", kind: "text", required: true },
+      { key: "map_name", label: "Map code description", kind: "text" },
+      { key: "rc_code", label: "Equivalent RC district code", kind: "text", required: true },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source", required: true },
+      { key: "citation_section", label: "Citation (section / table)", kind: "text", required: true },
+      { key: "page", label: "Page", kind: "text" },
+      { key: "effect_note", label: "Applicability note", kind: "textarea" },
+      { key: "last_verified_at", label: "Last verified", kind: "text", required: true, help: "YYYY-MM-DD" },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
+  overlay_district: {
+    type: "overlay_district",
+    label: "Overlay District (zona sobrepuesta)",
+    plural: "Overlay Districts",
+    color: "#a855f7",
+    labelOf: (d) => `${s(d.code)} — ${s(d.name)}`.replace(/^ — | — $/g, "") || s(d.id),
+    fields: [
+      { key: "code", label: "Overlay code (as mapped)", kind: "text", required: true },
+      { key: "municipality", label: "Municipality", kind: "text" },
+      { key: "name", label: "Name", kind: "text", required: true },
+      { key: "meaning", label: "Meaning", kind: "textarea", required: true },
+      { key: "effect", label: "Effect on base zoning", kind: "select", options: ["adds", "modifies", "restricts", "may_modify_or_restrict", "unknown"], required: true },
+      { key: "effect_basis", label: "Precedence basis (cited)", kind: "textarea", required: true },
+      { key: "provisions_status", label: "Overlay provisions", kind: "select", options: ["encoded", "not_obtained"], required: true, help: "not_obtained → compatibility stays undetermined." },
+      { key: "provisions_needed", label: "Provisions still needed", kind: "textarea" },
+      { key: "obtain_from", label: "Obtain from", kind: "text" },
+      { key: "source_ids", label: "Sources", kind: "entity_ref_list", refType: "regulatory_source", required: true },
+      { key: "last_verified_at", label: "Last verified", kind: "text", required: true, help: "YYYY-MM-DD" },
+    ],
+    edgesOf: (d) => {
+      const out: DerivedEdge[] = [];
+      pushRefs(out, "derived_from", d.source_ids);
+      return out;
+    },
+  },
 };
 
 export const NODE_TYPES = Object.keys(NODE_TYPE_CONFIGS) as NodeType[];
@@ -950,6 +998,8 @@ export const EDGE_RULES: { from: NodeType; edge: EdgeType; to: NodeType }[] = [
   { from: "development_standard", edge: "derived_from", to: "regulatory_source" },
   { from: "site_rule", edge: "triggers", to: "document" },
   { from: "site_rule", edge: "derived_from", to: "regulatory_source" },
+  { from: "district_equivalence", edge: "derived_from", to: "regulatory_source" },
+  { from: "overlay_district", edge: "derived_from", to: "regulatory_source" },
 ];
 
 export function labelForNode(nodeType: NodeType, data: Record<string, unknown>): string {
@@ -1073,6 +1123,8 @@ export function newEntityId(nodeType: NodeType, name: string): string {
     use_permission: "UP",
     development_standard: "DS",
     site_rule: "SR",
+    district_equivalence: "EQ",
+    overlay_district: "OV",
   };
   const slug = name
     .normalize("NFD")

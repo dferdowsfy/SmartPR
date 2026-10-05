@@ -79,6 +79,46 @@
    "unlisted_citation": "Tabla 6.32; Sección 6.1.3.3",
    "equivalence_confidence": "high",
    "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "ZD_RC",
+   "code": "R-C",
+   "name": "Residencial Comercial",
+   "family": "residential",
+   "aliases": [
+    "R-C",
+    "RC"
+   ],
+   "governing_instrument": "Reglamento Conjunto 2023, Regla 6.1.5",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Regla 6.1.5 (pp. 372–378)",
+   "unlisted_uses": "not_listed",
+   "unlisted_citation": "Tabla 6.40; Sección 6.1.5.3–6.1.5.4",
+   "equivalence_confidence": "high",
+   "last_verified_at": "2026-10-05",
+   "purpose": "Combines residential and commercial uses; the principal use is residential, and part or all of the first floor may be commercial or service (Sección 6.1.5.2(a), p. 373)."
+  },
+  {
+   "id": "ZD_DG",
+   "code": "D-G",
+   "name": "Dotacional General",
+   "family": "institutional",
+   "aliases": [
+    "D-G",
+    "DG"
+   ],
+   "governing_instrument": "Reglamento Conjunto 2023 (Dotacional districts)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.6 (p. 322) equivalence; district rules not yet encoded",
+   "unlisted_uses": "not_listed",
+   "unlisted_citation": "not encoded",
+   "equivalence_confidence": "high",
+   "last_verified_at": "2026-10-05",
+   "purpose": "Public / institutional facilities (dotacional). SmartPR has not encoded this district's use table."
   }
  ],
  "land_uses": [
@@ -969,6 +1009,27 @@
    "last_verified_at": "2026-10-04",
    "verification": "verified_text",
    "notes": ""
+  },
+  {
+   "id": "UP_RC_SINGLE_FAMILY",
+   "name": "Single-family dwelling in R-C",
+   "zoning_district_id": "ZD_RC",
+   "land_use_id": "LU_SINGLE_FAMILY",
+   "outcome": "permitted",
+   "conditions": [
+    "The principal use in R-C is residential (Sección 6.1.5.2(a), p. 373).",
+    "New construction must meet Tabla 6.41 design parameters and Sección 6.1.1.11 (Sección 6.1.5.5, p. 375)."
+   ],
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.5.2(b); Tabla 6.40 (Residencial: Unifamiliar), pp. 373–374",
+   "table": "6.40",
+   "page": "373–374",
+   "effective_date": "2023-06-16",
+   "version": "RC 2023 (Reg. 9473)",
+   "last_verified_at": "2026-10-05",
+   "verification": "verified_text"
   }
  ],
  "development_standards": [
@@ -1103,6 +1164,102 @@
    ],
    "citation_section": "Tabla 6.70",
    "applies_to": "residential"
+  },
+  {
+   "id": "DS_RC_LOT",
+   "zoning_district_id": "ZD_RC",
+   "name": "Minimum lot size",
+   "value": "400 m² (high-density urban areas) · existing lot size (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_WIDTH",
+   "zoning_district_id": "ZD_RC",
+   "name": "Minimum lot width",
+   "value": "20 m (high-density urban areas) · existing width (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_OCC",
+   "zoning_district_id": "ZD_RC",
+   "name": "Maximum lot occupancy",
+   "value": "Interior lots 70% · corner 80% · two/three corners 90% · whole block 100% (high-density urban areas); 75% · 85% · 95% · 100% (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_FAR",
+   "zoning_district_id": "ZD_RC",
+   "name": "Maximum gross floor area",
+   "value": "250% or per Sección 6.1.4.6 (high-density urban areas); 450% interior / 510% corner (traditional urban centres); no upper floor may exceed the maximum occupancy",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_DENSITY",
+   "zoning_district_id": "ZD_RC",
+   "name": "Residential density",
+   "value": "1 basic dwelling unit per 150 m² of lot (high-density urban areas; convertible per Sección 6.1.1.5) · 1 per 80 m² (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_FRONT",
+   "zoning_district_id": "ZD_RC",
+   "name": "Front yard",
+   "value": "3 m or 1/5 of building height, whichever is greater (high-density urban areas) · 1 m or 1/5 of height; exempt where neighbours have no front yard (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_REAR",
+   "zoning_district_id": "ZD_RC",
+   "name": "Rear yard",
+   "value": "4 m or 1/5 of building height, whichever is greater (high-density urban areas) · 3 m or 1/5 of height (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
+  },
+  {
+   "id": "DS_RC_SIDE",
+   "zoning_district_id": "ZD_RC",
+   "name": "Side yards",
+   "value": "Two side yards of at least 4 m or 1/5 of height (high-density urban areas) · 2 m or 1/5 of height where the parcel abuts another district; party-wall development allowed between same-district parcels (traditional urban centres)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Tabla 6.41 (pp. 375–378)",
+   "applies_to": "new_construction",
+   "variant_note": "Tabla 6.41 has two columns — 'Áreas urbanas de alta densidad' and 'Centros urbanos tradicionales'. Which column applies to a parcel is not determined by SmartPR."
   }
  ],
  "site_rules": [
@@ -1481,6 +1638,201 @@
    "source_ids": [],
    "citation_section": "Citation carried by the linked permit document",
    "constraint": "documentation"
+  },
+  {
+   "id": "SR_CONSTRUCTION_PERMIT",
+   "name": "Construction permit",
+   "component": "construction",
+   "when": {
+    "all": [
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement",
+       "renovation",
+       "demolition"
+      ]
+     }
+    ]
+   },
+   "approval_document_id": "DOC_OGPE_CONSTRUCTION_PERMIT",
+   "agency": "OGPe, or the autonomous municipality's permits office where permit powers were transferred",
+   "requirement": "required",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "citation_section": "Regla 3.2.1, Sección 3.2.1.1(a) (p. 125): a construction permit application is required for construction, reconstruction, remodelling, demolition, rehabilitation, expansion or alteration",
+   "page": "125",
+   "prerequisites": [
+    "Certified plans (Sección 3.2.1.2(a))",
+    "JP flood certification (Sección 3.2.1.2(c))",
+    "Soil-conditions certification or study, as applicable (Sección 3.2.1.2(f))",
+    "Fondo del Seguro del Estado policy and municipal construction excise evidence once initially approved (Sección 3.2.1.2(g)–(h))"
+   ],
+   "sequence": "Filed by a licensed architect or engineer; the permit closes with the Informe Final de Obras (Sección 3.2.1.1(f)).",
+   "evidence": [
+    "Certified construction plans (site, architectural, structural)"
+   ],
+   "constraint": "documentation",
+   "source_ids": [
+    "SRC_RC_2023"
+   ]
+  },
+  {
+   "id": "SR_FLOOD_CERTIFICATION",
+   "name": "JP flood certification (certificación de inundabilidad)",
+   "component": "construction",
+   "when": {
+    "all": [
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement"
+      ]
+     }
+    ]
+   },
+   "agency": "Junta de Planificación",
+   "requirement": "required",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "citation_section": "Regla 3.2.1, Sección 3.2.1.2(c) (p. 125): a JP flood certification must be submitted for construction works",
+   "page": "125",
+   "sequence": "Obtain before filing; it is a filing requirement of the construction permit.",
+   "evidence": [
+    "Certificación de inundabilidad (JP)"
+   ],
+   "constraint": "documentation",
+   "source_ids": [
+    "SRC_RC_2023"
+   ]
+  },
+  {
+   "id": "SR_ICP_ARCHAEOLOGY_EARTHWORK",
+   "name": "ICP archaeology and historic-conservation recommendation",
+   "component": "earthwork",
+   "when": {
+    "all": [
+     {
+      "fact": "activity.construction",
+      "op": "in",
+      "value": [
+       "new",
+       "addition",
+       "substantial_improvement",
+       "demolition"
+      ]
+     }
+    ]
+   },
+   "agency": "Instituto de Cultura Puertorriqueña (ICP), requested through OGPe, the autonomous municipality or an Authorized Professional",
+   "requirement": "required",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "citation_section": "Sección 2.1.8.7(b)(4) (p. 24): every public or private project involving earth movement, excavation or construction must request the ICP recommendation on archaeology and historic conservation",
+   "page": "24",
+   "sequence": "Requested through the Unidad de Evaluación de Cumplimiento Ambiental before or with the construction permit.",
+   "evidence": [
+    "ICP recommendation (arqueología y conservación histórica)"
+   ],
+   "constraint": "documentation",
+   "source_ids": [
+    "SRC_RC_2023"
+   ]
+  },
+  {
+   "id": "SR_DEMOLITION",
+   "name": "Demolition of existing structures",
+   "component": "demolition",
+   "when": {
+    "all": [
+     {
+      "fact": "project.demolition",
+      "op": "truthy"
+     }
+    ]
+   },
+   "agency": "OGPe or the autonomous municipality's permits office; DRNA (asbestos/lead, recycling plan); ICP in traditional urban centres",
+   "requirement": "required",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "citation_section": "Regla 3.2.2(a)–(b) (pp. 126–127): demolition is filed through a construction permit; asbestos/lead-free certification; DRNA permits if present; DRNA recycling plan; written ICP recommendation in historic zones, traditional urban centres and archaeological sites",
+   "page": "126–127",
+   "prerequisites": [
+    "Asbestos- and lead-paint-free certification by a DRNA-certified inspector (Regla 3.2.2(b)(4))",
+    "DRNA permits before the construction permit if such materials exist (Regla 3.2.2(b)(5))",
+    "Recycling plan filed with DRNA (Regla 3.2.2(b)(7))"
+   ],
+   "evidence": [
+    "Asbestos / lead-paint certification",
+    "DRNA recycling plan"
+   ],
+   "constraint": "documentation",
+   "source_ids": [
+    "SRC_RC_2023"
+   ]
+  },
+  {
+   "id": "SR_PUBLIC_POOL_HEALTH",
+   "name": "Health recommendation for a public pool",
+   "component": "pool",
+   "when": {
+    "all": [
+     {
+      "fact": "project.pool",
+      "op": "truthy"
+     },
+     {
+      "fact": "project.pool_public",
+      "op": "truthy"
+     }
+    ]
+   },
+   "agency": "Departamento de Salud, through OGPe or an autonomous municipality",
+   "requirement": "required",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "citation_section": "Regla 4.3.11, Sección 4.3.11.1(a) (p. 238): to build, modify or remodel a public pool, plans are submitted for a Health recommendation before the construction permit",
+   "page": "238",
+   "sequence": "Before the construction permit.",
+   "evidence": [
+    "Pool plans per the ISPSC as adopted in the PR Building Code"
+   ],
+   "constraint": "documentation",
+   "source_ids": [
+    "SRC_RC_2023"
+   ]
+  },
+  {
+   "id": "SR_STORMWATER_CGP",
+   "name": "EPA NPDES Construction General Permit",
+   "component": "earthwork",
+   "when": {
+    "all": [
+     {
+      "fact": "project.disturbance_1acre",
+      "op": "truthy"
+     }
+    ]
+   },
+   "agency": "U.S. EPA Region 2 (NPDES)",
+   "requirement": "required",
+   "certainty_full": "confirmed",
+   "certainty_partial": "confirmed",
+   "citation_section": "40 CFR 122.26(b)(14)(x) and (b)(15)(i): construction disturbing one acre or more (or part of a larger common plan) needs NPDES stormwater permit coverage",
+   "page": null,
+   "evidence": [
+    "Notice of Intent (NOI) and Stormwater Pollution Prevention Plan (SWPPP)"
+   ],
+   "constraint": "documentation",
+   "source_ids": [
+    "SRC_40CFR122_26"
+   ]
   }
  ],
  "sources": [
@@ -1545,6 +1897,621 @@
    "legal_status": "effective",
    "authority_level": "authoritative",
    "last_verified_at": "2026-10-04"
+  },
+  {
+   "id": "SRC_40CFR122_26",
+   "name": "40 CFR §122.26 — Storm water discharges (NPDES)",
+   "citation": "40 CFR 122.26(b)(14)(x), (b)(15)(i)",
+   "url": "https://www.law.cornell.edu/cfr/text/40/122.26",
+   "source_type": "regulation",
+   "legal_status": "effective",
+   "authority_level": "authoritative",
+   "last_verified_at": "2026-10-05"
+  }
+ ],
+ "district_equivalences": [
+  {
+   "id": "EQ_GUAYNABO_R_1",
+   "municipality": "Guaynabo",
+   "map_code": "R-1",
+   "map_name": "Residencial Uno",
+   "rc_code": "R-B",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_2",
+   "municipality": "Guaynabo",
+   "map_code": "R-2",
+   "map_name": "Residencial Dos",
+   "rc_code": "R-I",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_3",
+   "municipality": "Guaynabo",
+   "map_code": "R-3",
+   "map_name": "Residencial Tres",
+   "rc_code": "R-I",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_A",
+   "municipality": "Guaynabo",
+   "map_code": "R-A",
+   "map_name": "Residencial de Alta Densidad",
+   "rc_code": "R-I",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_3_PA",
+   "municipality": "Guaynabo",
+   "map_code": "R-3-PA",
+   "map_name": "Residencial General Plan de Área Ave. Esmeralda-Alejandrino",
+   "rc_code": "R-I",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_4",
+   "municipality": "Guaynabo",
+   "map_code": "R-4",
+   "map_name": "Residencial Cuatro",
+   "rc_code": "R-U",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_5",
+   "municipality": "Guaynabo",
+   "map_code": "R-5",
+   "map_name": "Residencial Cinco",
+   "rc_code": "R-U",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_5_PA",
+   "municipality": "Guaynabo",
+   "map_code": "R-5-PA",
+   "map_name": "Residencial de Apartamentos Plan de Área Ave. Esmeralda-Alejandrino",
+   "rc_code": "R-U",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_PACUT",
+   "municipality": "Guaynabo",
+   "map_code": "PACUT",
+   "map_name": "Distrito de Uso Mixto",
+   "rc_code": "R-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_3_T",
+   "municipality": "Guaynabo",
+   "map_code": "R-3-T",
+   "map_name": "Residencial General Tradicional",
+   "rc_code": "R-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_4_T",
+   "municipality": "Guaynabo",
+   "map_code": "R-4-T",
+   "map_name": "Residencial General Tradicional",
+   "rc_code": "R-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_R_5_T",
+   "municipality": "Guaynabo",
+   "map_code": "R-5-T",
+   "map_name": "Residencial de Apartamentos Tradicional Alta Densidad",
+   "rc_code": "R-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_3_T",
+   "municipality": "Guaynabo",
+   "map_code": "C-3-T",
+   "map_name": "Comercial Central Tradicional",
+   "rc_code": "R-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_CO_1",
+   "municipality": "Guaynabo",
+   "map_code": "CO-1",
+   "map_name": "Comercial para Oficina Uno",
+   "rc_code": "C-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_1",
+   "municipality": "Guaynabo",
+   "map_code": "C-1",
+   "map_name": "Comercial Local",
+   "rc_code": "C-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_1_T",
+   "municipality": "Guaynabo",
+   "map_code": "C-1-T",
+   "map_name": "Comercial Local Tradicional",
+   "rc_code": "C-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_L_PA",
+   "municipality": "Guaynabo",
+   "map_code": "C-L-PA",
+   "map_name": "Comercial Local Plan de Área Ave. Esmeralda-Alejandrino",
+   "rc_code": "C-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_1_PA",
+   "municipality": "Guaynabo",
+   "map_code": "C-1-PA",
+   "map_name": "Comercial Local Plan de Área Ave. Esmeralda-Alejandrino",
+   "rc_code": "C-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_2_PA",
+   "municipality": "Guaynabo",
+   "map_code": "C-2-PA",
+   "map_name": "Comercial Local Plan de Área Ave. Esmeralda-Alejandrino",
+   "rc_code": "C-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_2",
+   "municipality": "Guaynabo",
+   "map_code": "C-2",
+   "map_name": "Comercial Central Intermedio",
+   "rc_code": "C-I",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_3",
+   "municipality": "Guaynabo",
+   "map_code": "C-3",
+   "map_name": "Comercial Central",
+   "rc_code": "C-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_C_4",
+   "municipality": "Guaynabo",
+   "map_code": "C-4",
+   "map_name": "Centros de Mercadeo",
+   "rc_code": "C-C",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_I_1",
+   "municipality": "Guaynabo",
+   "map_code": "I-1",
+   "map_name": "Industrial Liviano",
+   "rc_code": "I-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_I_1_T",
+   "municipality": "Guaynabo",
+   "map_code": "I-1-T",
+   "map_name": "Industrias Livianas Tradicional",
+   "rc_code": "I-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_IL_1",
+   "municipality": "Guaynabo",
+   "map_code": "IL-1",
+   "map_name": "Industrial Liviano Limitado",
+   "rc_code": "I-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_IL_1_PA",
+   "municipality": "Guaynabo",
+   "map_code": "IL-1-PA",
+   "map_name": "Industrial Liviano Plan de Área Ave. Esmeralda-Alejandrino",
+   "rc_code": "I-L",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_I_2",
+   "municipality": "Guaynabo",
+   "map_code": "I-2",
+   "map_name": "Industrial Pesado",
+   "rc_code": "I-P",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_IL_2",
+   "municipality": "Guaynabo",
+   "map_code": "IL-2",
+   "map_name": "Industrial Pesado Limitado",
+   "rc_code": "I-P",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_AD",
+   "municipality": "Guaynabo",
+   "map_code": "AD",
+   "map_name": "Áreas Desarrolladas",
+   "rc_code": "ARD",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_D_2",
+   "municipality": "Guaynabo",
+   "map_code": "D-2",
+   "map_name": "Dotacional Dos",
+   "rc_code": "D-G",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_D_3",
+   "municipality": "Guaynabo",
+   "map_code": "D-3",
+   "map_name": "Dotacional Tres",
+   "rc_code": "D-G",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_D_2_T",
+   "municipality": "Guaynabo",
+   "map_code": "D-2-T",
+   "map_name": "Usos Dotacionales 2 Tradicional",
+   "rc_code": "D-G",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_D_3_T",
+   "municipality": "Guaynabo",
+   "map_code": "D-3-T",
+   "map_name": "Usos Dotacionales 3 Tradicional",
+   "rc_code": "D-G",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_DT_G",
+   "municipality": "Guaynabo",
+   "map_code": "DT-G",
+   "map_name": "Dotacional General",
+   "rc_code": "D-G",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_D_1",
+   "municipality": "Guaynabo",
+   "map_code": "D-1",
+   "map_name": "Dotacional Uno",
+   "rc_code": "D-A",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_D_1_T",
+   "municipality": "Guaynabo",
+   "map_code": "D-1-T",
+   "map_name": "Usos Dotacionales 1 Tradicional",
+   "rc_code": "D-A",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_DT_P",
+   "municipality": "Guaynabo",
+   "map_code": "DT-P",
+   "map_name": "Dotacional Parque",
+   "rc_code": "D-A",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_CR_3",
+   "municipality": "Guaynabo",
+   "map_code": "CR-3",
+   "map_name": "Conservación de Cuencas",
+   "rc_code": "CR",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_CR_5",
+   "municipality": "Guaynabo",
+   "map_code": "CR-5",
+   "map_name": "Conservación de Terrenos Susceptibles a Deslizamientos",
+   "rc_code": "CR",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_CR_C",
+   "municipality": "Guaynabo",
+   "map_code": "CR-C",
+   "map_name": "Conservación de Cuencas",
+   "rc_code": "CR",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  },
+  {
+   "id": "EQ_GUAYNABO_M",
+   "municipality": "Guaynabo",
+   "map_code": "M",
+   "map_name": "A Mejorarse",
+   "rc_code": "M",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "citation_section": "Sección 6.1.1.4; Tabla 6.6 — Equivalencias Distritos de Calificación Municipio Autónomo de Guaynabo",
+   "page": "321–322",
+   "effect_note": "Transitional equivalence (Sección 6.1.1.3(b) and 6.1.1.4(b), pp. 309 and 314). Overlay zones of special plans or territorial plans prevail over the equivalent district (Sección 6.1.1.3(m), p. 314).",
+   "last_verified_at": "2026-10-05"
+  }
+ ],
+ "overlay_districts": [
+  {
+   "id": "OV_GUAYNABO_PACUT",
+   "code": "PA-PACUT",
+   "municipality": "Guaynabo",
+   "name": "Plan de Área del Centro Urbano Tradicional (PACUT) de Guaynabo",
+   "meaning": "The parcel lies inside the area of Guaynabo's Plan de Área for its Centro Urbano Tradicional (recorded on the JP calificación layer as overlay 'PA-PACUT'). RC 2023 lists 'PACUT — Distrito de Uso Mixto' among Guaynabo's POT districts (Tabla 6.6, p. 321).",
+   "effect": "may_modify_or_restrict",
+   "effect_basis": "RC 2023 Sección 6.1.1.3(m) (p. 314): overlay areas or zones established by special plans or territorial plans prevail over the zoning districts under the equivalence. Sección 6.1.1.1(b), (d), (e) (p. 308): provisions of special plans not converted to RC districts prevail, and where provisions differ the one that best protects the resource prevails.",
+   "precedence_citations": [
+    {
+     "citation": "Sección 6.1.1.3(m)",
+     "page": "314"
+    },
+    {
+     "citation": "Sección 6.1.1.1(b), (d), (e)",
+     "page": "308"
+    }
+   ],
+   "provisions_status": "not_obtained",
+   "provisions_needed": "The PACUT plan's use and design provisions (uses, density, height, yards, design guidelines) and confirmation that they remain in force after the 2010 POT revision.",
+   "obtain_from": "Municipio Autónomo de Guaynabo — Oficina de Planificación y Ordenación Territorial (and the JP record of the plan's adoption)",
+   "source_ids": [
+    "SRC_RC_2023"
+   ],
+   "layer_source": "JP calificación vigente layer (cali_sobre = PA-PACUT)",
+   "last_verified_at": "2026-10-05"
   }
  ]
 }

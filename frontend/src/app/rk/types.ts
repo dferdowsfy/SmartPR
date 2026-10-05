@@ -49,7 +49,10 @@ export type NodeType =
   | "land_use"
   | "use_permission"
   | "development_standard"
-  | "site_rule";
+  | "site_rule"
+  // Municipal POT code → RC district equivalences, and overlay zones with their precedence.
+  | "district_equivalence"
+  | "overlay_district";
 
 export type NodeStatus =
   | "draft"
@@ -395,6 +398,8 @@ export interface CompiledKb {
     landUses?: Record<string, unknown>[];
     usePermissions?: Record<string, unknown>[];
     developmentStandards?: Record<string, unknown>[];
+    districtEquivalences?: Record<string, unknown>[];
+    overlayDistricts?: Record<string, unknown>[];
     siteRules?: Record<string, unknown>[];
   };
   meta: { version: number; compiledAt: string; batchId: string | null };

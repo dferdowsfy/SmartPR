@@ -13,12 +13,13 @@ import { useEffect, useId, useRef, useState } from "react";
 import { BookmarkPlus, Check, ChevronDown, Copy, Download, FileJson, Loader2, X } from "lucide-react";
 import type { Lang } from "../../forms/engine/types";
 import { PassportMap } from "../map/PassportMap";
+import { reportDocument, reportDocumentText } from "../../locations/reportDocument";
 import { assessmentOf, BASIS_TEXT, basisOf, findingStateText, reportArea, reportSummaryText, RETRIEVAL_TEXT, SCOPE_TEXT, type PropertyReport, type ReportFinding, type ReportGroup } from "../../locations/propertyReport";
 import { FindingValue } from "./SiteReportPreview";
 import { FindingReviewControls, PropertyReviewPanel, usePropertyReview, type ReviewApi, type ReviewTarget } from "./PropertyReviewPanel";
 import { downloadPropertyReportPdf } from "../../locations/propertyReportPdf";
 import { exportableReview, REVIEW_DISCLAIMER, REVIEW_STATUS_TEXT } from "../../locations/propertyReview";
-import { ApprovalsSection, CompatibilitySection, EvidenceSection, ProposedActivityPanel, ReasoningDetails, StandardsList, UnresolvedSection, type ActivityInput } from "./LandUseSections";
+import { ApprovalsSection, CompatibilitySection, DecisionSummary, EvidenceSection, ProposedActivityPanel, ReasoningDetails, StandardsList, UnresolvedSection, type ActivityInput } from "./LandUseSections";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -83,6 +84,13 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
         </table>
       )}
       {f.detail && !(f.coverage && f.coverage.parts.length > 0) && <p className="spr-prd-finding-detail">{f.detail[lang]}</p>}
+      {f.currency?.status === "unresolved" && (
+        <div className="spr-prd-ambiguity" role="note" data-testid="put-currency">
+          <strong>{lang === "es" ? "Vigencia de la fuente sin resolver" : "Source currency unresolved"}</strong>
+          <p>{f.currency.reason[lang]}</p>
+          <ul>{f.currency.evidence.map((d, i) => <li key={i}><a href={d.url} target="_blank" rel="noreferrer">{d.title}</a>{d.checked_on ? ` · ${lang === "es" ? "consultado" : "checked"} ${d.checked_on}` : ""}{d.note ? ` — ${d.note}` : ""}</li>)}</ul>
+        </div>
+      )}
       {(f.notes?.length ?? 0) > 0 && <ul className="spr-prd-notes" data-testid="finding-notes">{f.notes!.map((n, i) => <li key={i}>{n[lang]}</li>)}</ul>}
       {(f.ambiguities?.length ?? 0) > 0 && (
         <div className="spr-prd-ambiguity" role="note" data-testid="finding-ambiguities">
@@ -114,9 +122,10 @@ function FindingRow({ f, lang, api }: { f: ReportFinding; lang: Lang; api: Revie
 }
 
 const STATUS_HEAD = {
-  review: { en: "Review required", es: "Requiere revisión", note: { en: "Material constraint or issue detected.", es: "Se detectó una restricción o asunto importante." } },
+  review: { en: "Material constraints or exposure", es: "Restricciones o exposición importantes", note: { en: "Mapped constraint, exposure or issue that needs review.", es: "Restricción, exposición o asunto mapeado que requiere revisión." } },
+  mapped: { en: "Mapped findings", es: "Hallazgos mapeados", note: { en: "A classification or zone is mapped; that layer alone indicates no constraint.", es: "Hay una clasificación o zona mapeada; esa capa por sí sola no indica restricción." } },
   clear: { en: "No mapped intersection identified", es: "No se identificó intersección mapeada", note: { en: "Checked; nothing mapped in the stated dataset at the stated scope. Not a clearance.", es: "Verificado; nada mapeado en el conjunto de datos y alcance indicados. No es una autorización." } },
-  unable: { en: "Unable to verify", es: "No se pudo verificar", note: { en: "Source unavailable, did not respond, or evidence is insufficient — unknown, not clear.", es: "Fuente no disponible, no respondió o evidencia insuficiente — desconocido, no despejado." } },
+  unable: { en: "Unresolved or insufficient evidence", es: "Sin resolver o evidencia insuficiente", note: { en: "Source unavailable, did not respond, or evidence is insufficient — unknown, not clear.", es: "Fuente no disponible, no respondió o evidencia insuficiente — desconocido, no despejado." } },
 } as const;
 
 function KeyFindings({ report, lang }: { report: PropertyReport; lang: Lang }) {
@@ -124,7 +133,7 @@ function KeyFindings({ report, lang }: { report: PropertyReport; lang: Lang }) {
   return (
     <section className="spr-prd-section spr-rv-findings" aria-labelledby="spr-rv-findings" data-testid="key-findings">
       <h3 id="spr-rv-findings">{L("Key regulatory findings", "Hallazgos regulatorios clave", lang)}</h3>
-      {(["review", "clear", "unable"] as const).map((k) => a[k].length > 0 && (
+      {(["review", "mapped", "clear", "unable"] as const).map((k) => (a[k]?.length ?? 0) > 0 && (
         <div key={k} className={`spr-rv-group spr-rv-${k}`} data-status={k}>
           <h4>{STATUS_HEAD[k][lang]} <small>{STATUS_HEAD[k].note[lang]}</small></h4>
           <ul>{a[k].map((x) => (
@@ -217,7 +226,7 @@ export function PropertyReportDrawer({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"summary" | "full" | null>(null);
   const [copyFallback, setCopyFallback] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "pdf">(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -258,8 +267,8 @@ export function PropertyReportDrawer({
   const assessment = assessmentOf(report);
   const nad = p.technical.nad83_state_plane;
 
-  const copy = async () => {
-    const text = reportSummaryText(report, lang, reviewExport);
+  const copy = async (kind: "summary" | "full" = "summary") => {
+    const text = kind === "full" ? reportDocumentText(reportDocument(report, lang, reviewExport)) : reportSummaryText(report, lang, reviewExport);
     setCopyFallback(null);
     // 1) Async Clipboard API (refused in some mobile browsers / in-app views).
     let ok = false;
@@ -272,8 +281,8 @@ export function PropertyReportDrawer({
     // 2) Legacy copy from a selected textarea (works on iOS Safari/Chrome).
     if (!ok) ok = legacyCopy(text, panelRef.current);
     if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      setCopied(kind);
+      setTimeout(() => setCopied(null), 2500);
     } else {
       // 3) Show the text selected so the user can copy it by hand.
       setCopyFallback(text);
@@ -325,8 +334,11 @@ export function PropertyReportDrawer({
             {busy === "pdf" ? <Loader2 className="spr-loc-spin" aria-hidden="true" /> : <Download aria-hidden="true" />} {L("Download PDF", "Descargar PDF", lang)}
           </button>
           {pdfError && <span className="spr-prd-error" role="alert" data-testid="report-pdf-error">{pdfError}</span>}
-          <button type="button" className="spr-loc-btn" onClick={copy} data-testid="report-copy">
-            {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied ? L("Copied", "Copiado", lang) : L("Copy summary", "Copiar resumen", lang)}
+          <button type="button" className="spr-loc-btn" onClick={() => copy("summary")} data-testid="report-copy">
+            {copied === "summary" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied === "summary" ? L("Copied", "Copiado", lang) : L("Copy summary", "Copiar resumen", lang)}
+          </button>
+          <button type="button" className="spr-loc-btn" onClick={() => copy("full")} data-testid="report-copy-full">
+            {copied === "full" ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />} {copied === "full" ? L("Copied", "Copiado", lang) : L("Copy full report", "Copiar informe completo", lang)}
           </button>
           <button type="button" className="spr-loc-btn" onClick={() => downloadJson(report, reviewExport)} data-testid="report-json">
             <FileJson aria-hidden="true" /> {L("Export data (JSON)", "Exportar datos (JSON)", lang)}
@@ -361,6 +373,8 @@ export function PropertyReportDrawer({
             <p className="spr-rv-conclusion" data-testid="reviewer-conclusion">{assessment.conclusion[lang]}</p>
           </section>
 
+          {report.land_use?.activity.use && report.land_use.decision && <DecisionSummary lu={report.land_use} lang={lang} />}
+
           <KeyFindings report={report} lang={lang} />
 
           <NextSteps report={report} lang={lang} />
@@ -381,6 +395,8 @@ export function PropertyReportDrawer({
                 <PassportMap
                   point={{ latitude: p.latitude, longitude: p.longitude }}
                   parcel={p.boundary.geometry}
+                  neighbors={(p.map?.neighbors ?? []).map((n) => n.geometry)}
+                  highlights={(p.map?.partials ?? []).map((h) => ({ id: h.id, geometry: h.geometry, color: h.tone === "hazard" ? "#c2410c" : "#d98c12" }))}
                   layerControls
                   navigable
                   layerLabels={{ streets: L("Map", "Mapa", lang), satellite: L("Satellite", "Satélite", lang), flood: L("Flood zones (FEMA)", "Zonas inundables (FEMA)", lang), zoning: L("Zoning (JP)", "Calificación (JP)", lang), parcel: L("Parcel", "Parcela", lang), layers: L("Map layers", "Capas del mapa", lang) }}
@@ -389,6 +405,15 @@ export function PropertyReportDrawer({
                   errorText={L("The map could not load.", "El mapa no pudo cargar.", lang)}
                   className="spr-prd-map-canvas"
                 />
+                {!!p.boundary.geometry && (
+                  <ul className="spr-map-legend" data-testid="map-legend">
+                    <li><span className="spr-map-key spr-map-key-parcel" aria-hidden="true" />{L("Selected parcel", "Parcela seleccionada", lang)}{p.catastro.value ? ` ${p.catastro.value}` : ""}</li>
+                    {(p.map?.neighbors.length ?? 0) > 0 && <li><span className="spr-map-key spr-map-key-neighbor" aria-hidden="true" />{L("Neighbouring parcels (CRIM)", "Parcelas vecinas (CRIM)", lang)}</li>}
+                    {(p.map?.partials ?? []).map((h) => (
+                      <li key={h.id} data-partial={h.layer}><span className="spr-map-key" style={{ background: h.tone === "hazard" ? "#c2410c" : "#d98c12", opacity: 0.6 }} aria-hidden="true" />{h.label[lang]} — {L(`part of the parcel (${h.share_text})`, `parte de la parcela (${h.share_text})`, lang)}</li>
+                    ))}
+                  </ul>
+                )}
                 <p className="spr-prd-caption">{p.boundary.geometry ? L("Parcel boundary from the CRIM digital cadastre — not a survey.", "Límite de parcela del catastro digital del CRIM — no es una mensura.", lang) : L("No parcel boundary determined — showing the pin only.", "No se determinó el límite de la parcela — se muestra solo el pin.", lang)}</p>
               </div>
               <dl className="spr-prd-facts">

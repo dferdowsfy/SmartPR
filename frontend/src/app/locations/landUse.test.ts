@@ -172,9 +172,9 @@ test("report carries flags, land-use section and standardized statuses", () => {
   const ids = r.flags!.map((x) => x.id);
   assert.deepEqual(ids, ["zoning", "land_class", "compatibility", "flood", "coastal", "environmental", "historic", "complexity"]);
   assert.equal(r.flags!.find((x) => x.id === "flood")!.value.en, "High-risk area on 19.5% of the parcel");
-  // Governing regulation not verified → pending; the RC 2023 reading is kept as preliminary detail.
-  assert.equal(f(r, "permitted_uses").value!.en, "Pending — governing regulation not verified");
-  assert.match(f(r, "permitted_uses").detail!.en, /Preliminary reading under .* \(not confirmed to govern this site\): Hotel \/ lodging: Conditional/);
+  // Governing regulation not verified → undetermined; the RC 2023 reading is kept apart from the conclusion.
+  assert.equal(f(r, "permitted_uses").value!.en, "Undetermined — see the evidence gaps");
+  assert.match(f(r, "permitted_uses").detail!.en, /^No conclusion yet because .*the regulation governing uses in San Juan has not been confirmed.* Rule reading kept separate \(not a conclusion\): CT: Conditional/);
   assert.equal(r.land_use?.activity.use, "LU_HOTEL");
 });
 

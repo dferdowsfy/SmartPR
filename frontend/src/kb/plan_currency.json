@@ -1,0 +1,120 @@
+{
+  "_note": "Curated, cited evidence about which municipal plan and rules apply, and whether SmartPR's map layers reflect them. Each entry records what was checked, where, when, and what remains unresolved. Never a legal determination. Update only with new evidence; old entries are kept in git history.",
+  "municipalities": {
+    "Arroyo": {
+      "plan": {
+        "name": "Plan de Ordenación Territorial de Arroyo (primer POT)",
+        "resolution": "JP-PT-72-03",
+        "executive_order": "OE-2025-039",
+        "effective": "2025-07-01",
+        "documents": [
+          {
+            "title": "JP-PT-72-03 Plan Final 2025 (Memorial · Programa · Reglamentación)",
+            "url": "https://docs.pr.gov/files/JP-Junta%20de%20Planificacion/Planes%20Territoriales/PT/Arroyo/JP-PT-72-03-Plan-Final-2025-1.pdf",
+            "checked_on": "2026-10-05",
+            "note": "345 scanned pages without a text layer; read by OCR (machine reading — quotations below are OCR'd and should be confirmed against the PDF)."
+          },
+          {
+            "title": "JP-PT-72-03 Resolución de adopción",
+            "url": "https://jp.pr.gov/wp-content/uploads/2025/09/JP-PT-72-03-Resolucion.pdf",
+            "checked_on": "2026-10-05",
+            "note": "Returned HTTP 404 (page not found) on 2026-10-05; not reviewed."
+          },
+          {
+            "title": "JP — Municipios Información de PT (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1",
+            "checked_on": "2026-10-05",
+            "note": "Arroyo: pt_aprobado 1-Jul-2025, orden_ejecutiva OE-2025-039, Estatus 'POT aprobados vigentes'."
+          },
+          {
+            "title": "JP — Calificación vigente (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+            "checked_on": "2026-10-05",
+            "note": "Arroyo polygons carry resolucion JP-PT-72-03, vigencia 01-JUL-2025 — the calificación layer reflects the 2025 plan."
+          }
+        ]
+      },
+      "rules": {
+        "status": "identified",
+        "regulation": "Reglamento Conjunto 2023 and subsequent amendments, as adopted by the Arroyo Plan de Ordenación Territorial",
+        "evidence": "Orden Ejecutiva OE-2025-039, reproduced in the Plan Final (p. 9): the first Plan de Ordenación Territorial of Arroyo adopts the Reglamento Conjunto para la Evaluación y Expedición de Permisos … (Reglamento Conjunto 2023) and its subsequent amendments for the related substantive and procedural provisions.",
+        "unresolved": "SmartPR's use rules encode the 2023 text; amendments after 2023 and any plan-specific provisions in the plan's Reglamentación section have not been checked against them."
+      },
+      "put": {
+        "plan_modifies_put": true,
+        "evidence": [
+          "Orden Ejecutiva OE-2025-039 (Plan Final p. 9): the Arroyo Plan Territorial includes minor modifications to the Classification Map of the PUT-PR-2015, under PUT-PR Chapter 4, Section B(4); the municipality also submitted a 'Modificación Menor al Plan de Uso de Terrenos de Puerto Rico'.",
+          "Plan Final p. 33: the final plan annex includes, where applicable, the 'Memorial Justificativo sobre Posible Modificación Menor al PUT-PR'.",
+          "Plan Final p. 40 (work plan): 'mapas propuestos y modificación menor al PUT-PR' presented to the Junta de Comunidad (Sept 2023 – Apr 2024)."
+        ],
+        "layer_check": {
+          "checked_on": "2026-10-05",
+          "layer": "https://sigejp.pr.gov/server/rest/services/MIPR/PUT_v10/MapServer/0",
+          "finding": "Every feature in the island-wide PUT layer (PUT_v10) carries R_PUT = PUT-2014 and V_PUT = 30-nov-2015 (distinct-value query over all features). No feature references JP-PT-72-03 or 2025. The service publishes no edit date.",
+          "incorporated": "no_evidence"
+        },
+        "affected_areas": null,
+        "status": "unresolved",
+        "unresolved": "Whether the 2025 minor modification changed the PUT classification of any given Arroyo parcel cannot be established from the PUT layer (it carries no 2025 version) — the plan's modification map / memorial must be compared to the parcel.",
+        "parcel_check": {
+          "catastro": "420-000-010-29",
+          "checked_on": "2026-10-05",
+          "put_layer": "SU 75.99% (34,757.9 m²), VIAL 24.01% (10,980.5 m²), AGUA 0.1 m² sliver; pin in SU",
+          "pt_calificacion_layer": "R-I, clasificación SU over >99.9% of the parcel, resolución JP-PT-72-03, vigencia 01-JUL-2025",
+          "comparison": "The 2025 PT layer classifies the whole parcel SU, while the 2015 PUT layer shows 24% VIAL. This is consistent with — but does not prove — a 2025 change; it may also be a difference in how road rights-of-way are drawn."
+        },
+        "memorial_search": "OCR of the Plan Final (pages read so far) finds the 'Memorial Justificativo sobre Posible Modificación Menor al PUT-PR' referenced as a separate annex (p. 33); the modification map itself was not found in the Plan Final. Request the memorial/annex from the JP or the Municipio."
+      },
+      "permit_authority": {
+        "status": "unresolved",
+        "note": "Not researched for Arroyo. Confirm whether permits are filed with OGPe or a municipal permits office.",
+        "obtain_from": "OGPe / Municipio de Arroyo"
+      }
+    },
+    "Guaynabo": {
+      "plan": {
+        "name": "Plan de Ordenación Territorial de Guaynabo (revisión integral 2010)",
+        "resolution": "JP-PT-16-10",
+        "executive_order": "OE-2010-016",
+        "effective": "2010-05-02",
+        "documents": [
+          {
+            "title": "JP — Municipios Información de PT (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1",
+            "checked_on": "2026-10-05",
+            "note": "Guaynabo: pt_aprobado 15-Dic-1999 (OE-1999-63); first revision approved 2-May-2010 (OE-2010-016); status 'POT en proceso de revisión integral (RIPOT)'; jerarquia 5; convenio revised 26-Dec-2008, 'a perpetuidad'."
+          },
+          {
+            "title": "JP — Calificación vigente (layer)",
+            "url": "https://sigejp.pr.gov/server/rest/services/calificacion/cali_vige/MapServer/0",
+            "checked_on": "2026-10-05",
+            "note": "Polygons tagged with catastro 114-042-022-01: R-5-T 'Residencial de Apartamentos Tradicional de Alta Densidad, Solar Mínimo 400 m/c' (SU), resolución JP-PT-16-10, vigencia 05/02/2010, overlay cali_sobre PA-PACUT; layer field cali_2021 = R-C."
+          },
+          {
+            "title": "Reglamento Conjunto 2023 — Tabla 6.6, Equivalencias Municipio Autónomo de Guaynabo",
+            "url": "https://docs.pr.gov/files/DDEC/OGPe/Reglamentos/RC-2023-E.pdf",
+            "checked_on": "2026-10-05",
+            "note": "pp. 321–322: R-5-T, R-3-T, R-4-T, C-3-T and PACUT → R-C; D-2-T → D-G. Sección 6.1.1.3(m), p. 314: overlay zones of special or territorial plans prevail over the equivalent district."
+          },
+          {
+            "title": "Avance — Plan Territorial Municipio Autónomo de Guaynabo (2024)",
+            "url": "https://guaynabocity.gov.pr/wp-content/uploads/2024/08/Avance_PT-MAG_2024_VEDA.pdf",
+            "checked_on": "2026-10-05",
+            "note": "Municipal RIPOT advance (not adopted). Tabla 42 (pp. 163–165) shows the same R-5-T → R-C equivalence under the RC 2020."
+          }
+        ]
+      },
+      "rules": {
+        "status": "unresolved",
+        "regulation": "Reglamento Conjunto 2023 district rules via the Tabla 6.6 equivalence, subject to Guaynabo POT / Plan de Área provisions",
+        "evidence": "RC 2023 Sección 6.1.1.4(a) (p. 314) applies the RC districts to autonomous municipalities with territorial plans through the transitional equivalences of Tabla 6.6; Sección 6.1.1.3(m) (p. 314) makes overlay zones of special plans or territorial plans prevail over the equivalent district.",
+        "unresolved": "Whether the Guaynabo POT (2010) reglamentación or the PA-PACUT plan modifies the R-C rules for this parcel; amendments to RC 2023 after June 2023 have not been checked."
+      },
+      "permit_authority": {
+        "status": "unresolved",
+        "note": "Guaynabo is an autonomous municipality with a transfer agreement recorded by the JP (jerarquía field 5; agreement revised 26-Dec-2008, perpetual). RC 2023 lets Municipios Autónomos con Jerarquía I–III issue determinations; SmartPR has not confirmed which office issues this construction permit.",
+        "obtain_from": "Municipio Autónomo de Guaynabo — Oficina de Permisos; OGPe"
+      }
+    }
+  }
+}

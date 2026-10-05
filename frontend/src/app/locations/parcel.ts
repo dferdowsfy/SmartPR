@@ -110,6 +110,10 @@ export interface ParcelFindings {
   /** True when per-district / per-zone coverage was computed completely (every feature intersected). */
   areas_reliable?: { zoning: boolean; flood: boolean };
   extras?: Partial<Record<ExtraId, ExtraFinding>>;
+  /** Neighbouring CRIM parcels (outlines only, lon/lat) — to tell the selected parcel apart on the map. */
+  neighbors?: Array<{ catastro: string | null; geometry: ParcelBoundary["geometry"] }>;
+  /** Display shapes for findings that cover only part of the parcel (lon/lat; for the map, not for measurement). */
+  partials?: Array<{ layer: "zoning" | "flood" | "put" | "soils"; key: string; share: number; geometry: { type: "MultiPolygon"; coordinates: number[][][][] } }>;
 }
 
 const src = (k: keyof typeof LAYER_SOURCES): ParcelSourceRef => {

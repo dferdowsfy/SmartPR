@@ -4,17 +4,40 @@ import { reason, type ReasoningGraph } from "../reasoning/scenarioReasoning";
 
 import { reasoningGraphFromNodes } from "../reasoning/loadGraph";
 import type { IntakeSite } from "./intakeLocation";
+import PLAN_CURRENCY from "../../kb/plan_currency.json";
 import { siteLayersCurrent } from "./intakeLocation";
 import type { ParcelFindings, ExtraFinding } from "./parcel";
-import { analyzeLandUse, parseProposedActivity, type LandUseAnalysis, type LandUseGraph, type ProposedActivity, type SourceRef, type ParcelFacts } from "./landUse";
+import { analyzeLandUse, parseProposedActivity, type ComponentQuestion, type Governance, type LandUseAnalysis, type LandUseGraph, type ProposedActivity, type SourceRef, type ParcelFacts } from "./landUse";
+
+type CurrencyEntry = {
+  plan?: { name?: string; documents?: Governance["documents"] };
+  rules?: { status?: string; regulation?: string; unresolved?: string };
+  permit_authority?: { status?: string; note?: string; obtain_from?: string };
+};
+/** Curated governance record for a municipality (plan_currency.json); "unknown" when SmartPR has not researched it. */
+export function governanceFor(municipality: string): Governance {
+  const e = (PLAN_CURRENCY.municipalities as Record<string, CurrencyEntry>)[municipality];
+  const st = (v: string | undefined) => (v === "identified" ? "identified" : v === "unresolved" ? "unresolved" : "unknown") as Governance["rules"];
+  return {
+    municipality,
+    plan: e?.plan?.name ?? null,
+    rules: e ? st(e.rules?.status) : "unknown",
+    rulesText: e?.rules?.regulation ?? null,
+    rulesUnresolved: e?.rules?.unresolved ?? null,
+    permitAuthority: e ? st(e.permit_authority?.status) : "unknown",
+    permitNote: e?.permit_authority?.note ?? null,
+    permitObtainFrom: e?.permit_authority?.obtain_from ?? null,
+    documents: e?.plan?.documents ?? [],
+  };
+}
 interface NodeLike { nodeType: string; entityId: string; data: Record<string, unknown>; status?: string }
 const INACTIVE = new Set(["archived", "superseded", "rolled_back", "inactive"]);
 
 export function landUseGraphFromNodes(nodes: NodeLike[]): LandUseGraph {
-  const g: LandUseGraph = { zoningDistricts: [], landUses: [], usePermissions: [], developmentStandards: [], siteRules: [], documents: [], sources: [] };
+  const g: Required<LandUseGraph> = { zoningDistricts: [], landUses: [], usePermissions: [], developmentStandards: [], siteRules: [], documents: [], sources: [], districtEquivalences: [], overlayDistricts: [] };
   const bucket: Record<string, keyof LandUseGraph> = {
     zoning_district: "zoningDistricts", land_use: "landUses", use_permission: "usePermissions", development_standard: "developmentStandards",
-    site_rule: "siteRules", document: "documents", regulatory_source: "sources",
+    site_rule: "siteRules", document: "documents", regulatory_source: "sources", district_equivalence: "districtEquivalences", overlay_district: "overlayDistricts",
   };
   for (const n of nodes) {
     const b = bucket[n.nodeType];
@@ -81,7 +104,7 @@ export function parcelFactsFor(site: IntakeSite, parcel: ParcelFindings | null):
     : zPoint?.status === "resolved" && zPoint.code ? [{ code: zPoint.code, name: zPoint.name, share: null, area_m2: null, overlays: [] }] : [];
   const fl = by.get("flood_zone");
   const floodZones = p?.flood.status === "sourced"
-    ? p.flood.zones.map((z) => ({ zone: z.zone, sfha: z.sfha, floodway: z.floodway, share: p.flood.coverage || p.areas_reliable?.flood ? z.share ?? null : null }))
+    ? p.flood.zones.map((z) => ({ zone: z.zone, subtype: z.subtype ?? null, sfha: z.sfha, floodway: z.floodway, share: p.flood.coverage || p.areas_reliable?.flood ? z.share ?? null : null }))
     : fl?.status === "resolved" && fl.code ? [{ zone: fl.code, sfha: fl.tags.includes("SFHA"), floodway: fl.tags.includes("FLOODWAY"), share: null }] : [];
   const cz = by.get("coastal_zone");
   const ex = p?.extras ?? {};
@@ -108,13 +131,31 @@ export function parcelFactsFor(site: IntakeSite, parcel: ParcelFindings | null):
       return tops.length ? Math.max(...tops) : null;
     })(),
     landClass: ex.put?.status === "verified" ? ex.put.value : by.get("land_class")?.status === "resolved" ? by.get("land_class")!.code : null,
+    overlays: (() => {
+      if (p?.zoning.status !== "sourced") return [];
+      const names = new Map(p.zoning.districts.flatMap((d) => (d.overlays ?? []).map((o) => [o.code, o.name] as const)));
+      const cov = p.zoning.overlay_coverage;
+      if (cov?.parts.length) return cov.parts.map((x) => ({ code: x.key, name: names.get(x.key) ?? null, share: x.share }));
+      return [...names].map(([code, name]) => ({ code, name, share: null }));
+    })(),
+    floodAdvisory: (() => { const r = by.get("flood_advisory"); return !r ? null : r.status === "unknown" ? "unable" : r.status === "resolved" ? "yes" : "no"; })(),
+    governance: governanceFor(site.municipality.name),
   };
 }
 
 /** One call for the UI / tests: description → full land-use analysis on the bundled graph. */
-export function analyzeProposedActivity(description: string, site: IntakeSite, parcel: ParcelFindings | null, overrides: { construction?: string | null; use?: string | null } = {}, graphs = bundledLandUseGraphs()): LandUseAnalysis {
+export function analyzeProposedActivity(description: string, site: IntakeSite, parcel: ParcelFindings | null, overrides: { construction?: string | null; use?: string | null; answers?: Partial<Record<ComponentQuestion, string>> | null } = {}, graphs = bundledLandUseGraphs()): LandUseAnalysis {
   const a = parseProposedActivity(description, graphs.lu.landUses);
   if (overrides.use) { const n = graphs.lu.landUses.find((x) => x.id === overrides.use); if (n) { a.use = n.id; a.useName = String(n.name); } }
   if (overrides.construction) a.construction = overrides.construction as typeof a.construction;
+  applyComponentAnswers(a, overrides.answers);
   return analyzeLandUse(parcelFactsFor(site, parcel), a, graphs.lu, scenarioPathsForActivity(graphs.rg, a));
+}
+
+/** Answers to the inline project questions ("yes" / "no"; anything else leaves the fact unknown). */
+export function applyComponentAnswers(a: ProposedActivity, answers: Partial<Record<ComponentQuestion, string>> | null | undefined) {
+  for (const [k, v] of Object.entries(answers ?? {}) as Array<[ComponentQuestion, string]>) {
+    if (!(k in a.components)) continue;
+    a.components[k] = v === "yes" ? true : v === "no" ? false : a.components[k];
+  }
 }

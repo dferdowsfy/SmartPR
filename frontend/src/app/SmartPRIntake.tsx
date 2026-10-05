@@ -2052,7 +2052,7 @@ export default function SmartPRIntake() {
       setPointConfirmation({ latitude: st.pointConfirmation.latitude, longitude: st.pointConfirmation.longitude, at: String(st.pointConfirmation.at ?? '') });
     }
     if (st.propertyActivity && typeof st.propertyActivity.text === 'string') {
-      setPropertyActivity({ text: String(st.propertyActivity.text).slice(0, 400), construction: typeof st.propertyActivity.construction === 'string' ? st.propertyActivity.construction : null, use: typeof st.propertyActivity.use === 'string' ? st.propertyActivity.use : null });
+      setPropertyActivity({ text: String(st.propertyActivity.text).slice(0, 400), construction: typeof st.propertyActivity.construction === 'string' ? st.propertyActivity.construction : null, use: typeof st.propertyActivity.use === 'string' ? st.propertyActivity.use : null, answers: st.propertyActivity.answers && typeof st.propertyActivity.answers === 'object' ? Object.fromEntries(Object.entries(st.propertyActivity.answers as Record<string, unknown>).filter(([, v]) => v === 'yes' || v === 'no')) as Record<string, string> : null });
     }
     if (restoredSite && st.parcelFindings) {
       const pf = restoreParcelFindings(st.parcelFindings, restoredSite.latitude, restoredSite.longitude);
@@ -6423,9 +6423,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const activityInput: ActivityInput = propertyActivity ?? { text: (intakeDescription || '').slice(0, 400), construction: null, use: null };
   const landUseParcel = parcelState.revision === locState.revision ? parcelState.data : null;
   const landUse = useMemo(
-    () => (intakeSite && activityInput.text.trim() ? analyzeProposedActivity(activityInput.text, intakeSite, landUseParcel, { construction: activityInput.construction, use: activityInput.use }) : null),
+    () => (intakeSite && activityInput.text.trim() ? analyzeProposedActivity(activityInput.text, intakeSite, landUseParcel, { construction: activityInput.construction, use: activityInput.use, answers: activityInput.answers ?? null }) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the inputs that change the analysis
-    [intakeSite, landUseParcel, activityInput.text, activityInput.construction, activityInput.use]
+    [intakeSite, landUseParcel, activityInput.text, activityInput.construction, activityInput.use, JSON.stringify(activityInput.answers ?? null)]
   );
   const propertyReport = intakeSite ? buildPropertyReport({
     site: intakeSite,

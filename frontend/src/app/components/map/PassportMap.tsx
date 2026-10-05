@@ -70,6 +70,10 @@ export interface PassportMapProps {
   focus?: (MapPoint & { zoom?: number }) | null;
   /** Verified parcel boundary (GeoJSON Polygon / MultiPolygon, EPSG:4326). */
   parcel?: unknown | null;
+  /** Neighbouring parcel outlines (GeoJSON geometries) — drawn thin and grey so the selected parcel stands out. */
+  neighbors?: unknown[];
+  /** Shapes of findings covering only part of the parcel (GeoJSON geometries + colour). */
+  highlights?: Array<{ id: string; geometry: unknown; color: string }>;
   /** Base map (default "streets"). */
   base?: MapBase;
   overlays?: MapOverlay[];
@@ -96,6 +100,8 @@ export function PassportMap({
   point,
   focus = null,
   parcel = null,
+  neighbors = [],
+  highlights = [],
   base: baseProp,
   overlays: overlaysProp,
   layerControls = false,
@@ -125,8 +131,8 @@ export function PassportMap({
   const [panelOpen, setPanelOpen] = useState(false);
   const base = baseProp ?? baseState;
   const overlays = overlaysProp ?? overlayState;
-  const extrasRef = useRef<{ parcel: unknown | null; overlays: MapOverlay[]; showParcel: boolean }>({ parcel, overlays, showParcel });
-  extrasRef.current = { parcel, overlays, showParcel };
+  const extrasRef = useRef<{ parcel: unknown | null; overlays: MapOverlay[]; showParcel: boolean; neighbors: unknown[]; highlights: Array<{ id: string; geometry: unknown; color: string }> }>({ parcel, overlays, showParcel, neighbors, highlights });
+  extrasRef.current = { parcel, overlays, showParcel, neighbors, highlights };
   const styleBase = useRef<MapBase>(base);
 
   useEffect(() => {
@@ -222,7 +228,7 @@ export function PassportMap({
   function drawExtras() {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
-    const { parcel: geo, overlays: ov, showParcel: sp } = extrasRef.current;
+    const { parcel: geo, overlays: ov, showParcel: sp, neighbors: nb, highlights: hl } = extrasRef.current;
     for (const id of Object.keys(OVERLAY_TILES) as MapOverlay[]) {
       const on = ov.includes(id);
       const has = !!map.getSource(`ov-${id}`);
@@ -237,20 +243,30 @@ export function PassportMap({
         map.removeSource(`ov-${id}`);
       }
     }
-    const src = map.getSource("parcel") as { setData?: (d: unknown) => void } | undefined;
+    const setOrAdd = (id: string, data: unknown, layers: () => void) => {
+      const s = map.getSource(id) as { setData?: (d: unknown) => void } | undefined;
+      if (s?.setData) s.setData(data);
+      else { map.addSource(id, { type: "geojson", data: data as never }); layers(); }
+    };
+    // Neighbouring parcels: thin grey outlines.
+    setOrAdd("neighbors", { type: "FeatureCollection", features: sp ? nb.map((g) => ({ type: "Feature", properties: {}, geometry: g })) : [] }, () => {
+      map.addLayer({ id: "neighbors-line", type: "line", source: "neighbors", paint: { "line-color": "#7b8a90", "line-width": 1, "line-dasharray": [2, 2], "line-opacity": 0.85 } });
+    });
+    // Findings that cover only part of the parcel.
+    setOrAdd("partials", { type: "FeatureCollection", features: sp ? hl.map((h) => ({ type: "Feature", properties: { color: h.color, id: h.id }, geometry: h.geometry })) : [] }, () => {
+      map.addLayer({ id: "partials-fill", type: "fill", source: "partials", paint: { "fill-color": ["get", "color"], "fill-opacity": 0.38 } });
+      map.addLayer({ id: "partials-line", type: "line", source: "partials", paint: { "line-color": ["get", "color"], "line-width": 1.5 } });
+    });
+    // The selected parcel: light fill, white casing + strong outline.
     const data = geo && sp ? { type: "Feature", properties: {}, geometry: geo } : { type: "FeatureCollection", features: [] };
-    if (src?.setData) src.setData(data);
-    else {
-      map.addSource("parcel", { type: "geojson", data: data as never });
-      map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel", paint: { "fill-color": "#2f8f83", "fill-opacity": 0.16 } });
-      map.addLayer({ id: "parcel-line", type: "line", source: "parcel", paint: { "line-color": "#5eead4", "line-width": 2.5 } });
-    }
-    // Parcel above the overlays but below labels.
-    if (map.getLayer("parcel-fill")) {
-      const firstLabel = map.getStyle().layers?.find((l) => l.type === "symbol")?.id;
-      map.moveLayer("parcel-fill", firstLabel);
-      map.moveLayer("parcel-line", firstLabel);
-    }
+    setOrAdd("parcel", data, () => {
+      map.addLayer({ id: "parcel-fill", type: "fill", source: "parcel", paint: { "fill-color": "#2f8f83", "fill-opacity": 0.12 } });
+      map.addLayer({ id: "parcel-casing", type: "line", source: "parcel", paint: { "line-color": "#ffffff", "line-width": 6, "line-opacity": 0.9 } });
+      map.addLayer({ id: "parcel-line", type: "line", source: "parcel", paint: { "line-color": "#0f766e", "line-width": 3 } });
+    });
+    // Above the overlays, below labels: neighbours, partial findings, then the selected parcel on top.
+    const firstLabel = map.getStyle().layers?.find((l) => l.type === "symbol")?.id;
+    for (const id of ["neighbors-line", "partials-fill", "partials-line", "parcel-fill", "parcel-casing", "parcel-line"]) if (map.getLayer(id)) map.moveLayer(id, firstLabel);
   }
 
   // Base map switch: swap the style; overlays/parcel are re-added on style.load.
@@ -262,7 +278,7 @@ export function PassportMap({
   }, [base]);
 
   // Parcel / overlay changes.
-  const parcelKey = parcel ? JSON.stringify(parcel).length + ":" + JSON.stringify(parcel).slice(0, 80) : "";
+  const parcelKey = (parcel ? JSON.stringify(parcel).length + ":" + JSON.stringify(parcel).slice(0, 80) : "") + `|n${neighbors.length}|h${highlights.map((h) => h.id).join(",")}`;
   useEffect(() => {
     if (status !== "ready") return;
     drawExtras();

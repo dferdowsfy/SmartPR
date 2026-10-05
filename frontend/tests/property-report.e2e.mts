@@ -224,7 +224,7 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   await page.locator('[data-testid="property-report"]').waitFor({ timeout: 10000 });
   check("drawer: dialog with aria-modal and focus on Close", (await page.locator('[role="dialog"][aria-modal="true"]').count()) === 1 && (await page.evaluate(() => document.activeElement?.getAttribute("data-testid"))) === "property-report-close");
   const r = await text(page, '[data-testid="property-report"]');
-  check("drawer: reviewer layout — key findings, next steps, detailed findings (land, flood, environment), approvals", /Key regulatory findings/.test(r) && /Recommended next steps/.test(r) && /Detailed site findings/.test(r) && /Land & zoning/.test(r) && /Flood & water/.test(r) && /Required approvals/.test(r));
+  check("drawer: reviewer layout — key findings, next steps, detailed findings (land, flood, environment), approvals", /Key regulatory findings/.test(r) && /Recommended next steps/.test(r) && /Detailed site findings/.test(r) && /Land & zoning/.test(r) && /Flood & water/.test(r) && /Potential approvals/.test(r));
   // Checks this (older) parcel record never ran read "Not checked" with that basis — never "Official map finding".
   const notRun = page.locator('[data-finding][data-state="not_performed"]');
   const notRunBases = await notRun.evaluateAll((els) => els.map((e) => `${e.getAttribute("data-basis")}|${e.querySelector('[data-testid="finding-basis"]')?.textContent}`));
@@ -245,7 +245,14 @@ const waitPreviewCatastro = (page: Page, cat: string, ms = 20000) => page.locato
   await pdf.saveAs(path.join(OUT, "report.pdf"));
   await page.click('[data-testid="report-copy"]');
   const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
-  check("copy summary", clip.includes("173-000-001-39") && /Review required:\n• Land classification: Specially protected rustic land/.test(clip));
+  check("copy summary", clip.includes("173-000-001-39") && /Material constraints or exposure:\n• Land classification: Specially protected rustic land/.test(clip));
+  await page.click('[data-testid="report-copy-full"]');
+  const full = await page.evaluate(() => navigator.clipboard.readText()).catch(() => "");
+  const screenKeys = await page.locator('[data-testid="key-findings"] li').evaluateAll((els) => els.map((e) => `${e.querySelector("strong")?.textContent ?? ""}${e.querySelector("span:not(.spr-rv-dot)")?.childNodes[0]?.textContent ?? ""}`).filter(Boolean));
+    const strip = (t: string) => t.replace(/[\s:•]/g, "");
+  const fullS = strip(full);
+  const missingOnCopy = screenKeys.filter((k) => !fullS.includes(strip(k).slice(0, 50)));
+  check("copy full report: every key finding on screen is in the full copy, plus the snapshot and every detailed finding", full.includes("173-000-001-39") && /DETAILED SITE FINDINGS/.test(full) && /Report \S+ · smartpr\.property-report\/v3/.test(full) && missingOnCopy.length === 0, missingOnCopy.slice(0, 3).join(" | "));
   await page.screenshot({ path: path.join(OUT, "2-drawer-desktop.png") });
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
@@ -405,7 +412,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   await page.click('[data-testid="open-property-report"]');
   await expandAll(page);
   const groups = await page.locator('[data-testid="key-findings"] [data-status]').evaluateAll((els) => els.map((e) => e.getAttribute("data-status")));
-  check("santurce: key findings grouped (review before clear; no 'unable' group when every source answered)", groups.join(",") === "review,clear", groups.join(","));
+  check("santurce: key findings grouped (review, then mapped findings, then clear; no 'unable' group when every source answered)", groups.join(",") === "review,mapped,clear", groups.join(","));
   check("santurce: description pre-fills the proposed activity (not asked twice)", /120-room hotel/.test(await page.locator('[data-testid="activity-input"]').inputValue()));
   const compat = page.locator('[data-testid="land-use-compatibility"]');
   check("santurce hotel: professional review (APE-ZC overlay), base zoning conditional", (await compat.getAttribute("data-outcome")) === "professional_review" && /Conditional/.test(await compat.innerText()));
@@ -414,6 +421,23 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   check("santurce: PUT / Plan Territorial / soils verified", /Verified|SU — Suelo Urbano/.test(await page.locator('[data-finding="put"]').innerText()) && /13-Mar-2003/.test(await page.locator('[data-finding="municipal_plan"]').innerText()) && /Urban land/.test(await page.locator('[data-finding="soils"]').innerText()));
   check("santurce: 'Why?' reasoning path down to source and evidence", /44 CFR/.test(await page.locator('[data-rule="SR_FLOOD_SFHA_CONSTRUCTION"] [data-testid="reasoning-path"]').innerText()));
   await page.screenshot({ path: path.join(OUT, "10-santurce-hotel.png"), fullPage: false });
+  const dec = page.locator('[data-testid="decision-summary"]');
+  check("decision summary leads the report: scope, compatibility, constraints, unresolved, pathway, next action", await dec.isVisible() && (await dec.getAttribute("data-compatibility")) === "undetermined" && (await Promise.all(["decision-scope", "decision-compatibility", "decision-constraints", "decision-unresolved", "decision-pathway", "decision-next"].map((t) => dec.locator(`[data-testid="${t}"]`).count()))).every((n) => n === 1));
+  check("decision summary: pathway is never presented as complete", /^Not a complete approval pathway/.test(await dec.locator('[data-testid="pathway-completeness"]').innerText()));
+  check("decision summary sits above key findings", await page.evaluate(() => { const d = document.querySelector('[data-testid="decision-summary"]'); const k = document.querySelector('[data-testid="key-findings"]'); return !!d && !!k && !!(d.compareDocumentPosition(k) & Node.DOCUMENT_POSITION_FOLLOWING); }));
+  await page.fill('[data-testid="activity-input"]', "New 3,200-square-foot single-family residence with a pool");
+  await page.click('[data-testid="activity-analyze"]');
+  await page.waitForTimeout(300);
+  check("new residence with pool: scope says new construction with a pool; construction permit required; no remodel trigger", /^New construction · single-family dwelling · about 3,200 sq ft \(297 m²\) · with a pool/.test(await dec.locator('[data-testid="decision-scope"] dd').innerText()) && (await page.locator('[data-rule="SR_CONSTRUCTION_PERMIT"]').getAttribute("data-requirement")) === "required" && /New construction of a single-family dwelling, about 3,200 sq ft/.test(await page.locator('[data-rule="SR_CONSTRUCTION_PERMIT"]').innerText()) && (await page.locator('[data-testid="required-approvals"] [data-rule*="REMODEL"]').count()) === 0);
+  check("new residence: inline questions for demolition / pool use / earthwork", await page.locator('[data-testid="activity-question-pool_public"]').isVisible() && await page.locator('[data-testid="activity-question-demolition"]').isVisible());
+  await page.locator('[data-testid="activity-question-pool_public"] button[data-answer="no"]').click();
+  await page.waitForTimeout(300);
+  check("answering 'private pool' removes the public-pool approval and the question", (await page.locator('[data-rule="SR_PUBLIC_POOL_HEALTH"]').count()) === 0 && (await page.locator('[data-testid="activity-question-pool_public"]').count()) === 0);
+  check("evidence gaps show missing / why / task / blocks", (await page.locator('[data-testid="evidence-gaps"] li').count()) > 0 && /Research task/.test(await page.locator('[data-testid="evidence-gaps"]').innerText()));
+  await page.screenshot({ path: path.join(OUT, "10b-decision-summary.png"), fullPage: false });
+  await page.fill('[data-testid="activity-input"]', "Build a 120-room hotel");
+  await page.click('[data-testid="activity-analyze"]');
+  await page.waitForTimeout(300);
   await page.fill('[data-testid="activity-input"]', "Open a restaurant in the existing building");
   await page.click('[data-testid="activity-analyze"]');
   await page.waitForTimeout(300);
@@ -474,7 +498,7 @@ for (const [desc, tag] of [["Restaurant in Gurabo serving customers from Caguas 
   const soils = await text(page, '[data-testid="property-report"] [data-finding="soils"]');
   check("AB: parcel-wide soils with shares; pin answer separate", /HtF 75\.3% · MxF 23\.9% · HtE 0\.8% \(small\)/.test(soils) && /At the pin:\s*Humatas clay, 40 to 60 percent slopes \(HtF\)/.test(soils) && /survey area PR686/.test(soils) && /Well drained · flooding: None/.test(soils));
   const hz = page.locator('[data-testid="property-report"] [data-finding="historic_zone"]');
-  check("AB: refused source → 'Unable to verify' + reason, basis 'Source unavailable'", (await hz.getAttribute("data-basis")) === "source_unavailable" && /refused the request \(HTTP 403\)/.test(await hz.innerText()) && !/Official map finding/.test(await hz.innerText()));
+  check("AB: refused source → 'Unable to verify' + reason, basis 'Source unavailable'", (await hz.getAttribute("data-basis")) === "source_unavailable" && /refused the request \(HTTP 403\)/.test((await hz.textContent()) ?? "") && !/Official map finding/.test(await hz.innerText()), `${await hz.getAttribute("data-basis")} | ${(await hz.innerText()).slice(0, 300)}`);
   check("AB: approximate area is a number with units", /^15,152 m² \(3\.86 cuerdas\)/.test((await text(page, '[data-testid="report-area"]')).trim()));
   await page.click(".spr-prd-tech-toggle");
   const nad = await text(page, '[data-testid="report-nad83"]');

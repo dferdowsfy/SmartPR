@@ -533,6 +533,8 @@ export function ProjectLocationCard({
               point={point}
               focus={!point && areaFocus ? { ...areaFocus, zoom: proposal?.place.precision === "barrio" ? 14 : 12.5 } : null}
               parcel={isSaved && report ? report.property.boundary.geometry : null}
+              neighbors={isSaved && report ? (report.property.map?.neighbors ?? []).map((n) => n.geometry) : []}
+              highlights={isSaved && report ? (report.property.map?.partials ?? []).map((h) => ({ id: h.id, geometry: h.geometry, color: h.tone === "hazard" ? "#c2410c" : "#d98c12" })) : []}
               layerControls={isSaved}
               navigable={isSaved}
               layerLabels={{ streets: L("Map", "Mapa", lang), satellite: L("Satellite", "Satélite", lang), flood: L("Flood zones", "Zonas inundables", lang), zoning: L("Zoning", "Calificación", lang), parcel: L("Parcel", "Parcela", lang), layers: L("Map layers", "Capas del mapa", lang) }}
