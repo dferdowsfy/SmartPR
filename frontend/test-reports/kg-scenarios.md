@@ -343,7 +343,7 @@ Rendered order: MERCHANT_REGISTRATION (required) > PATENTE_MUNICIPAL (required) 
 
 Matrix: nonprofit / new_business_existing_building / urban_zone_x. CI test name: `KG23 kg-scenario: nonprofit / new_business_existing_building / urban_zone_x`
 
-Rendered order: CERT_INCORPORATION (required) > EIN (required) > MERCHANT_REGISTRATION (required) > PERMISO_UNICO (required) > SAM_REGISTRATION (required) > WORKERS_COMP (required) > DTRH_EMPLOYER_REG (required) > HACIENDA_EMPLOYER_WITHHOLDING (required) > PATENTE_MUNICIPAL (needs_more_information) > IRS_TAX_EXEMPT_DETERMINATION (needs_more_information) > HACIENDA_PR_TAX_EXEMPTION (needs_more_information) > LEASE_AGREEMENT (needs_more_information)
+Rendered order: CERT_INCORPORATION (required) > EIN (required) > MERCHANT_REGISTRATION (required) > PERMISO_UNICO (required) > SAM_REGISTRATION (required) > WORKERS_COMP (required) > DTRH_EMPLOYER_REG (required) > HACIENDA_EMPLOYER_WITHHOLDING (required) > PATENTE_MUNICIPAL (needs_more_information) > IRS_TAX_EXEMPT_DETERMINATION (conditional) > HACIENDA_PR_TAX_EXEMPTION (conditional) > LEASE_AGREEMENT (needs_more_information)
 
 Questions (1): inline: Will the business lease its commercial space?
 

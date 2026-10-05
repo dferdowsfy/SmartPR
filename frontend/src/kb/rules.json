@@ -8328,6 +8328,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
+  "is_conditional": true,
   "citation": "26 U.S.C. § 501(c); IRS Form 1023/1023-EZ / 1024",
   "citation_confidence": "review",
   "citation_source": "review",
@@ -8348,6 +8349,11 @@
     "date": "2026-09-21",
     "change": "Final form: business_type BT_NONPROFIT_ORGANIZATION, no municipality flag, missing_fact_keys=[federal_tax_exemption_claim] -> needs_more_information (asks whether the entity will seek 501(c)). The 501(c) determination is sought, not imposed; metro/coastal flags are not federal tax elements.",
     "reason": "Deep-research REJECTED verdict applied; correct_trigger rendered as a named missing fact per the validated NMI ground-truth principle."
+   },
+   {
+    "date": "2026-10-04",
+    "change": "is_conditional=true (REG-ELECTIVE-STATUS-001); verification, citation and missing_fact_keys unchanged",
+    "reason": "Validated golden G20 (Darius ground truth, 2026-09-16) classifies this determination as CONDITIONAL ('if sought'): the exemption is sought by the entity, not imposed (this rule's own 2026-09-21 research verdict). Same elective-status pattern as RULE_0041/RULE_0218 (agriculture registration). The engine now keeps elective is_conditional bases conditional instead of needs_more_information; the named missing fact stays on the card so the UI still asks whether the entity will seek the exemption."
    }
   ],
   "missing_fact_keys": [
@@ -8362,6 +8368,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_IRS_TAX_EXEMPT_DETERMINATION",
+  "is_conditional": true,
   "citation": "26 U.S.C. § 501(c)",
   "citation_confidence": "review",
   "citation_source": "review",
@@ -8382,6 +8389,11 @@
     "date": "2026-09-21",
     "change": "Final form: business_type BT_NONPROFIT_ORGANIZATION, no municipality flag, missing_fact_keys=[federal_tax_exemption_claim] -> needs_more_information (asks whether the entity will seek 501(c)). The 501(c) determination is sought, not imposed; metro/coastal flags are not federal tax elements.",
     "reason": "Deep-research REJECTED verdict applied; correct_trigger rendered as a named missing fact per the validated NMI ground-truth principle."
+   },
+   {
+    "date": "2026-10-04",
+    "change": "is_conditional=true (REG-ELECTIVE-STATUS-001); verification, citation and missing_fact_keys unchanged",
+    "reason": "Validated golden G20 (Darius ground truth, 2026-09-16) classifies this determination as CONDITIONAL ('if sought'): the exemption is sought by the entity, not imposed (this rule's own 2026-09-21 research verdict). Same elective-status pattern as RULE_0041/RULE_0218 (agriculture registration). The engine now keeps elective is_conditional bases conditional instead of needs_more_information; the named missing fact stays on the card so the UI still asks whether the entity will seek the exemption."
    }
   ],
   "missing_fact_keys": [
@@ -8396,6 +8408,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HACIENDA_PR_TAX_EXEMPTION",
+  "is_conditional": true,
   "citation": "Ley 1-2011 Sec. 1101.01; CC RI 18-08; Modelo SC 2645",
   "citation_confidence": "statute",
   "citation_source": "review",
@@ -8414,6 +8427,11 @@
     "date": "2026-09-21",
     "change": "Trigger broadened: municipality flag (metro/coastal) removed per verdict — Sec. 1101.01 exemption does not arise from the municipality. Now business_type BT_NONPROFIT_ORGANIZATION + missing_fact_keys=[pr_tax_exemption_claim] -> needs_more_information.",
     "reason": "Deep-research NEEDS-FACT verdict; flag removal follows the verdict notes."
+   },
+   {
+    "date": "2026-10-04",
+    "change": "is_conditional=true (REG-ELECTIVE-STATUS-001); verification, citation and missing_fact_keys unchanged",
+    "reason": "Validated golden G20 (Darius ground truth, 2026-09-16) classifies this determination as CONDITIONAL ('if sought'): the exemption is sought by the entity, not imposed (this rule's own 2026-09-21 research verdict). Same elective-status pattern as RULE_0041/RULE_0218 (agriculture registration). The engine now keeps elective is_conditional bases conditional instead of needs_more_information; the named missing fact stays on the card so the UI still asks whether the entity will seek the exemption."
    }
   ]
  },
@@ -8425,6 +8443,7 @@
   "expected_answer": null,
   "municipality_flag": null,
   "requires_document_id": "DOC_HACIENDA_PR_TAX_EXEMPTION",
+  "is_conditional": true,
   "citation": "Ley 1-2011 Sec. 1101.01; CC RI 18-08",
   "citation_confidence": "statute",
   "citation_source": "review",
@@ -8443,6 +8462,11 @@
     "date": "2026-09-21",
     "change": "Trigger broadened: municipality flag (metro/coastal) removed per verdict — Sec. 1101.01 exemption does not arise from the municipality. Now business_type BT_NONPROFIT_ORGANIZATION + missing_fact_keys=[pr_tax_exemption_claim] -> needs_more_information.",
     "reason": "Deep-research NEEDS-FACT verdict; flag removal follows the verdict notes."
+   },
+   {
+    "date": "2026-10-04",
+    "change": "is_conditional=true (REG-ELECTIVE-STATUS-001); verification, citation and missing_fact_keys unchanged",
+    "reason": "Validated golden G20 (Darius ground truth, 2026-09-16) classifies this determination as CONDITIONAL ('if sought'): the exemption is sought by the entity, not imposed (this rule's own 2026-09-21 research verdict). Same elective-status pattern as RULE_0041/RULE_0218 (agriculture registration). The engine now keeps elective is_conditional bases conditional instead of needs_more_information; the named missing fact stays on the card so the UI still asks whether the entity will seek the exemption."
    }
   ]
  },
