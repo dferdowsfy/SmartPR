@@ -34,6 +34,9 @@ import {
   LOMC_SEARCH_RADIUS_M,
   parseJpCalificacion,
   parsePresence,
+  parseProtectedArea,
+  PRESENCE_NAME_FIELDS,
+  sourceForEndpoint,
   type ArcGisQueryResponse,
   type SiteLayerId,
   type SiteLayerResult,
@@ -80,7 +83,7 @@ export interface ResolveLayersOptions {
   skipOptional?: boolean;
 }
 
-export type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "czm_noaa" | "coastline" | "historic" | "protected";
+export type QueryKey = "fema_zones" | "fema_panels" | "fema_community" | "fema_lomas" | "fema_lomrs" | "advisory_1pct" | "advisory_02pct" | "landslide" | "elevation" | "jp_calificacion" | "crim" | "czm_official" | "czm_noaa" | "coastline" | "historic" | "protected" | "reserves";
 
 /**
  * Provider registry: every ArcGIS point query SmartPR makes, declared once —
@@ -95,6 +98,11 @@ export interface LayerQuerySpec {
   retryOnTimeout: boolean;
   /** Best-effort: a miss never degrades a core layer. */
   optional: boolean;
+  /**
+   * Fields to ask the PRIMARY endpoint for (keeps the answer small); backups
+   * publish a different schema and get "*".
+   */
+  outFields?: string;
 }
 
 export const LAYER_QUERIES: Record<Exclude<QueryKey, "landslide" | "elevation">, LayerQuerySpec> = {
@@ -110,8 +118,12 @@ export const LAYER_QUERIES: Record<Exclude<QueryKey, "landslide" | "elevation">,
   czm_official: { source: "jp_zona_costanera", retryOnTimeout: false, optional: true },
   czm_noaa: { source: "noaa_czma", retryOnTimeout: false, optional: false },
   coastline: { source: "jp_linea_costa", retryOnTimeout: false, optional: true },
-  historic: { source: "jp_zonas_historicas", retryOnTimeout: false, optional: true },
-  protected: { source: "jp_areas_naturales", retryOnTimeout: false, optional: true },
+  // 2026-10-05: the old JP layers (jp_zonas_historicas / jp_areas_naturales)
+  // hang > 25 s on point queries; the MIPR / Hosted copies answer < 1 s. The
+  // old ones stay as backups (fallback_urls in layers.ts).
+  historic: { source: "mipr_zona_historica", retryOnTimeout: false, optional: true, outFields: "ZONA,Resolucion" },
+  protected: { source: "jp_areas_protegidas", retryOnTimeout: false, optional: true, outFields: "name,loc_desig,mgmt" },
+  reserves: { source: "jp_reservas_naturales", retryOnTimeout: false, optional: true, outFields: "nombre_reserv,resolucion" },
 };
 
 /** Every endpoint of a dataset, primary first. */
@@ -204,6 +216,7 @@ export const LAYER_TIMEOUTS_MS: Record<QueryKey, number> = {
   coastline: 6000,
   historic: 3500,
   protected: 3500,
+  reserves: 3500,
 };
 
 const FRESH_MS = 24 * 3600_000;
@@ -226,7 +239,8 @@ interface CacheEntry {
  * 24 h fresh / 30 days stale. Bump this whenever a parser's output for the
  * same upstream answer changes; old rows are simply never read again.
  */
-export const LAYER_PARSER_VERSION = "p2";
+// p3 (2026-10-05): historic / protected read the MIPR / Hosted layers (+ reserves).
+export const LAYER_PARSER_VERSION = "p3";
 
 export class LayerCache {
   private map = new Map<string, CacheEntry>();
@@ -344,16 +358,18 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const at = now().toISOString();
   const retries = opts.retries ?? 1;
   const retryDelayMs = opts.retryDelayMs ?? 250;
-  const q = async (k: keyof typeof LAYER_QUERIES, extra?: Record<string, string>) => {
+  const qe = (k: keyof typeof LAYER_QUERIES, extra?: Record<string, string>) => {
     const spec = LAYER_QUERIES[k];
-    const { result } = await queryDataset(fetchImpl, sourceEndpoints(spec.source), (ep) => buildArcgisPointQuery(ep, point, extra), {
+    const primary = LAYER_SOURCES[spec.source].url;
+    const fields = (ep: string): Record<string, string> => (spec.outFields && ep === primary ? { outFields: spec.outFields } : {});
+    return queryDataset(fetchImpl, sourceEndpoints(spec.source), (ep) => buildArcgisPointQuery(ep, point, { ...fields(ep), ...extra }), {
       timeoutMs: t(k),
       retries,
       retryDelayMs,
       retryOnTimeout: spec.retryOnTimeout,
     });
-    return result;
   };
+  const q = async (k: keyof typeof LAYER_QUERIES, extra?: Record<string, string>) => (await qe(k, extra)).result;
 
   // Seed the in-memory cache from the shared store: a pin resolved before a
   // restart (or on another instance) is still served fresh / stale-on-failure.
@@ -382,7 +398,7 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const want = (layers: SiteLayerId[]) => layers.some((l) => !fresh(l));
 
   const near = { distance: String(LOMC_SEARCH_RADIUS_M), units: "esriSRUnit_Meter" };
-  const [czmNoaa, advOne, landslide, elevation, zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot] = await Promise.all([
+  const [czmNoaa, advOne, landslide, elevation, zones, panels, community, lomas, lomrs, cali, crim, czmOff, coast, hist, prot, resv] = await Promise.all([
     want(["coastal_zone"]) ? q("czm_noaa") : null,
     want(["flood_advisory"]) ? q("advisory_1pct") : null,
     want(["terrain"]) ? readLandslidePixel(fetchImpl, point, t("landslide"), retries, retryDelayMs, opts.decodePng ?? sharpDecoder, opts.isOnLand) : null,
@@ -399,8 +415,9 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
     want(["coastal_zone"])
       ? q("coastline", { distance: String(CZM_BAND_M), units: "esriSRUnit_Meter", returnCountOnly: "true" })
       : null,
-    opts.skipOptional || !want(["historic_zone"]) ? null : q("historic"),
-    opts.skipOptional || !want(["protected_area"]) ? null : q("protected"),
+    opts.skipOptional || !want(["historic_zone"]) ? null : qe("historic"),
+    opts.skipOptional || !want(["protected_area"]) ? null : qe("protected"),
+    opts.skipOptional || !want(["protected_area"]) ? null : qe("reserves"),
   ]);
 
   const computed: Partial<Record<SiteLayerId, SiteLayerResult>> = {};
@@ -426,8 +443,15 @@ export async function resolveSiteLayers(latitude: number, longitude: number, opt
   const noaaCoastal = czmNoaa !== null ? parseNoaaCoastalZone(czmNoaa, at) : null;
   if (noaaCoastal) computed.coastal_zone = noaaCoastal;
   else if (czmOff !== null || coast !== null) computed.coastal_zone = parseCoastalZone(czmOff, coast, at);
-  if (hist !== null) computed.historic_zone = parsePresence("historic_zone", LAYER_SOURCES.jp_zonas_historicas, hist, at, ["NOMBRE", "Nombre", "nombre", "ZONA", "Zona"]);
-  if (prot !== null) computed.protected_area = parsePresence("protected_area", LAYER_SOURCES.jp_areas_naturales, prot, at, ["NOMBRE", "Nombre", "nombre", "AREA", "Name"]);
+  if (hist !== null) {
+    const src = sourceForEndpoint(LAYER_SOURCES.mipr_zona_historica, hist.endpoint);
+    computed.historic_zone = parsePresence("historic_zone", src, hist.result, at, [...PRESENCE_NAME_FIELDS.historic]);
+  }
+  if (prot !== null) {
+    const protSrc = sourceForEndpoint(LAYER_SOURCES.jp_areas_protegidas, prot.endpoint);
+    const resSrc = sourceForEndpoint(LAYER_SOURCES.jp_reservas_naturales, resv?.endpoint ?? null);
+    computed.protected_area = parseProtectedArea(prot.result, protSrc, resv?.result ?? null, resSrc, at);
+  }
 
   const order: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain", ...(opts.skipOptional ? [] : (["historic_zone", "protected_area"] as SiteLayerId[]))];
   const results: SiteLayerResult[] = [];
