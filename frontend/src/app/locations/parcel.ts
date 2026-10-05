@@ -16,8 +16,8 @@
 //   unavailable      the service did not answer — unknown, never "none"
 // ============================================================================
 
-import polygonClipping from "polygon-clipping";
 import { arcgisError, LAYER_SOURCES, zoningFamily, type ArcGisQueryResponse } from "./layers.ts";
+import type { Coverage } from "./coverage.ts";
 
 export type FindingStatus = "sourced" | "none_mapped" | "unavailable";
 
@@ -47,9 +47,13 @@ export interface ZoningDistrict {
   overlays?: Array<{ code: string; name: string | null; resolution: string | null; effective: string | null }>;
   effective: string | null;
   resolution: string | null;
-  /** Area of the parcel inside this district (m²) and share of the parcel — only when computed reliably. */
+  /** Area of the parcel inside this district (m², unrounded) and share of the parcel (0..1) — from `coverage`. */
   area_m2?: number | null;
   share?: number | null;
+  /** Below coverage.SMALL_SHARE of the parcel: a small intersection (kept, flagged — not assumed to be an error). */
+  small?: boolean;
+  /** The (clipped) district polygon contains the pin. */
+  contains_pin?: boolean;
 }
 
 export interface FloodZonePart {
@@ -59,6 +63,8 @@ export interface FloodZonePart {
   floodway: boolean;
   area_m2?: number | null;
   share?: number | null;
+  small?: boolean;
+  contains_pin?: boolean;
 }
 
 /**
@@ -80,19 +86,28 @@ export interface ExtraFinding {
   scope: "parcel" | "point" | "municipality";
   reason: string | null;
   retrieved_at: string;
+  /** Raw source fields behind the value, by official field name (provenance). */
+  raw?: Record<string, string | null>;
+  /** Official-source ambiguities found while reading the record (never resolved by guessing). */
+  ambiguities?: string[];
+  /** Parcel coverage by category (PUT classes, soil map units), when geometry was available. */
+  coverage?: Coverage | null;
+  /** Descriptive data for each coverage key (e.g. soil map-unit name, drainage). */
+  part_info?: Record<string, { label: string; attributes: Record<string, string | number | null> }>;
+  /** The answer at the pin, kept separately from the parcel-wide answer. */
+  pin?: { status: "verified" | "no_mapped" | "unable"; key: string | null; value: string | null; attributes: Record<string, string | number | null>; reason: string | null } | null;
+  /** Why the parcel-wide answer is missing when only a point answer exists. */
+  parcel_limitation?: string | null;
 }
-
-/** Areas are trusted only when the pieces add up to the parcel (± this). */
-export const AREA_TOLERANCE = 0.12;
 
 export interface ParcelFindings {
   latitude: number;
   longitude: number;
   retrieved_at: string;
   boundary: { status: FindingStatus; value: ParcelBoundary | null; reason: string | null; source: ParcelSourceRef };
-  zoning: { status: FindingStatus; districts: ZoningDistrict[]; reason: string | null; source: ParcelSourceRef; scope: "parcel" | "point" };
-  flood: { status: FindingStatus; zones: FloodZonePart[]; reason: string | null; source: ParcelSourceRef; scope: "parcel" | "point" };
-  /** True when per-district / per-zone areas were computed and add up to the parcel. */
+  zoning: { status: FindingStatus; districts: ZoningDistrict[]; reason: string | null; source: ParcelSourceRef; scope: "parcel" | "point"; coverage?: Coverage | null; overlay_coverage?: Coverage | null };
+  flood: { status: FindingStatus; zones: FloodZonePart[]; reason: string | null; source: ParcelSourceRef; scope: "parcel" | "point"; coverage?: Coverage | null };
+  /** True when per-district / per-zone coverage was computed completely (every feature intersected). */
   areas_reliable?: { zoning: boolean; flood: boolean };
   extras?: Partial<Record<ExtraId, ExtraFinding>>;
 }
@@ -279,59 +294,27 @@ export function restoreParcelFindings(raw: unknown, latitude: number, longitude:
 
 
 // ---------------------------------------------------------------------------
-// Area of the parcel inside each district / zone (polygon intersection)
+// Coverage → items (see coverage.ts for the method)
 // ---------------------------------------------------------------------------
 
-
-type Ring = number[][];
-const toMulti = (g: ParcelBoundary["geometry"]): number[][][][] => (g.type === "Polygon" ? [g.coordinates] : g.coordinates);
-
-/** Geodesic area (m²) of a MultiPolygon in lon/lat. */
-export function multiPolygonArea(mp: number[][][][]): number {
-  let a = 0;
-  for (const poly of mp) poly.forEach((ring, i) => { const r = Math.abs(ringAreaM2(ring as Ring)); a += i === 0 ? r : -r; });
-  return Math.max(0, a);
-}
-
-/** ArcGIS rings (outer + holes, any order) → polygon-clipping MultiPolygon. */
-function ringsToMulti(rings: number[][][]): number[][][][] {
-  const g = ringsToGeoJson(rings);
-  return g ? toMulti(g.geometry) : [];
-}
-
 /**
- * Area of the parcel inside the given feature rings, grouped by key.
- * Returns null for a key whose geometry could not be intersected.
+ * Copy each category's coverage onto the matching items (area, share, small,
+ * contains_pin). Items that only touch the parcel get 0; items whose geometry
+ * could not be measured get null. Returns true when the coverage is complete.
  */
-export function areasByKey(parcel: ParcelBoundary["geometry"], features: Array<{ key: string; rings: number[][][] }>): Map<string, number | null> {
-  const out = new Map<string, number | null>();
-  const subject = toMulti(parcel) as unknown as Parameters<typeof polygonClipping.intersection>[0];
-  for (const f of features) {
-    try {
-      const clip = polygonClipping.intersection(subject, ringsToMulti(f.rings) as unknown as Parameters<typeof polygonClipping.intersection>[0]);
-      const a = multiPolygonArea(clip as unknown as number[][][][]);
-      out.set(f.key, (out.get(f.key) ?? 0) + a);
-    } catch {
-      out.set(f.key, null);
-    }
+export function applyCoverage<T extends { area_m2?: number | null; share?: number | null; small?: boolean; contains_pin?: boolean }>(items: T[], keyOf: (t: T) => string, c: Coverage): boolean {
+  const failed = new Set(c.warnings.flatMap((w) => (w.code === "intersection_failed" ? w.keys : [])));
+  for (const t of items) {
+    const k = keyOf(t);
+    const part = c.parts.find((p) => p.key === k);
+    // Unknown stays unknown: an item whose geometry could not be measured gets null, never 0.
+    const unknown = !part && failed.has(k);
+    t.area_m2 = part ? part.area_m2 : unknown ? null : 0;
+    t.share = part ? part.share : unknown ? null : 0;
+    t.small = part ? part.small : false;
+    t.contains_pin = c.pin_key === k;
   }
-  return out;
-}
-
-/**
- * Attach area_m2 / share to each item when the computed pieces are reliable:
- * every key computed and the pieces sum to the parcel area within tolerance.
- * Otherwise areas are left null (the report then says "parcel intersects …").
- */
-export function applyAreas<T extends { area_m2?: number | null; share?: number | null }>(items: T[], keyOf: (t: T) => string, areas: Map<string, number | null>, parcelArea: number): boolean {
-  if (!parcelArea || !items.length) return false;
-  const vals = items.map((t) => areas.get(keyOf(t)));
-  if (vals.some((v) => v === null || v === undefined)) return false;
-  const total = (vals as number[]).reduce((a, b) => a + b, 0);
-  const reliable = Math.abs(total - parcelArea) / parcelArea <= AREA_TOLERANCE;
-  if (!reliable) return false;
-  items.forEach((t, i) => { const a = vals[i] as number; t.area_m2 = Math.round(a * 10) / 10; t.share = Math.round((a / total) * 1000) / 1000; });
-  return true;
+  return c.complete;
 }
 
 
@@ -371,32 +354,247 @@ export function parsePutExtra(resp: ArcGisQueryResponse | string, source: SrcRef
   return { id: "put", status: classes.length ? "verified" : "unable", value: classes.join(" · ") || null, items: classes, attributes: { resolution: str(a.R_PUT), effective: str(a.V_PUT) }, source: { ...source, dataset_date: str(a.V_PUT) ?? source.dataset_date }, scope, reason: classes.length ? null : "put_attribute_missing", retrieved_at: at };
 }
 
-/** Municipal Plan Territorial status (approval / revision / hierarchy). */
+// ---------------------------------------------------------------------------
+// Municipal Plan Territorial — date fields and their official meanings
+// ---------------------------------------------------------------------------
+//
+// Layer "Municipios Informacion de PT" (JP, Planes_territoriales /
+// Analisis_PT_Municipios/MapServer/1). Field aliases published by the service:
+//   pt_aprobado             "Fecha Aprobada PT"                   → plan approved
+//   pt_revision_1           "Toca Primera Revision"               → 1st revision DUE (a deadline, not a revision)
+//   pt_revision_1_aprobada  "Fecha Aprobacion Primera Revision"   → 1st revision APPROVED
+//   pt_revision_2           "Toca Segunda Revision PT"            → 2nd revision DUE
+//   pt_revision_2_aprobada  "Fecha Aprobacion Segunda Revision"   → 2nd revision APPROVED
+// A due date is never shown as "revised". Values are free text in the source
+// ("27-dic-2024", "27_Dic-2020", "10-Sept-2026"); unreadable ones are shown
+// as recorded and listed as ambiguities.
+
+export const PT_FIELDS = {
+  approved: { field: "pt_aprobado", alias: "Fecha Aprobada PT", meaning: "plan approved" },
+  revision_1_due: { field: "pt_revision_1", alias: "Toca Primera Revision", meaning: "first revision due" },
+  revision_1_approved: { field: "pt_revision_1_aprobada", alias: "Fecha Aprobacion Primera Revision", meaning: "first revision approved" },
+  revision_2_due: { field: "pt_revision_2", alias: "Toca Segunda Revision PT", meaning: "second revision due" },
+  revision_2_approved: { field: "pt_revision_2_aprobada", alias: "Fecha Aprobacion Segunda Revision", meaning: "second revision approved" },
+} as const;
+export type PtDateKey = keyof typeof PT_FIELDS;
+
+const MONTHS: Record<string, number> = {
+  ene: 1, jan: 1, feb: 2, mar: 3, abr: 4, apr: 4, may: 5, jun: 6, jul: 7, ago: 8, aug: 8,
+  sep: 9, sept: 9, set: 9, oct: 10, nov: 11, dic: 12, dec: 12,
+};
+const MONTH_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTH_ES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+/** "27-dic-2024" / "27_Dic-2020" / "10-Sept-2026" → ISO date; null when it cannot be read unambiguously. */
+export function parsePtDate(raw: string | null): string | null {
+  if (!raw) return null;
+  const m = /^\s*(\d{1,2})\s*[-_/. ]\s*([A-Za-zÁÉÍÓÚáéíóú]{3,4})\.?\s*[-_/. ]\s*(\d{4})\s*$/.exec(raw);
+  if (!m) return null;
+  const d = Number(m[1]);
+  const mon = MONTHS[m[2]!.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")];
+  const y = Number(m[3]);
+  if (!mon || y < 1950 || y > 2100 || d < 1 || d > 31) return null;
+  const dt = new Date(Date.UTC(y, mon - 1, d));
+  if (dt.getUTCMonth() !== mon - 1) return null;
+  return dt.toISOString().slice(0, 10);
+}
+/** ISO date → "27-Dec-2024" / "27-dic-2024". */
+export function ptDateText(iso: string, lang: "en" | "es" = "en"): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d}-${(lang === "es" ? MONTH_ES : MONTH_EN)[m! - 1]}-${y}`;
+}
+
+export interface PlanTerritorialDates {
+  municipio: string | null;
+  /** Each official date field: raw text, parsed ISO (null when unreadable). */
+  dates: Record<PtDateKey, { raw: string | null; iso: string | null }>;
+  /** Most recent completed approval action (plan or revision), from approval fields only. */
+  latest_approval: { key: "approved" | "revision_1_approved" | "revision_2_approved"; iso: string } | null;
+  /** The first revision whose due date has no matching approval date in the record. */
+  pending_revision: { n: 1 | 2; due_iso: string; due_passed: boolean } | null;
+}
+
+/** Read the PT date fields with their official meanings (pure). `asOf` is the lookup date. */
+export function readPlanTerritorialDates(a: Record<string, unknown>, asOf: string): { dates: PlanTerritorialDates; ambiguities: string[] } {
+  const ambiguities: string[] = [];
+  const dates = {} as PlanTerritorialDates["dates"];
+  for (const k of Object.keys(PT_FIELDS) as PtDateKey[]) {
+    const raw = str(a[PT_FIELDS[k].field]);
+    const iso = parsePtDate(raw);
+    if (raw && !iso) ambiguities.push(`${PT_FIELDS[k].field} ("${PT_FIELDS[k].alias}") reads "${raw}", which is not a readable date — shown as recorded.`);
+    dates[k] = { raw, iso };
+  }
+  const today = asOf.slice(0, 10);
+  for (const k of ["approved", "revision_1_approved", "revision_2_approved"] as const) {
+    const iso = dates[k].iso;
+    if (iso && iso > today) ambiguities.push(`${PT_FIELDS[k].field} ("${PT_FIELDS[k].alias}") is ${iso}, later than the lookup date ${today} — an approval cannot be in the future; confirm with the Junta de Planificación.`);
+  }
+  if (dates.revision_2_approved.iso && !dates.revision_1_approved.raw) ambiguities.push("A second-revision approval is recorded without a first-revision approval.");
+  const approvals = (["approved", "revision_1_approved", "revision_2_approved"] as const)
+    .map((k) => ({ key: k, iso: dates[k].iso }))
+    .filter((x): x is { key: typeof x.key; iso: string } => !!x.iso && x.iso <= today)
+    .sort((x, y) => (x.iso < y.iso ? 1 : -1));
+  let pending: PlanTerritorialDates["pending_revision"] = null;
+  for (const n of [1, 2] as const) {
+    const due = dates[`revision_${n}_due`];
+    const appr = dates[`revision_${n}_approved`];
+    if (appr.raw) continue;
+    if (due.iso) { pending = { n, due_iso: due.iso, due_passed: due.iso <= today }; break; }
+  }
+  return { dates: { municipio: str(a.MUNICIPIO) ?? str(a.municipio_1) ?? str(a.Nombre), dates, latest_approval: approvals[0] ?? null, pending_revision: pending }, ambiguities };
+}
+
+/** Municipal Plan Territorial record: approval, revisions approved and revision deadlines — kept apart. */
 export function parsePlanTerritorialExtra(resp: ArcGisQueryResponse | string, source: SrcRef, at: string): ExtraFinding {
   if (typeof resp === "string" || arcgisError(resp)) return unable("plan_territorial", source, typeof resp === "string" ? resp : arcgisError(resp)!, at, "municipality");
   const a = features(resp)[0]?.attributes;
   if (!a) return { id: "plan_territorial", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "municipality", reason: "no_municipal_record", retrieved_at: at };
-  const approved = str(a.pt_aprobado);
-  const rev1 = str(a.pt_revision_1);
-  const status = str(a.Estatus_ripot2) ?? str(a.Estatus_ripot);
-  const muni = str(a.MUNICIPIO) ?? str(a.municipio_1) ?? str(a.Nombre);
+  const { dates: d, ambiguities } = readPlanTerritorialDates(a, at);
+  const approvedIso = d.dates.approved.iso;
+  const approvedRaw = d.dates.approved.raw;
+  const parts: string[] = [];
+  if (approvedRaw) parts.push(`approved ${approvedIso ? ptDateText(approvedIso) : `"${approvedRaw}" (as recorded)`}`);
+  for (const n of [1, 2] as const) {
+    const ap = d.dates[`revision_${n}_approved`];
+    if (ap.raw) parts.push(`${n === 1 ? "first" : "second"} revision approved ${ap.iso ? ptDateText(ap.iso) : `"${ap.raw}" (as recorded)`}`);
+  }
+  if (d.pending_revision) parts.push(`${d.pending_revision.n === 1 ? "first" : "second"} revision ${d.pending_revision.due_passed ? "was due" : "due"} ${ptDateText(d.pending_revision.due_iso)}${d.pending_revision.due_passed ? " — no revision approval recorded" : ""}`);
+  const raw: Record<string, string | null> = {};
+  for (const k of [...Object.values(PT_FIELDS).map((f) => f.field), "Estatus_ripot", "Estatus_ripot2", "orden_ejecutiva", "orde_ejecutiva_1rev", "en_proceso_primera_rev", "en_proceso_segunda_rev", "MUNICIPIO"]) raw[k] = str(a[k]);
   return {
     id: "plan_territorial",
-    status: approved ? "verified" : "no_mapped",
-    value: approved ? `${muni ?? ""} Plan Territorial — approved ${approved}${rev1 ? `, revised ${rev1}` : ""}` : null,
+    status: approvedRaw ? "verified" : "no_mapped",
+    value: approvedRaw ? `${d.municipio ?? ""} Plan Territorial — ${parts.join("; ")}` : null,
     items: [],
-    attributes: { municipio: muni, approved, revision_1: rev1, hierarchy: str(a.jerarquia), review_status: status, executive_order: str(a.orden_ejecutiva) },
-    source, scope: "municipality", reason: approved ? null : "no_approved_plan_recorded", retrieved_at: at,
+    attributes: {
+      municipio: d.municipio,
+      approved: approvedIso,
+      revision_1_due: d.dates.revision_1_due.iso,
+      revision_1_approved: d.dates.revision_1_approved.iso,
+      revision_2_due: d.dates.revision_2_due.iso,
+      revision_2_approved: d.dates.revision_2_approved.iso,
+      latest_approval: d.latest_approval?.iso ?? null,
+      latest_approval_kind: d.latest_approval?.key ?? null,
+      pending_revision: d.pending_revision ? d.pending_revision.n : null,
+      pending_revision_due: d.pending_revision?.due_iso ?? null,
+      pending_revision_due_passed: d.pending_revision ? (d.pending_revision.due_passed ? "yes" : "no") : null,
+      hierarchy: str(a.jerarquia),
+      review_status: str(a.Estatus_ripot2) ?? str(a.Estatus_ripot),
+      term_status: str(a.Estatus_ripot),
+      executive_order: str(a.orden_ejecutiva),
+    },
+    raw,
+    ambiguities,
+    source, scope: "municipality", reason: approvedRaw ? null : "no_approved_plan_recorded", retrieved_at: at,
   };
 }
 
-/** USDA Soil Data Access answer: {"Table":[["musym","muname",...],[...]]}. */
+// ---------------------------------------------------------------------------
+// USDA NRCS soils (SSURGO via Soil Data Access)
+// ---------------------------------------------------------------------------
+
+type SdaTable = { Table?: unknown[][] } | null;
+/** SDA "JSON+COLUMNNAME" table → row objects (first row = column names). */
+export function sdaRows(resp: unknown): Array<Record<string, string | null>> | null {
+  const t = (resp as SdaTable)?.Table;
+  if (!Array.isArray(t)) return resp && typeof resp === "object" ? [] : null;
+  const cols = (t[0] ?? []).map((c) => String(c));
+  return t.slice(1).map((r) => Object.fromEntries(cols.map((c, i) => [c, r[i] === null || r[i] === undefined || r[i] === "" ? null : String(r[i])])));
+}
+
+const soilAttrs = (r: Record<string, string | null>): Record<string, string | number | null> => ({
+  musym: r.musym ?? null,
+  muname: r.muname ?? null,
+  drainage_class: r.drclassdcd ?? r.drainagecl ?? null,
+  flooding_frequency: r.flodfreqdcd ?? null,
+  hydric_percent: r.hydclprs !== null && r.hydclprs !== undefined && r.hydclprs !== "" && Number.isFinite(Number(r.hydclprs)) ? Number(r.hydclprs) : null,
+  hydric_rating: r.hydricrating ?? null,
+  survey_area: r.areasymbol ? `${r.areasymbol}${r.areaname ? ` — ${r.areaname}` : ""}` : null,
+  survey_version: r.saverest ?? null,
+});
+
+/** Soil map unit at the pin (SDA point query). */
+export function parseSoilsPin(resp: unknown): NonNullable<ExtraFinding["pin"]> {
+  if (typeof resp === "string") return { status: "unable", key: null, value: null, attributes: {}, reason: resp };
+  const rows = sdaRows(resp);
+  if (rows === null) return { status: "unable", key: null, value: null, attributes: {}, reason: "unreadable_response" };
+  const r = rows[0];
+  if (!r) return { status: "no_mapped", key: null, value: null, attributes: {}, reason: "no_soil_map_unit" };
+  return { status: "verified", key: r.mukey ?? r.musym ?? null, value: `${r.muname ?? ""}${r.musym ? ` (${r.musym})` : ""}`, attributes: soilAttrs(r), reason: null };
+}
+
+/** WKT POLYGON / MULTIPOLYGON / GEOMETRYCOLLECTION → lon/lat polygons (lines and points have no area and are skipped). */
+export function wktPolygons(wkt: string | null): number[][][][] {
+  if (!wkt) return [];
+  const out: number[][][][] = [];
+  const re = /(MULTIPOLYGON|POLYGON)\s*(\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\))/gi;
+  for (const m of wkt.matchAll(re)) {
+    const body = m[2]!;
+    const polyTexts = m[1]!.toUpperCase() === "POLYGON" ? [body.slice(1, -1)] : [...body.slice(1, -1).matchAll(/\(((?:\([^()]*\)\s*,?\s*)+)\)/g)].map((x) => x[1]!);
+    for (const pt of polyTexts) {
+      const rings = [...pt.matchAll(/\(([^()]*)\)/g)].map((r) => r[1]!.split(",").map((pair) => pair.trim().split(/\s+/).map(Number)).filter((p) => p.length >= 2 && p.every(Number.isFinite)));
+      if (rings.length && rings[0]!.length >= 4) out.push(rings);
+    }
+  }
+  return out;
+}
+
+/**
+ * Parcel-wide soils: SDA rows of (mukey, musym, muname, …, wkt) clipped to the
+ * parcel. Returns the per-unit polygons (for coverage) and descriptive info.
+ */
+export function parseSoilsParcel(resp: unknown): { status: "verified" | "no_mapped" | "unable"; reason: string | null; features: Array<{ key: string; polygons: number[][][][] }>; info: NonNullable<ExtraFinding["part_info"]>; survey: { area: string | null; version: string | null } } {
+  if (typeof resp === "string") return { status: "unable", reason: resp, features: [], info: {}, survey: { area: null, version: null } };
+  const rows = sdaRows(resp);
+  if (rows === null) return { status: "unable", reason: "unreadable_response", features: [], info: {}, survey: { area: null, version: null } };
+  if (!rows.length) return { status: "no_mapped", reason: "no_soil_map_unit", features: [], info: {}, survey: { area: null, version: null } };
+  const info: NonNullable<ExtraFinding["part_info"]> = {};
+  const feats: Array<{ key: string; polygons: number[][][][] }> = [];
+  for (const r of rows) {
+    const key = r.musym ?? r.mukey ?? "";
+    if (!key) continue;
+    info[key] ??= { label: r.muname ?? key, attributes: soilAttrs(r) };
+    const polys = wktPolygons(r.wkt ?? null);
+    if (polys.length) feats.push({ key, polygons: polys });
+  }
+  const a = soilAttrs(rows[0]!);
+  return { status: "verified", reason: null, features: feats, info, survey: { area: (a.survey_area as string | null) ?? null, version: (a.survey_version as string | null) ?? null } };
+}
+
+/**
+ * Soils finding. Parcel-wide coverage when available; the pin answer is
+ * always kept separately. Only a point answer → scope "point" with the
+ * limitation stated.
+ */
+export function buildSoilsExtra(input: { pin: unknown; parcel: ReturnType<typeof parseSoilsParcel> | null; coverage: Coverage | null; parcelLimitation: string | null }, source: SrcRef, at: string): ExtraFinding {
+  const pin = parseSoilsPin(input.pin);
+  const p = input.parcel;
+  if (p && p.status === "verified" && input.coverage && input.coverage.parts.length) {
+    const c = input.coverage;
+    const label = (k: string) => `${k} — ${p.info[k]?.label ?? k}`;
+    return {
+      id: "soils", status: "verified",
+      value: c.parts.map((x) => x.key).join(" · "),
+      items: c.parts.map((x) => label(x.key)),
+      attributes: { survey_area: p.survey.area, survey_version: p.survey.version, map_units: c.parts.length },
+      source: { ...source, dataset_date: p.survey.version ?? source.dataset_date },
+      scope: "parcel", reason: null, retrieved_at: at,
+      coverage: c, part_info: p.info, pin, parcel_limitation: null,
+    };
+  }
+  const limitation = input.parcelLimitation ?? (p ? (p.status === "unable" ? `parcel-wide soil query failed (${p.reason})` : p.status === "no_mapped" ? "no soil map unit intersects the parcel" : "parcel-wide soil areas could not be computed") : "no parcel boundary — point lookup only");
+  if (pin.status === "verified") {
+    return {
+      id: "soils", status: "verified", value: pin.value, items: pin.value ? [pin.value] : [], attributes: pin.attributes,
+      source: { ...source, dataset_date: (pin.attributes.survey_version as string | null) ?? source.dataset_date },
+      scope: "point", reason: null, retrieved_at: at, coverage: null, pin, parcel_limitation: limitation,
+    };
+  }
+  if (pin.status === "no_mapped") return { id: "soils", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "point", reason: "no_soil_map_unit", retrieved_at: at, pin, parcel_limitation: limitation };
+  return { ...unable("soils", source, pin.reason ?? "error", at, "point"), pin, parcel_limitation: limitation };
+}
+
+/** @deprecated point-only parser kept for older callers; use buildSoilsExtra. */
 export function parseSoilsExtra(resp: unknown, source: SrcRef, at: string): ExtraFinding {
-  if (typeof resp === "string") return unable("soils", source, resp, at, "point");
-  const t = (resp as { Table?: unknown[][] } | null)?.Table;
-  if (!Array.isArray(t)) return { id: "soils", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "point", reason: "no_soil_map_unit", retrieved_at: at };
-  const rows = t.slice(1).map((r) => ({ sym: String(r[0] ?? ""), name: String(r[1] ?? ""), hydric: String(r[3] ?? ""), drainage: String(r[4] ?? "") }));
-  if (!rows.length) return { id: "soils", status: "no_mapped", value: null, items: [], attributes: {}, source, scope: "point", reason: "no_soil_map_unit", retrieved_at: at };
-  const r = rows[0]!;
-  return { id: "soils", status: "verified", value: `${r.name}${r.sym ? ` (${r.sym})` : ""}`, items: rows.map((x) => x.name), attributes: { hydric_rating: r.hydric || null, drainage_class: r.drainage || null }, source, scope: "point", reason: null, retrieved_at: at };
+  return buildSoilsExtra({ pin: resp, parcel: null, coverage: null, parcelLimitation: "point lookup only" }, source, at);
 }

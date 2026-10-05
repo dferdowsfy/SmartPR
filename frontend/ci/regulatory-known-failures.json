@@ -1,5 +1,5 @@
 {
-  "recordedAt": "2026-09-29",
+  "recordedAt": "2026-10-04",
   "recordedAtCommit": "0da0866",
   "minimumTests": 401,
   "knownFailures": [
@@ -16,10 +16,6 @@
       "name": "G21 [validated] Convenience store with fuel sales, 6 employees — Toa Baja"
     },
     {
-      "id": "KG07",
-      "name": "KG07 kg-scenario: retail_store / expansion / flood_ae"
-    },
-    {
       "id": "KG10",
       "name": "KG10 kg-scenario: medical_office / renovation / coastal_zone_x"
     },
@@ -28,20 +24,8 @@
       "name": "KG16 kg-scenario: auto_repair / new_business_existing_building / urban_industrial_x"
     },
     {
-      "id": "KG17",
-      "name": "KG17 kg-scenario: warehouse_logistics / expansion / flood_ae"
-    },
-    {
       "id": "KG18",
       "name": "KG18 kg-scenario: manufacturing / new_construction / rural_srep_agricultural"
-    },
-    {
-      "id": "KG19",
-      "name": "KG19 kg-scenario: textile_recycler / change_of_use / urban_industrial_x"
-    },
-    {
-      "id": "KG20",
-      "name": "KG20 kg-scenario: construction_contractor / new_business_existing_building / urban_residential_x"
     },
     {
       "id": "KG24",
@@ -56,20 +40,8 @@
       "name": "KG29 kg-scenario: rooftop_solar_battery / new_business_existing_building / flood_ae"
     },
     {
-      "id": "KG31",
-      "name": "KG31 kg-scenario: standalone_battery / new_construction / urban_industrial_x"
-    },
-    {
-      "id": "KG33",
-      "name": "KG33 kg-scenario: utility_scale_solar / new_construction / floodway"
-    },
-    {
       "id": "KG35",
       "name": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin"
-    },
-    {
-      "id": "KG39",
-      "name": "KG39 kg-scenario: restaurant_with_alcohol / expansion / coastal_zone_x"
     }
   ],
   "kgScenariosRecordedAt": "2026-10-04",

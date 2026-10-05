@@ -1,0 +1,121 @@
+{
+ "_provenance": "Live query on 2026-10-04 of https://sigejp.pr.gov/server/rest/services/Planes_territoriales/Analisis_PT_Municipios/MapServer/1 (layer \"Municipios Informacion de PT\"). Field aliases from the service: pt_aprobado=\"Fecha Aprobada PT\"; pt_revision_1=\"Toca Primera Revision\" (first revision DUE); pt_revision_2=\"Toca Segunda Revision PT\"; pt_revision_1_aprobada=\"Fecha Aprobacion Primera Revision\"; pt_revision_2_aprobada=\"Fecha Aprobacion Segunda Revision\". Values copied verbatim.",
+ "retrieved_on": "2026-10-04",
+ "responses": {
+  "Aguada": {
+   "features": [
+    {
+     "attributes": {
+      "MUNICIPIO": "Aguada",
+      "Nombre": "Aguada",
+      "municipio_1": "Aguada",
+      "pt_aprobado": "27-Dic-2012",
+      "pt_revision_1": "27_Dic-2020",
+      "pt_revision_2": null,
+      "pt_revision_1_aprobada": "27-Dic-2024",
+      "pt_revision_2_aprobada": null,
+      "Estatus_ripot": "Dentro Término 8 años",
+      "Estatus_ripot2": "RIPOT aprobados vigentes",
+      "orden_ejecutiva": "OE-2012-84",
+      "orde_ejecutiva_1rev": "OE-2024-044",
+      "jerarquia": null,
+      "en_proceso_primera_rev": null,
+      "en_proceso_segunda_rev": null
+     }
+    }
+   ]
+  },
+  "Aguadilla": {
+   "features": [
+    {
+     "attributes": {
+      "MUNICIPIO": "Aguadilla",
+      "Nombre": "Aguadilla",
+      "municipio_1": "Aguadilla",
+      "pt_aprobado": "21-Sep-2000",
+      "pt_revision_1": "21-Sep-2008",
+      "pt_revision_2": "11-Ene-2020",
+      "pt_revision_1_aprobada": "11-Ene-2012",
+      "pt_revision_2_aprobada": "9-Mar-2026",
+      "Estatus_ripot": "Expirado",
+      "Estatus_ripot2": "RIPOT aprobados vigentes",
+      "orden_ejecutiva": "OE-2000-52",
+      "orde_ejecutiva_1rev": "OE-2012-01; OE-2026-010",
+      "jerarquia": "5",
+      "en_proceso_primera_rev": null,
+      "en_proceso_segunda_rev": null
+     }
+    }
+   ]
+  },
+  "Aguas Buenas": {
+   "features": [
+    {
+     "attributes": {
+      "MUNICIPIO": "Aguas Buenas",
+      "Nombre": "Aguas Buenas",
+      "municipio_1": "Aguas Buenas",
+      "pt_aprobado": "15-Sep-2011",
+      "pt_revision_1": "15-Sep-2019",
+      "pt_revision_2": null,
+      "pt_revision_1_aprobada": null,
+      "pt_revision_2_aprobada": null,
+      "Estatus_ripot": "Expirado",
+      "Estatus_ripot2": "POT en proceso de revisión integral (RIPOT)",
+      "orden_ejecutiva": "OE-2011-041",
+      "orde_ejecutiva_1rev": null,
+      "jerarquia": null,
+      "en_proceso_primera_rev": null,
+      "en_proceso_segunda_rev": null
+     }
+    }
+   ]
+  },
+  "Patillas": {
+   "features": [
+    {
+     "attributes": {
+      "MUNICIPIO": "Patillas",
+      "Nombre": "Patillas",
+      "municipio_1": "Patillas",
+      "pt_aprobado": "27-dic-2024",
+      "pt_revision_1": "27-dic-2032",
+      "pt_revision_2": null,
+      "pt_revision_1_aprobada": null,
+      "pt_revision_2_aprobada": null,
+      "Estatus_ripot": "Dentro Término 8 años",
+      "Estatus_ripot2": "POT aprobados vigentes",
+      "orden_ejecutiva": "OE-2024-041",
+      "orde_ejecutiva_1rev": null,
+      "jerarquia": null,
+      "en_proceso_primera_rev": null,
+      "en_proceso_segunda_rev": null
+     }
+    }
+   ]
+  },
+  "San Juan": {
+   "features": [
+    {
+     "attributes": {
+      "MUNICIPIO": "San Juan",
+      "Nombre": "San Juan",
+      "municipio_1": "San Juan",
+      "pt_aprobado": "13-Mar-2003",
+      "pt_revision_1": "13-Mar-2011",
+      "pt_revision_2": null,
+      "pt_revision_1_aprobada": null,
+      "pt_revision_2_aprobada": null,
+      "Estatus_ripot": "Expirado",
+      "Estatus_ripot2": "POT/RIPOT con más de 8 años de elaboración",
+      "orden_ejecutiva": "OE-2003-16",
+      "orde_ejecutiva_1rev": null,
+      "jerarquia": "5",
+      "en_proceso_primera_rev": null,
+      "en_proceso_segunda_rev": null
+     }
+    }
+   ]
+  }
+ }
+}

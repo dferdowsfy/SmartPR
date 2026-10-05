@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { KB } from "../../../kb.ts";
 import type { KnowledgeBase } from "../../../rulesEngine.ts";
-import { interpretScenario } from "./interpret.ts";
+import { interpretScenario, newConstructionStated, renovationStated } from "./interpret.ts";
 import { combineScenario, normalizeScenario } from "./normalize.ts";
 import { applyScenarioAnswer, evaluateScenario } from "./graph.ts";
 import { describeScenario } from "./describe.ts";
@@ -450,5 +450,54 @@ describe("tenure and premises read in context", () => {
       interpretScenario("I haven't signed a lease yet but I own the building.").property.ownershipStatus?.value,
       "owned"
     );
+  });
+});
+
+describe("project scope: renovation is work on THIS project (KG19, KG20)", () => {
+  const types = (t: string) => interpretScenario(t).project.type?.value ?? [];
+
+  it("a bare conversion to a new use is a change of use, not renovation", () => {
+    const t = "We are converting an empty warehouse in Toa Baja into a daycare.";
+    assert.deepEqual(types(t), ["change_of_use"]);
+    assert.equal(interpretScenario(t).project.renovation, undefined);
+    assert.equal(renovationStated(t), false);
+    // A use the vocabulary does not know is still not renovation.
+    const recycler = "We are converting an empty warehouse in Toa Baja into a textile recycling facility.";
+    assert.ok(!types(recycler).includes("renovation"));
+    assert.equal(renovationStated(recycler), false);
+  });
+
+  it("a conversion with physical work stated is both renovation and change of use", () => {
+    for (const t of [
+      "We're converting an existing warehouse into a daycare and will add new walls and plumbing.",
+      "We are converting a house into a daycare; we will add an accessible bathroom.",
+      "We want to convert a farmhouse into an event venue, with a new parking area.",
+    ]) {
+      assert.deepEqual(types(t), ["renovation", "change_of_use"], t);
+      assert.equal(renovationStated(t), true, t);
+    }
+  });
+
+  it("work the business sells at clients' properties is not this project's renovation or construction", () => {
+    for (const t of [
+      "I am a general contractor working from my home office. I do residential remodeling at their properties.",
+      "We offer kitchen renovation services for homeowners across the island.",
+      "Our crew builds new homes for our clients.",
+    ]) {
+      assert.deepEqual(types(t), [], t);
+      assert.equal(renovationStated(t), false, t);
+      assert.equal(newConstructionStated(t), false, t);
+    }
+  });
+
+  it("the applicant's own site keeps renovation even when customers or contractors are mentioned", () => {
+    for (const t of [
+      "We are renovating the space we lease for our customers.",
+      "Our renovation contractor will remodel our store next month.",
+      "We will renovate the interior of our restaurant.",
+    ]) {
+      assert.ok(types(t).includes("renovation"), t);
+      assert.equal(renovationStated(t), true, t);
+    }
   });
 });

@@ -9,9 +9,10 @@
 import { checkSitePoint, LAYER_SOURCES, USDA_SOILS_SOURCE, type ArcGisQueryResponse, type LayerSourceKey } from "./layers.ts";
 import { queryDataset, sourceEndpoints, type FetchLike } from "./layerService.ts";
 import {
-  applyAreas, areasByKey, parseFloodZones, parseParcelBoundary, parsePlanTerritorialExtra, parsePresenceExtra, parsePutExtra, parseSoilsExtra, parseZoningDistricts,
+  applyCoverage, buildSoilsExtra, parseFloodZones, parseParcelBoundary, parsePlanTerritorialExtra, parsePresenceExtra, parsePutExtra, parseSoilsParcel, parseZoningDistricts,
   type ExtraFinding, type ExtraId, type ParcelBoundary, type ParcelFindings,
 } from "./parcel.ts";
+import { computeCoverage, parcelPlanarArea, type CoverageFeature } from "./coverage.ts";
 
 const TIMEOUT_MS = 12000;
 /** The JP / MIPR ArcGIS servers time out when hit with ~10 parallel queries. */
@@ -40,10 +41,12 @@ function thin(ring: number[][]): number[][] {
 }
 
 /**
- * Pull a ring ~`m` metres toward its centroid. CRIM parcels and JP districts
- * are digitized separately, so their shared edges overlap by slivers; without
- * this, every neighbouring district (often the road, VIAL) "intersects" the
- * parcel. Exported for tests.
+ * Pull a ring ~`m` metres toward its centroid. Used ONLY for the presence
+ * layers (historic, archaeology, protected areas, reserves, wetlands), which
+ * return no geometry: without it a polygon that merely shares the parcel's
+ * edge would read as "on the parcel". The report states this edge tolerance.
+ * Zoning, flood, PUT and soils query the full boundary and measure every
+ * intersection instead (see coverage.ts). Exported for tests.
  */
 export function insetRing(ring: number[][], m: number): number[][] {
   const n = ring.length - 1;
@@ -66,17 +69,27 @@ export function insetRing(ring: number[][], m: number): number[][] {
 
 export const EDGE_TOLERANCE_M = 3;
 
-function esriPolygon(g: ParcelBoundary["geometry"]): string {
+function esriPolygon(g: ParcelBoundary["geometry"], insetM = 0): string {
   const rings = g.type === "Polygon" ? g.coordinates : g.coordinates.flat();
-  return JSON.stringify({ rings: rings.map((r) => insetRing(thin(r), EDGE_TOLERANCE_M)), spatialReference: { wkid: 4326 } });
+  return JSON.stringify({ rings: rings.map((r) => (insetM ? insetRing(thin(r), insetM) : thin(r))), spatialReference: { wkid: 4326 } });
 }
+
+function wktPolygon(g: ParcelBoundary["geometry"]): string {
+  const ring = (r: number[][]) => `(${thin(r).map(([x, y]) => `${x!.toFixed(7)} ${y!.toFixed(7)}`).join(", ")})`;
+  return g.type === "Polygon"
+    ? `POLYGON(${g.coordinates.map(ring).join(", ")})`
+    : `MULTIPOLYGON(${g.coordinates.map((p) => `(${p.map(ring).join(", ")})`).join(", ")})`;
+}
+
+export type PostJson = (url: string, body: unknown, timeoutMs: number) => Promise<unknown>;
 
 function url(layerUrl: string, params: Record<string, string>): string {
   return `${layerUrl}/query?${new URLSearchParams({ inSR: "4326", spatialRel: "esriSpatialRelIntersects", f: "json", ...params }).toString()}`;
 }
 
-export async function resolveParcelFindings(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; now?: () => Date; refresh?: boolean } = {}): Promise<ParcelFindings> {
+export async function resolveParcelFindings(latitude: number, longitude: number, opts: { fetchImpl?: FetchLike; postJson?: PostJson; now?: () => Date; refresh?: boolean } = {}): Promise<ParcelFindings> {
   const fetchImpl: FetchLike = opts.fetchImpl ?? ((u, init) => fetch(u, { ...init, cache: "no-store" }) as ReturnType<FetchLike>);
+  const postJson = opts.postJson ?? defaultPostJson;
   const now = opts.now ?? (() => new Date());
   const key = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
   const hit = cache.get(key);
@@ -96,19 +109,25 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
   const parcelResp = await q("crim_parcels", { geometry: point, geometryType: "esriGeometryPoint", outFields: "NUM_CATASTRO,TIPO", returnGeometry: "true", outSR: "4326", geometryPrecision: "7" });
   const boundary = parseParcelBoundary(parcelResp, longitude, latitude);
   const scope: "parcel" | "point" = boundary.value ? "parcel" : "point";
-  const geomParams = boundary.value
+  const pin = { latitude, longitude };
+  // Zoning, flood and PUT: the full boundary, with geometry, so every
+  // intersection is measured (small ones included and flagged).
+  const fullParams = boundary.value
     ? { geometry: esriPolygon(boundary.value.geometry), geometryType: "esriGeometryPolygon" }
     : { geometry: point, geometryType: "esriGeometryPoint" };
-  // Geometry is requested (simplified to ~0.5 m) so the share of the parcel
-  // in each district / flood zone can be computed by polygon intersection.
+  // Presence layers (no geometry returned): boundary pulled in by EDGE_TOLERANCE_M.
+  const presenceParams = boundary.value
+    ? { geometry: esriPolygon(boundary.value.geometry, EDGE_TOLERANCE_M), geometryType: "esriGeometryPolygon" }
+    : { geometry: point, geometryType: "esriGeometryPoint" };
+  // Geometry is requested (simplified to ~0.5 m) for the coverage computation.
   const geomOut: Record<string, string> = boundary.value ? { returnGeometry: "true", outSR: "4326", geometryPrecision: "7", maxAllowableOffset: "0.000005" } : { returnGeometry: "false" };
   const jp = limiter(JP_CONCURRENCY);
   const qJp = (src: LayerSourceKey, params: Record<string, string>) => jp(() => q(src, params));
-  const presence = (key: LayerSourceKey) => qJp(key, { ...geomParams, outFields: "*", returnGeometry: "false" });
-  const [zoningResp, floodResp, putResp, ptResp, histZ, histS, arch, prot, resv, wet, soilsResp] = await Promise.all([
-    qJp("jp_calificacion", { ...geomParams, outFields: "cali,descrip,vigencia,resolucion,cali_sobre,des_sobre,r_sobre,v_sobre,cali_sobre2,des_sobre2,r_sobre2,v_sobre2", ...geomOut }),
-    q("fema_flood_zones", { ...geomParams, outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF", ...geomOut }),
-    presence("jp_put"),
+  const presence = (key: LayerSourceKey) => qJp(key, { ...presenceParams, outFields: "*", returnGeometry: "false" });
+  const [zoningResp, floodResp, putResp, ptResp, histZ, histS, arch, prot, resv, wet, soilsPinResp, soilsParcelResp] = await Promise.all([
+    qJp("jp_calificacion", { ...fullParams, outFields: "cali,descrip,vigencia,resolucion,cali_sobre,des_sobre,r_sobre,v_sobre,cali_sobre2,des_sobre2,r_sobre2,v_sobre2", ...geomOut }),
+    q("fema_flood_zones", { ...fullParams, outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF", ...geomOut }),
+    qJp("jp_put", { ...fullParams, outFields: "*", ...geomOut }),
     // The municipal Plan Territorial record is per municipio: the pin is enough.
     qJp("jp_plan_territorial", { geometry: point, geometryType: "esriGeometryPoint", outFields: "*", returnGeometry: "false" }),
     presence("mipr_zona_historica"),
@@ -117,11 +136,47 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
     presence("jp_areas_protegidas"),
     presence("jp_reservas_naturales"),
     presence("mipr_humedales"),
-    querySoils(fetchImpl, latitude, longitude),
+    postJson(USDA_SOILS_SOURCE.url, { format: "JSON+COLUMNNAME", query: soilsPinSql(latitude, longitude) }, TIMEOUT_MS),
+    boundary.value ? postJson(USDA_SOILS_SOURCE.url, { format: "JSON+COLUMNNAME", query: soilsParcelSql(wktPolygon(boundary.value.geometry)) }, TIMEOUT_MS) : Promise.resolve(null),
   ]);
   const ref = (k: LayerSourceKey): ExtraFinding["source"] => ({ name: LAYER_SOURCES[k].name, url: LAYER_SOURCES[k].url, layer: LAYER_SOURCES[k].layer, dataset_date: LAYER_SOURCES[k].dataset_date });
+  const g = boundary.value?.geometry ?? null;
+  if (boundary.value) boundary.value.area_m2 = parcelPlanarArea(boundary.value.geometry);
+  const allFeats = (r: ArcGisQueryResponse | string, keysOf: (a: Record<string, unknown>) => string[]) =>
+    typeof r === "string" ? [] : ((r as { features?: Array<{ attributes?: Record<string, unknown>; geometry?: { rings?: number[][][] } }> }).features ?? [])
+      .flatMap((f) => keysOf(f.attributes ?? {}).map((key) => ({ key, rings: f.geometry?.rings ?? [] })))
+      .filter((f) => f.key);
+  const feats = (r: ArcGisQueryResponse | string, keysOf: (a: Record<string, unknown>) => string[]): CoverageFeature[] => allFeats(r, keysOf).filter((f) => f.rings.length);
+  /** Categories returned without geometry (area unknown — never treated as "none"). */
+  const noGeom = (r: ArcGisQueryResponse | string, keysOf: (a: Record<string, unknown>) => string[]) => {
+    const all = allFeats(r, keysOf);
+    const withGeom = new Set(all.filter((f) => f.rings.length).map((f) => f.key));
+    return [...new Set(all.filter((f) => !f.rings.length && !withGeom.has(f.key)).map((f) => f.key))];
+  };
+  const s = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+  // PUT polygons can be island-scale; if the geometry request fails (but was
+  // not refused), ask again for the classes only (3 m edge tolerance) and say
+  // that their areas were not computed.
+  let putClassesOnly = false;
+  let putAnswer = putResp;
+  if (boundary.value && typeof putResp === "string" && !/^http_40[13]/.test(putResp)) {
+    const retry = await qJp("jp_put", { ...presenceParams, outFields: "*", returnGeometry: "false" });
+    if (typeof retry !== "string") { putAnswer = retry; putClassesOnly = true; }
+  }
+  const put = parsePutExtra(putAnswer, ref("jp_put"), at, scope);
+  if (putClassesOnly) put.parcel_limitation = `areas not computed — the geometry request failed (${putResp as string}); classes checked with a ${EDGE_TOLERANCE_M} m edge tolerance`;
+  if (g && put.status === "verified") {
+    const pf = feats(putResp, (a) => (s(a.CLASIPUT) ? [s(a.CLASIPUT)!] : []));
+    if (pf.length) {
+      put.coverage = computeCoverage(g, pf, { exclusive: true, pin, missingGeometry: noGeom(putResp, (a) => (s(a.CLASIPUT) ? [s(a.CLASIPUT)!] : [])) });
+      put.pin = { status: put.coverage.pin_key ? "verified" : "no_mapped", key: put.coverage.pin_key, value: put.coverage.pin_key, attributes: {}, reason: null };
+    }
+  }
+  const soilsParcel = soilsParcelResp === null ? null : parseSoilsParcel(soilsParcelResp);
+  const soilsCoverage = g && soilsParcel?.status === "verified" && soilsParcel.features.length ? computeCoverage(g, soilsParcel.features, { exclusive: true, pin }) : null;
   const extras: Partial<Record<ExtraId, ExtraFinding>> = {
-    put: parsePutExtra(putResp, ref("jp_put"), at, scope),
+    put,
     plan_territorial: parsePlanTerritorialExtra(ptResp, ref("jp_plan_territorial"), at),
     historic_zone: parsePresenceExtra("historic_zone", histZ, ref("mipr_zona_historica"), at, scope),
     historic_site: parsePresenceExtra("historic_site", histS, ref("mipr_sitios_historicos"), at, scope),
@@ -129,21 +184,32 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
     protected_area: parsePresenceExtra("protected_area", prot, ref("jp_areas_protegidas"), at, scope),
     natural_reserve: parsePresenceExtra("natural_reserve", resv, ref("jp_reservas_naturales"), at, scope),
     wetlands: parsePresenceExtra("wetlands", wet, ref("mipr_humedales"), at, scope),
-    soils: parseSoilsExtra(soilsResp, { ...USDA_SOILS_SOURCE }, at),
+    soils: buildSoilsExtra({ pin: soilsPinResp, parcel: soilsParcel, coverage: soilsCoverage, parcelLimitation: g ? null : "no parcel boundary — point lookup only" }, { ...USDA_SOILS_SOURCE }, at),
   };
   const zoning = parseZoningDistricts(zoningResp, scope);
   const flood = parseFloodZones(floodResp, scope);
-  // Per-district / per-zone areas (only when they add up to the parcel).
+  // Coverage of the parcel by each district / zone (coverage.ts).
   const areas_reliable = { zoning: false, flood: false };
-  if (boundary.value) {
-    const feats = (r: ArcGisQueryResponse | string, keyOf: (a: Record<string, unknown>) => string | null) =>
-      typeof r === "string" ? [] : ((r as { features?: Array<{ attributes?: Record<string, unknown>; geometry?: { rings?: number[][][] } }> }).features ?? [])
-        .map((f) => ({ key: keyOf(f.attributes ?? {}) ?? "", rings: f.geometry?.rings ?? [] }))
-        .filter((f) => f.key && f.rings.length);
-    const zf = feats(zoningResp, (a) => (typeof a.cali === "string" ? a.cali.trim() : null));
-    if (zf.length) areas_reliable.zoning = applyAreas(zoning.districts, (d) => d.code, areasByKey(boundary.value.geometry, zf), boundary.value.area_m2);
-    const ff = feats(floodResp, (a) => (typeof a.FLD_ZONE === "string" ? `${a.FLD_ZONE.trim()}|${typeof a.ZONE_SUBTY === "string" ? a.ZONE_SUBTY.trim() : ""}` : null));
-    if (ff.length) areas_reliable.flood = applyAreas(flood.zones, (z) => `${z.zone}|${z.subtype ?? ""}`, areasByKey(boundary.value.geometry, ff), boundary.value.area_m2);
+  if (g) {
+    const zf = feats(zoningResp, (a) => (s(a.cali) ? [s(a.cali)!] : []));
+    if (zoning.status === "sourced" && zf.length) {
+      zoning.coverage = computeCoverage(g, zf, { exclusive: true, pin, missingGeometry: noGeom(zoningResp, (a) => (s(a.cali) ? [s(a.cali)!] : [])) });
+      areas_reliable.zoning = applyCoverage(zoning.districts, (d) => d.code, zoning.coverage);
+      // A district that only touches the boundary (no area inside) is not on the parcel.
+      const zc = zoning.coverage.contacts;
+      zoning.districts = zoning.districts.filter((d) => !zc.includes(d.code));
+      zoning.districts.sort((a, b) => (b.area_m2 ?? 0) - (a.area_m2 ?? 0));
+      const of = feats(zoningResp, (a) => [s(a.cali_sobre), s(a.cali_sobre2)].filter((x): x is string => !!x));
+      zoning.overlay_coverage = of.length ? computeCoverage(g, of, { exclusive: false, pin }) : null;
+    }
+    const ff = feats(floodResp, (a) => (s(a.FLD_ZONE) ? [`${s(a.FLD_ZONE)}|${s(a.ZONE_SUBTY) ?? ""}`] : []));
+    if (flood.status === "sourced" && ff.length) {
+      flood.coverage = computeCoverage(g, ff, { exclusive: true, pin, missingGeometry: noGeom(floodResp, (a) => (s(a.FLD_ZONE) ? [`${s(a.FLD_ZONE)}|${s(a.ZONE_SUBTY) ?? ""}`] : [])) });
+      areas_reliable.flood = applyCoverage(flood.zones, (z) => `${z.zone}|${z.subtype ?? ""}`, flood.coverage);
+      const fc = flood.coverage.contacts;
+      flood.zones = flood.zones.filter((z) => !fc.includes(`${z.zone}|${z.subtype ?? ""}`));
+      flood.zones.sort((a, b) => (b.area_m2 ?? 0) - (a.area_m2 ?? 0));
+    }
   }
   const value: ParcelFindings = {
     latitude,
@@ -164,21 +230,35 @@ export async function resolveParcelFindings(latitude: number, longitude: number,
 }
 
 
-/** USDA NRCS Soil Data Access: map unit at the point (name, symbol, hydric rating, drainage). */
-async function querySoils(fetchImpl: FetchLike, latitude: number, longitude: number): Promise<unknown> {
-  const sql = `SELECT mu.musym, mu.muname, mu.mukey, c.hydricrating, c.drainagecl FROM mapunit mu LEFT JOIN component c ON c.mukey = mu.mukey AND c.majcompflag = 'Yes' WHERE mu.mukey IN (SELECT * FROM SDA_Get_Mukey_from_intersection_with_WktWgs84('point(${longitude.toFixed(6)} ${latitude.toFixed(6)})'))`;
+/** SDA: soil map unit at the pin, with map-unit aggregate attributes and survey version. */
+export function soilsPinSql(latitude: number, longitude: number): string {
+  return `SELECT M.mukey, M.musym, M.muname, A.drclassdcd, A.flodfreqdcd, A.hydclprs, L.areasymbol, L.areaname, S.saverest
+FROM mapunit M LEFT JOIN muaggatt A ON A.mukey = M.mukey JOIN legend L ON L.lkey = M.lkey LEFT JOIN sacatalog S ON S.areasymbol = L.areasymbol
+WHERE M.mukey IN (SELECT * FROM SDA_Get_Mukey_from_intersection_with_WktWgs84('point(${longitude.toFixed(6)} ${latitude.toFixed(6)})'))`;
+}
+
+/** SDA: every soil polygon intersecting the parcel, clipped to it (WKT), with attributes. */
+export function soilsParcelSql(parcelWkt: string): string {
+  const aoi = `geometry::STGeomFromText('${parcelWkt}', 4326).MakeValid()`;
+  // Clipped server-side to the parcel grown by ~20 m (keeps the answer small
+  // and covers any vertex thinning); the exact clip is done in coverage.ts.
+  return `SELECT P.mukey, M.musym, M.muname, A.drclassdcd, A.flodfreqdcd, A.hydclprs, L.areasymbol, L.areaname, S.saverest, P.mupolygongeo.STIntersection(${aoi}.STBuffer(0.0002)).STAsText() AS wkt
+FROM mupolygon P JOIN mapunit M ON M.mukey = P.mukey LEFT JOIN muaggatt A ON A.mukey = P.mukey JOIN legend L ON L.lkey = M.lkey LEFT JOIN sacatalog S ON S.areasymbol = L.areasymbol
+WHERE P.mupolygongeo.STIntersects(${aoi}) = 1`;
+}
+
+/** POST JSON (USDA SDA is POST-only); a string on failure, never throws. */
+const defaultPostJson: PostJson = async (url, body, timeoutMs) => {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    // FetchLike has no body/method; use global fetch for this POST-only service.
-    void fetchImpl;
-    const res = await fetch(USDA_SOILS_SOURCE.url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ format: "JSON+COLUMNNAME", query: sql }), signal: ctrl.signal, cache: "no-store" });
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal, cache: "no-store" });
     if (!res.ok) return `http_${res.status}`;
     const text = await res.text();
     return text.trim() ? JSON.parse(text) : {};
   } catch (err) {
-    return (err as Error)?.name === "AbortError" ? `timeout_${TIMEOUT_MS}ms` : `network_error: ${(err as Error)?.message ?? "error"}`;
+    return (err as Error)?.name === "AbortError" ? `timeout_${timeoutMs}ms` : `network_error: ${(err as Error)?.message ?? "error"}`;
   } finally {
     clearTimeout(timer);
   }
-}
+};
