@@ -178,7 +178,8 @@ export async function renderPropertyReportPdf(report: PropertyReport, lang: Lang
   const row = (f: ReportFinding) => {
     const tone = f.state === "sourced" || f.state === "none_mapped" ? f.tone : "unknown";
     const answered = f.state === "sourced" || f.state === "none_mapped";
-    const main = answered ? f.plain?.[lang] ?? (f.value ? f.value[lang] : findingStateText(f.state)[lang]) : findingStateText(f.state)[lang];
+    // A not-evaluated finding carries its reason as the value ("Not evaluated — … roadway"); show it.
+    const main = answered ? f.plain?.[lang] ?? (f.value ? f.value[lang] : findingStateText(f.state)[lang]) : f.state === "not_evaluated" && f.value ? f.value[lang] : findingStateText(f.state)[lang];
     const sub = [
       f.value && answered && f.plain ? f.value[lang] : null,
       BASIS_TEXT[basisOf(f)][lang],
