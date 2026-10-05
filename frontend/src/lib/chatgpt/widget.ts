@@ -4,7 +4,13 @@
 // (ui/notifications/tool-result), falling back to window.openai.toolOutput.
 // All rendered strings go through textContent — tool data is untrusted.
 
-export const WIDGET_URI = "ui://smartpr/requirements-v1.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v2.html";
+/** Raster basemap tiles (plain <img>, the only external origin; same Esri
+ *  service family the portal's satellite base uses). Declared in the
+ *  widget CSP resource domains. */
+export const MAP_TILE_ORIGIN = "https://server.arcgisonline.com";
+export const MAP_TILE_URL = `${MAP_TILE_ORIGIN}/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}`;
+export const MAP_SATELLITE_URL = `${MAP_TILE_ORIGIN}/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}`;
 export const WIDGET_MIME = "text/html;profile=mcp-app";
 
 const CSS = `
@@ -31,12 +37,20 @@ label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}select,inpu
 .cta{margin-top:12px;background:var(--tealbg);border:1px solid #b7e1da;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.cta div{flex:1;min-width:220px}.cta b{display:block}
 .cont{display:flex;gap:8px;align-items:flex-start;padding:12px 4px 0;background:none;border:0;cursor:pointer;font:inherit;text-align:left;color:inherit}.cont b{color:var(--ink)}
 .note{border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px}.note.warn{background:#fffbeb;border:1px solid #fde68a}.note.err{background:#fef2f2;border:1px solid #fecaca}
+.mapc{margin-bottom:12px}.mapc h2{font-size:16px;margin:0 0 4px;display:flex;align-items:center}
+.map{position:relative;height:240px;overflow:hidden;border-radius:10px;border:1px solid var(--line);background:#e5e7eb;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none}
+.map .tl{position:absolute;inset:0}.map .tl img{position:absolute;width:256px;height:256px;max-width:none;pointer-events:none}
+.map .pin{position:absolute;width:28px;height:28px;margin:-28px 0 0 -14px;pointer-events:none}.map .pin.pend{opacity:.75}
+.map .zc{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:4px}.map .zc .bt{font-size:11px}.map .zc button{width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:#fff;font:600 16px/1 system-ui;cursor:pointer;color:var(--ink)}
+.map .attr{position:absolute;right:0;bottom:0;background:rgba(255,255,255,.8);font-size:10px;padding:1px 5px;color:#334155}
+.map .tip{position:absolute;left:8px;top:8px;background:rgba(255,255,255,.92);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--ink)}
+.siteinfo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:13px}.siteinfo .btn{padding:6px 12px}
 .foot{color:var(--mut);font-size:11px;margin-top:12px}.sk{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200%;animation:s 1.2s infinite;border-radius:8px;height:14px;margin:10px 0}@keyframes s{to{background-position:-200% 0}}
 `;
 
 const JS = String.raw`
 (function(){
-var root=document.getElementById("root"),pending={},nextId=1,state={result:null,input:null,answers:{},busy:false,error:null,lastAction:null};
+var root=document.getElementById("root"),pending={},nextId=1,state={result:null,input:null,answers:{},busy:false,error:null,lastAction:null,map:null};
 function post(m){window.parent.postMessage(m,"*")}
 function request(method,params,ms){var id=nextId++;post({jsonrpc:"2.0",id:id,method:method,params:params||{}});return new Promise(function(res,rej){pending[id]={res:res,rej:rej};setTimeout(function(){if(pending[id]){delete pending[id];rej(new Error("timeout"))}},ms||20000)})}
 function notify(method,params){post({jsonrpc:"2.0",method:method,params:params||{}})}
@@ -47,7 +61,7 @@ window.addEventListener("message",function(e){if(e.source!==window.parent)return
  if(m.method==="ui/notifications/tool-cancelled"){state.error="The request was cancelled.";render()}
 },{passive:true});
 function accept(r){if(!r)return;if(r.isError){state.error=txt(r)||"SmartPR could not complete the request.";state.busy=false;render();return}
- var sc=r.structuredContent||r;if(sc&&sc.scenario&&sc.versions){state.result=sc;state.error=null;state.busy=false;state.answers={};render()}}
+ var sc=r.structuredContent||r;if(sc&&sc.scenario&&sc.versions){state.result=sc;state.error=null;state.busy=false;state.answers={};var f=sc.map_focus||{latitude:18.22,longitude:-66.45,zoom:8};state.map={lat:f.latitude,lng:f.longitude,z:f.zoom,pin:null,base:state.map&&state.map.base||"streets"};render()}}
 function txt(r){try{return(r.content||[]).map(function(c){return c.text||""}).join(" ").slice(0,300)}catch(_){return""}}
 function callTool(name,args){
  return request("tools/call",{name:name,arguments:args},30000).catch(function(e){var o=window.openai;if(o&&o.callTool)return o.callTool(name,args);throw e})}
@@ -62,6 +76,45 @@ function act(kind){if(state.busy)return;state.lastAction=kind;var r=state.result
  if(kind==="refine"){var ans={};for(var k in state.answers)if(state.answers[k]!=="")ans[k]=state.answers[k];if(!Object.keys(ans).length)return;
   state.busy=true;state.error=null;render();callTool("refine_scenario",{scenario:r.scenario,answers:ans}).then(function(res){if(res&&!res.isError){accept(res);var n=state.result;request("ui/update-model-context",{content:[{type:"text",text:"User refined the SmartPR scenario in the widget. "+(n&&n.message||"")}]},5000).catch(function(){})}else{state.busy=false;state.error=txt(res)||"Could not update the preview.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
  else{state.busy=true;state.error=null;render();callTool("create_portal_handoff",{scenario:r.scenario,intent:kind}).then(function(res){state.busy=false;var u=res&&res.structuredContent&&res.structuredContent.url;if(u){openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
+var TILES={streets:"__TILE_URL__",satellite:"__SAT_URL__"},TS=256,BX={s:17.55,n:18.9,w:-68.4,e:-64.85};
+function wsz(z){return TS*Math.pow(2,z)}
+function px(lng,z){return (lng+180)/360*wsz(z)}
+function py(lat,z){var r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*wsz(z)}
+function unx(x,z){return x/wsz(z)*360-180}
+function uny(y,z){var n=Math.PI-2*Math.PI*y/wsz(z);return 180/Math.PI*Math.atan(.5*(Math.exp(n)-Math.exp(-n)))}
+function clampMap(m){m.z=Math.max(8,Math.min(18,m.z));m.lat=Math.max(BX.s,Math.min(BX.n,m.lat));m.lng=Math.max(BX.w,Math.min(BX.e,m.lng))}
+function pinSvg(color){var d=document.createElementNS("http://www.w3.org/2000/svg","svg");d.setAttribute("viewBox","0 0 24 24");d.setAttribute("width","28");d.setAttribute("height","28");d.innerHTML='<path fill="'+color+'" stroke="#fff" stroke-width="1.2" d="M12 1.5a7 7 0 0 0-7 7c0 5.2 7 14 7 14s7-8.8 7-14a7 7 0 0 0-7-7z"/><circle cx="12" cy="8.5" r="2.6" fill="#fff"/>';return d}
+function mapCard(r){var m=state.map;if(!m)return null;var site=r.scenario.site;
+ var c=el("div","card mapc");var h=el("h2",null,"Where is the site?");if(site)add(h,el("span","badge","Pinned"));add(c,h);
+ add(c,el("p","sub",site?"The pin sets the municipality from official Census boundaries. Move it if needed.":"Tap the map to drop a pin on the property. The pin sets the municipality; zoning, flood-zone and parcel checks for it are in SmartPR."));
+ var box=el("div","map"),tl=el("div","tl"),pin=el("div","pin"),pend=el("div","pin pend");pin.appendChild(pinSvg("#0f766e"));pend.appendChild(pinSvg("#f59e0b"));
+ var zc=el("div","zc"),zi=el("button",null,"+"),zo=el("button",null,"\u2212"),bb=el("button","bt",m.base==="satellite"?"Map":"Sat");zi.setAttribute("aria-label","Zoom in");zo.setAttribute("aria-label","Zoom out");bb.setAttribute("aria-label",m.base==="satellite"?"Street map":"Satellite imagery");add(zc,zi,zo,bb);
+ var att=el("div","attr",m.base==="satellite"?"Imagery \u00a9 Esri, Maxar, Earthstar Geographics":"Map \u00a9 Esri, HERE, Garmin, USGS");add(box,tl,site?pin:null,pend,zc,att);if(!site&&!m.pin)add(box,el("div","tip","Tap to drop a pin"));
+ function draw(){var W=box.clientWidth||600,H=box.clientHeight||240,cx=px(m.lng,m.z),cy=py(m.lat,m.z),x0=cx-W/2,y0=cy-H/2,n=Math.pow(2,m.z);tl.textContent="";
+  for(var i=Math.floor(x0/TS);i<=Math.floor((x0+W)/TS);i++)for(var j=Math.floor(y0/TS);j<=Math.floor((y0+H)/TS);j++){if(j<0||j>=n||i<0||i>=n)continue;var im=document.createElement("img");im.alt="";im.draggable=false;im.src=TILES[m.base==="satellite"?"satellite":"streets"].replace("{z}",m.z).replace("{y}",j).replace("{x}",i);im.style.left=(i*TS-x0)+"px";im.style.top=(j*TS-y0)+"px";tl.appendChild(im)}
+  function place(node,p){if(!p){node.style.display="none";return}node.style.display="block";node.style.left=(px(p.lng,m.z)-x0)+"px";node.style.top=(py(p.lat,m.z)-y0)+"px"}
+  place(pin,site?{lat:site.latitude,lng:site.longitude}:null);place(pend,m.pin)}
+ function zoom(d){m.z+=d;clampMap(m);draw()}
+ zi.onclick=function(e){e.stopPropagation();zoom(1)};bb.onclick=function(e){e.stopPropagation();m.base=m.base==="satellite"?"streets":"satellite";bb.textContent=m.base==="satellite"?"Map":"Sat";att.textContent=m.base==="satellite"?"Imagery \u00a9 Esri, Maxar, Earthstar Geographics":"Map \u00a9 Esri, HERE, Garmin, USGS";draw()};zo.onclick=function(e){e.stopPropagation();zoom(-1)};
+ zc.addEventListener("pointerdown",function(e){e.stopPropagation()});
+ var drag=null;
+ box.addEventListener("pointerdown",function(e){drag={x:e.clientX,y:e.clientY,cx:px(m.lng,m.z),cy:py(m.lat,m.z),moved:false};try{box.setPointerCapture(e.pointerId)}catch(_){}});
+ box.addEventListener("pointermove",function(e){if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<5)return;drag.moved=true;m.lng=unx(drag.cx-dx,m.z);m.lat=uny(drag.cy-dy,m.z);clampMap(m);draw()});
+ box.addEventListener("pointerup",function(e){if(!drag)return;var d=drag;drag=null;if(d.moved||state.busy)return;var rc=box.getBoundingClientRect(),W=box.clientWidth,H=box.clientHeight;
+  var x=px(m.lng,m.z)-W/2+(e.clientX-rc.left),y=py(m.lat,m.z)-H/2+(e.clientY-rc.top);m.pin={lat:Math.round(uny(y,m.z)*1e6)/1e6,lng:Math.round(unx(x,m.z)*1e6)/1e6};render()});
+ box.addEventListener("wheel",function(e){e.preventDefault();zoom(e.deltaY<0?1:-1)},{passive:false});
+ add(c,box);
+ var info=el("div","siteinfo");
+ if(m.pin){add(info,el("span",null,"New pin at "+m.pin.lat.toFixed(5)+", "+m.pin.lng.toFixed(5)));var ub=el("button","btn p",state.busy?"Checking\u2026":"Use this location");ub.disabled=state.busy;ub.onclick=function(){pinSite(m.pin)};var cb=el("button","btn o","Cancel");cb.onclick=function(){m.pin=null;render()};add(info,ub,cb)}
+ else if(site){add(info,el("b",null,"\ud83d\udccd "+(site.barrio?site.barrio+", ":"")+site.municipality),el("span","hint",site.latitude.toFixed(5)+", "+site.longitude.toFixed(5)));var xb=el("button","btn o","Remove pin");xb.disabled=state.busy;xb.onclick=function(){pinSite(null)};add(info,xb)}
+ add(c,info);
+ if(site&&site.near_boundary)add(c,el("div","note warn","This pin is about "+site.boundary_distance_m+" m from a municipal boundary \u2014 confirm the municipality."));
+ setTimeout(draw,0);return c}
+function pinSite(p){var r=state.result;if(!r||state.busy)return;state.busy=true;state.error=null;state.lastAction="pin";render();
+ callTool("refine_scenario",{scenario:r.scenario,site:p?{latitude:p.lat,longitude:p.lng}:null}).then(function(res){
+  if(res&&!res.isError){var dropped=((res.structuredContent||{}).dropped_answers||[]).indexOf("site")>=0;accept(res);if(dropped){state.error="That point is outside Puerto Rico. Drop the pin on the property in Puerto Rico.";render()}
+   var n=state.result,st=n&&n.scenario.site;request("ui/update-model-context",{content:[{type:"text",text:st?"User pinned the site on the SmartPR map: "+(st.barrio?st.barrio+", ":"")+st.municipality+" ("+st.latitude+", "+st.longitude+"). "+(n.message||""):"User removed the SmartPR map pin. "+(n&&n.message||"")}]},5000).catch(function(){})}
+  else{state.busy=false;state.error=txt(res)||"Could not use that location.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
 function render(){root.textContent="";var w=el("div","wrap");add(root,w);add(w,header());var r=state.result;
  if(!r){if(state.error){add(w,el("h1",null,"Something went wrong"));var n=el("div","note err",state.error);add(w,n);return}
   if(state.input||state.busy){add(w,el("h1",null,"Checking requirements…"));for(var i=0;i<5;i++)add(w,el("div","sk"));return}
@@ -74,8 +127,9 @@ function render(){root.textContent="";var w=el("div","wrap");add(root,w);add(w,h
  if(s.square_feet!=null)chip(Number(s.square_feet).toLocaleString("en-US")+" sq ft");if(s.employees!=null)chip(s.employees+" employees");
  chip(s.renovation==="interior"?"Interior renovations":s.renovation==="structural"?"Structural renovations":s.renovation==="none"?"No renovations":null,"Renovation scope?");
  add(w,chips);
- if(state.error){var e=el("div","note err");add(e,el("span",null,state.error+" "));var rb=el("button","btn o","Retry");rb.onclick=function(){state.error=null;act(state.lastAction||"refine")};add(e,rb);add(w,e)}
+ if(state.error){var e=el("div","note err");add(e,el("span",null,state.error+" "));var rb=el("button","btn o","Retry");rb.onclick=function(){state.error=null;if(state.lastAction==="pin"){render();return}act(state.lastAction||"refine")};add(e,rb);add(w,e)}
  if(r.status==="unsupported"){add(w,el("div","foot",(r.coverage_limits||[]).join(" ")));return}
+ add(w,mapCard(r));
  if(r.status==="partial")add(w,el("div","note warn","Preliminary — "+(r.unresolved_facts||[]).length+" detail(s) unresolved. Unknown facts are shown as \"Needs details\", never assumed \"no\"."));
  var g=el("div","grid"),left=el("div","card");add(g,left);var h2=el("h2",null,"Preliminary requirements");add(h2,el("span","badge",r.counts.total+" identified"));add(left,h2);
  var groups=["Business registrations","Construction & site authorization","Operating permits"],idx=0;
@@ -107,6 +161,8 @@ window.addEventListener("openai:set_globals",function(){if(window.openai&&window
 })();
 `;
 
+const JS_FINAL = JS.replace("__TILE_URL__", MAP_TILE_URL).replace("__SAT_URL__", MAP_SATELLITE_URL);
+
 export function widgetHtml(): string {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SmartPR</title><style>${CSS}</style></head><body><div id="root"></div><script>${JS}</script></body></html>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SmartPR</title><style>${CSS}</style></head><body><div id="root"></div><script>${JS_FINAL}</script></body></html>`;
 }

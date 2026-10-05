@@ -2609,6 +2609,12 @@ export default function SmartPRIntake() {
     if (draft.incentiveFacts) setIncentiveFacts(draft.incentiveFacts as Record<string, ProjectFactValue>);
     if (Array.isArray(draft.incentiveAssessmentHistory)) setIncentiveAssessmentHistory(draft.incentiveAssessmentHistory as IncentiveAssessment[]);
     if (Array.isArray(draft.pursuedIncentives)) setPursuedIncentives(draft.pursuedIncentives as IncentiveEligibilityResult[]);
+    // Site pinned before sign-in / handed off from ChatGPT's map pin.
+    const draftSite = restoreIntakeSite(draft.intakeSite);
+    if (draftSite) {
+      setIntakeSite(draftSite);
+      setSiteOrigin('restored');
+    }
     if (draft.currentStep) setCurrentStep(draft.currentStep as Step);
     if (draft.language === 'es' || draft.language === 'en') setLanguage(draft.language);
   }, [me]);
@@ -2628,12 +2634,13 @@ export default function SmartPRIntake() {
         incentiveFacts,
         incentiveAssessmentHistory,
         pursuedIncentives,
+        intakeSite,
         currentStep,
         language,
       });
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [me, profile, discoveryAnswers, potentialDecisions, requirements, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives, currentStep, language]);
+  }, [me, profile, discoveryAnswers, potentialDecisions, requirements, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives, intakeSite, currentStep, language]);
 
   // Hidden debug mode for the rules engine (enable with ?debug=1 in the URL).
   const [debugMode, setDebugMode] = useState(false);

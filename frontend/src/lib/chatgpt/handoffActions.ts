@@ -22,5 +22,14 @@ export function scenarioToGuestDraft(s: NormalizedScenario) {
   if (s.business_status !== "unknown") profile.business_stage = s.business_status;
   if (s.employees != null) profile.number_of_employees = s.employees;
   if (s.activity_description) profile.description = s.activity_description;
-  return { profile, discoveryAnswers: { ...s.answers }, potentialDecisions: {}, currentStep: 1, language: "en" };
+  // A ChatGPT map pin becomes the intake's confirmed site (same shape the
+  // portal pin produces); the intake then loads zoning/flood/parcel for it.
+  const intakeSite = s.site
+    ? {
+        latitude: s.site.latitude, longitude: s.site.longitude, coordinate_source: "MAP_PIN", formatted_address: null,
+        municipality: { name: s.site.municipality, fips: s.site.fips }, barrio: s.site.barrio ? { name: s.site.barrio, geoid: s.site.barrio_geoid } : null,
+        near_boundary: s.site.near_boundary, designations: s.site.designations, boundary_source: null, location_id: null, confirmed_at: new Date().toISOString(),
+      }
+    : undefined;
+  return { profile, discoveryAnswers: { ...s.answers }, potentialDecisions: {}, ...(intakeSite ? { intakeSite } : {}), currentStep: 1, language: "en" };
 }

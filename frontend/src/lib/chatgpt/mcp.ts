@@ -7,7 +7,7 @@
 
 import { assessScenario, normalizeScenario, CHATGPT_SERVER_VERSION, type NormalizedScenario, type ScenarioInput } from "./assessment";
 import { createHandoffToken, HandoffError, type HandoffIntent } from "./handoff";
-import { WIDGET_URI, WIDGET_MIME, widgetHtml } from "./widget";
+import { WIDGET_URI, WIDGET_MIME, widgetHtml, MAP_TILE_ORIGIN } from "./widget";
 
 export const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 export const SERVER_NAME = "smartpr-chatgpt";
@@ -15,7 +15,7 @@ export const SERVER_NAME = "smartpr-chatgpt";
 const INSTRUCTIONS =
   "SmartPR gives preliminary Puerto Rico business permit/registration requirements from SmartPR's deterministic rules engine — never answer requirements from model knowledge. " +
   "Call assess_scenario with the facts the user stated (leave unknowns out; never guess). Ask the returned clarifying questions, then call refine_scenario with the previous scenario plus answers. " +
-  "Use create_portal_handoff only when the user wants to continue in SmartPR. Results are a free preview, not legal advice.";
+  "The widget lets the user drop a map pin; the pin sets the municipality. Use create_portal_handoff only when the user wants to continue, unlock the full assessment, or use their SmartPR plan. Results are a free preview, not legal advice.";
 
 const scenarioProps = {
   business_type: { type: "string", description: "Business activity as the user described it, e.g. 'furniture manufacturing', 'restaurant'." },
@@ -25,6 +25,13 @@ const scenarioProps = {
   square_feet: { type: "number", description: "Premises size in square feet, if stated." },
   employees: { type: "integer", description: "Number of employees, if stated." },
   renovation: { type: "string", enum: ["none", "interior", "structural", "unknown"], description: "Renovation scope, if stated." },
+  site: {
+    type: ["object", "null"],
+    description: "Exact site as WGS84 coordinates — only when the user gave coordinates or pinned the site on the map; never geocode or guess. SmartPR resolves the municipality/barrio from the point. null clears the pin.",
+    properties: { latitude: { type: "number" }, longitude: { type: "number" } },
+    required: ["latitude", "longitude"],
+    additionalProperties: false,
+  },
 };
 const answersProp = { type: "object", description: "Clarifying answers keyed by clarifying_questions[].id (e.g. {\"business_status\":\"new\",\"Q_IMPORT_EXPORT\":\"no\"}).", additionalProperties: { type: ["string", "boolean"] } };
 
@@ -107,7 +114,7 @@ export function callTool(name: string, args: Record<string, unknown>, opts: { si
     const qs = result.clarifying_questions.map((q) => `- [${q.id}] ${q.question}`).join("\n");
     return {
       structuredContent: result,
-      content: [{ type: "text", text: `${result.message}\n${top}${qs ? `\nClarifying questions:\n${qs}` : ""}\n(Free preview from SmartPR's rules engine — not legal advice.)` }],
+      content: [{ type: "text", text: `${result.message}${scenario.site ? `\nSite (map pin): ${scenario.site.barrio ? `${scenario.site.barrio}, ` : ""}${scenario.site.municipality}${scenario.site.near_boundary ? " — near a municipal boundary, confirm" : ""}` : ""}${dropped.includes("site") ? "\nThe pin is outside Puerto Rico and was ignored." : ""}\n${top}${qs ? `\nClarifying questions:\n${qs}` : ""}\n(Free preview from SmartPR's rules engine — not legal advice.)` }],
     };
   }
   if (name === "create_portal_handoff") {
@@ -128,6 +135,21 @@ export function callTool(name: string, args: Record<string, unknown>, opts: { si
     }
   }
   return null;
+}
+
+/**
+ * Widget CSP: map tiles are plain <img> raster tiles (resource/img-src only —
+ * no fetch, so no connect domains; ChatGPT ignores connect_domains anyway).
+ * The only redirect target is the SmartPR portal that handoff links use.
+ */
+export function widgetResourceMeta(siteUrl: string) {
+  const portal = new URL(siteUrl).origin;
+  return {
+    ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [MAP_TILE_ORIGIN] } },
+    "openai/widgetCSP": { connect_domains: [], resource_domains: [MAP_TILE_ORIGIN], redirect_domains: [portal] },
+    "openai/widgetDescription": "SmartPR preliminary Puerto Rico requirements with a site map pin and refine controls.",
+    "openai/widgetPrefersBorder": true,
+  };
 }
 
 export function handleChatgptMcp(body: unknown, opts: { siteUrl: string }): McpResult {
@@ -153,7 +175,7 @@ export function handleChatgptMcp(body: unknown, opts: { siteUrl: string }): McpR
     case "resources/templates/list": return ok(msg.id, { resourceTemplates: [] });
     case "resources/read": {
       if (params.uri !== WIDGET_URI) return err(msg.id, -32602, "Unknown resource");
-      return ok(msg.id, { contents: [{ uri: WIDGET_URI, mimeType: WIDGET_MIME, text: widgetHtml(), _meta: { ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } }, "openai/widgetDescription": "SmartPR preliminary Puerto Rico requirements with refine controls.", "openai/widgetPrefersBorder": true } }] });
+      return ok(msg.id, { contents: [{ uri: WIDGET_URI, mimeType: WIDGET_MIME, text: widgetHtml(), _meta: widgetResourceMeta(opts.siteUrl) }] });
     }
     case "tools/call": {
       const name = typeof params.name === "string" ? params.name : "";

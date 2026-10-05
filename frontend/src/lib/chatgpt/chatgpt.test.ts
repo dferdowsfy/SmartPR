@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- JSON-RPC test payloads */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT } from "./assessment";
+import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite } from "./assessment";
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
-import { handleChatgptMcp, TOOLS } from "./mcp";
-import { WIDGET_URI, WIDGET_MIME, widgetHtml } from "./widget";
+import { handleChatgptMcp, TOOLS, widgetResourceMeta } from "./mcp";
+import { WIDGET_URI, WIDGET_MIME, widgetHtml, MAP_TILE_ORIGIN } from "./widget";
+import { municipioFocus } from "../../app/locations/boundaries";
+import { restoreIntakeSite } from "../../app/locations/intakeLocation";
 import { resolvePortalUrl, portalUrlForRequest, PORTAL_DEFAULT } from "./portalUrl";
 import { handoffActions, scenarioToGuestDraft, HANDOFF_INTAKE_PATH } from "./handoffActions";
 import { sanitizeNext, guestContinuePath, authCallbackPath } from "../safeNext";
@@ -86,7 +88,7 @@ test("MCP: initialize, tools/list, resources, tools/call", () => {
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
   assert.equal(res.mimeType, WIDGET_MIME);
-  assert.ok(!/<script[^>]+src=|https?:\/\/(?!www\.w3\.org)/.test(widgetHtml()), "widget has no external loads");
+  assert.ok(!/<script[^>]+src=|https?:\/\/(?!www\.w3\.org|server\.arcgisonline\.com\/ArcGIS\/rest\/services\/(World_Street_Map|World_Imagery)\/)/.test(widgetHtml()), "widget loads nothing external except basemap tile images");
   const a = (rpc("tools/call", { name: "assess_scenario", arguments: GUAYNABO }).body as Body).result;
   assert.equal(a.structuredContent.status, "partial");
   const r = (rpc("tools/call", { name: "refine_scenario", arguments: { scenario: a.structuredContent.scenario, answers: { activity: "Furniture Manufacturing" } } }).body as Body).result;
@@ -187,4 +189,63 @@ test("handoff review: sign-in round trip + intake prefill", () => {
   assert.equal(d.profile.business_stage, "new");
   assert.equal(d.profile.number_of_employees, 28);
   assert.equal(d.discoveryAnswers.Q_IMPORT_EXPORT, true);
+});
+
+test("map pin: resolved server-side, authoritative for municipality, carried to the portal intake", () => {
+  const g = municipioFocus("Guaynabo")!;
+  assert.ok(g && Math.abs(g.latitude - 18.36) < 0.1 && Math.abs(g.longitude + 66.11) < 0.1, "Guaynabo pueblo focus");
+  const site = resolveSite({ latitude: g.latitude, longitude: g.longitude })!;
+  assert.equal(site.municipality, "Guaynabo");
+  assert.equal(resolveSite({ latitude: 40.71, longitude: -74.0 }), null, "outside Puerto Rico");
+  assert.equal(resolveSite({ latitude: "x", longitude: 1 }), null);
+
+  // Pin wins over the typed municipality; client-supplied names are ignored.
+  const first = normalizeScenario({ ...GUAYNABO, municipality: "Ponce", business_type: "Furniture Manufacturing" });
+  assert.equal(first.scenario.municipality, "Ponce");
+  const pinned = normalizeScenario({ site: { latitude: g.latitude, longitude: g.longitude, municipality: "Ponce" } as any }, first.scenario).scenario;
+  assert.equal(pinned.municipality, "Guaynabo");
+  assert.equal(pinned.site?.municipality, "Guaynabo");
+  // Tampered prior scenario: name re-derived from coordinates.
+  const tampered = normalizeScenario({}, { ...pinned, municipality: "Ponce", site: { ...pinned.site!, municipality: "Ponce" } }).scenario;
+  assert.equal(tampered.municipality, "Guaynabo");
+  // Outside PR is dropped, null clears, typed change in chat moves off the pin.
+  const out = normalizeScenario({ site: { latitude: 40.7, longitude: -74 } }, pinned);
+  assert.ok(out.dropped.includes("site") && out.scenario.site === null);
+  assert.equal(normalizeScenario({ site: null }, pinned).scenario.site, null);
+  assert.equal(normalizeScenario({ municipality: "Ponce" }, pinned).scenario.site, null);
+  assert.equal(normalizeScenario({ municipality: "Guaynabo" }, pinned).scenario.site?.municipality, "Guaynabo");
+
+  const a = assessScenario(pinned);
+  assert.equal(a.map_focus.zoom, 16);
+  assert.ok(a.assumptions.some((x) => x.startsWith("Municipality from map pin")));
+  assert.ok(a.coverage_limits.some((x) => /map pin sets the municipality/.test(x)));
+  assert.ok(a.gated.locked_features.some((x) => /site analysis/.test(x)));
+  assert.equal(assessScenario(first.scenario).map_focus.zoom, 13);
+  assert.equal(assessScenario(normalizeScenario({ business_type: "Furniture Manufacturing" }).scenario).map_focus.zoom, 8);
+
+  // MCP: refine with a pin, then handoff carries it; the intake accepts the site.
+  const r = (rpc("tools/call", { name: "refine_scenario", arguments: { scenario: first.scenario, site: { latitude: g.latitude, longitude: g.longitude } } }).body as Body).result;
+  assert.equal(r.structuredContent.scenario.site.municipality, "Guaynabo");
+  assert.match(r.content[0].text, /Site \(map pin\):.*Guaynabo/);
+  const h = (rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: r.structuredContent.scenario, intent: "unlock" } }).body as Body).result;
+  const payload = verifyHandoffToken(new URL(h.structuredContent.url).searchParams.get("t"));
+  assert.equal(payload.scenario.site?.municipality, "Guaynabo");
+  const draft = scenarioToGuestDraft(payload.scenario) as ReturnType<typeof scenarioToGuestDraft> & { intakeSite?: unknown };
+  const restored = restoreIntakeSite(draft.intakeSite);
+  assert.ok(restored && restored.municipality.name === "Guaynabo" && restored.coordinate_source === "MAP_PIN");
+  assert.equal(Math.round(restored!.latitude * 1e5), Math.round(g.latitude * 1e5));
+});
+
+test("widget map: tile images only, CSP declares the tile origin and the portal redirect", () => {
+  const meta = widgetResourceMeta("https://www.getsmartpr.com");
+  assert.deepEqual(meta.ui.csp, { connectDomains: [], resourceDomains: [MAP_TILE_ORIGIN] });
+  assert.deepEqual(meta["openai/widgetCSP"], { connect_domains: [], resource_domains: [MAP_TILE_ORIGIN], redirect_domains: ["https://www.getsmartpr.com"] });
+  const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
+  assert.deepEqual(res._meta["openai/widgetCSP"].resource_domains, [MAP_TILE_ORIGIN]);
+  const html = widgetHtml();
+  assert.ok(html.includes(`${MAP_TILE_ORIGIN}/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}`));
+  assert.ok(!/fetch\(|XMLHttpRequest|EventSource|WebSocket/.test(html), "no network calls from the widget");
+  assert.match(html, /callTool\("refine_scenario",\{scenario:r\.scenario,site:p\?\{latitude:p\.lat,longitude:p\.lng\}:null\}\)/);
+  const site = (TOOLS[1].inputSchema.properties as Record<string, any>).site;
+  assert.deepEqual(site.required, ["latitude", "longitude"]);
 });
