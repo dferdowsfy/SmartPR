@@ -198,7 +198,7 @@ export function siteLayersFromFixture(g: GeoContextFixture, lat: number, lng: nu
       : parseCrimParcel(resp(g.crim), AT, catastro)
   );
   const presence = (layer: "historic_zone" | "protected_area", v: string | null | "unknown" | undefined) => {
-    const src = layer === "historic_zone" ? LAYER_SOURCES.jp_zonas_historicas : LAYER_SOURCES.jp_areas_naturales;
+    const src = layer === "historic_zone" ? LAYER_SOURCES.mipr_zona_historica : LAYER_SOURCES.jp_areas_protegidas;
     if (v === undefined || v === "unknown") return unknownLayer(layer, src, "fixture: not provided", AT);
     return parsePresence(layer, src, resp(v ? { NOMBRE: v } : null), AT, ["NOMBRE"]);
   };

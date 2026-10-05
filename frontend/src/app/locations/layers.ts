@@ -294,6 +294,11 @@ export const LAYER_SOURCES = {
     name: "Junta de Planificación (MIPR) — Zonas Históricas",
     publisher: "Junta de Planificación de Puerto Rico (MIPR)",
     url: "https://sigejp.pr.gov/server/rest/services/MIPR/Cultural_arquelogico_v10_2/MapServer/14",
+    // Backup: the older JP_Reglamentario copy of the same JP historic-zone
+    // boundaries. Its point queries hung > 25 s on 2026-10-05 (metadata fast),
+    // so it is tried only when this layer fails; parsePresence reads both
+    // schemas (ZONA here, NOMBRE/Zona there).
+    fallback_urls: ["https://sigejp.pr.gov/server/rest/services/JP_Reglamentario/Sitios_Historicos_JP/MapServer/1"],
     layer: "Zona Histórica",
     dataset_date: null,
     reliability: "medium",
@@ -324,6 +329,10 @@ export const LAYER_SOURCES = {
     name: "Junta de Planificación — Áreas Protegidas",
     publisher: "Junta de Planificación de Puerto Rico / DRNA",
     url: "https://sigejp.pr.gov/server/rest/services/Hosted/Areas_Protegidas_y_Reservas_Naturales_WFL1/FeatureServer/4",
+    // Backup: the older Advisory_Maps copy of the JP/DRNA protected natural
+    // areas (hung > 25 s on point queries 2026-10-05). Fields: name here,
+    // NOMBRE/AREA there; parsePresence reads both.
+    fallback_urls: ["https://sigejp.pr.gov/server/rest/services/Advisory_Maps/Datos_Generales/MapServer/5"],
     layer: "Área Protegidas",
     dataset_date: null,
     reliability: "medium",
@@ -1073,6 +1082,38 @@ export function parseCoastalZone(
 }
 
 /** Generic presence layer (historic zones, protected natural areas). */
+/** Name fields per presence layer: current primaries first, legacy JP schemas after. */
+export const PRESENCE_NAME_FIELDS = {
+  historic: ["ZONA", "Resolucion", "NOMBRE", "Nombre", "nombre", "Zona"],
+  protected: ["name", "loc_desig", "mgmt", "NOMBRE", "Nombre", "nombre", "AREA", "Name"],
+  reserves: ["nombre_reserv", "resolucion"],
+} as const;
+
+/** The source that actually answered (a backup endpoint is labelled as its own dataset when known). */
+export function sourceForEndpoint(primary: LayerSource, endpoint: string | null): LayerSource {
+  if (!endpoint || endpoint === primary.url) return primary;
+  return (Object.values(LAYER_SOURCES) as LayerSource[]).find((s) => s.url === endpoint) ?? { ...primary, url: endpoint };
+}
+
+/**
+ * Protected area = JP/DRNA protected areas OR a JP natural reserve (incl. its
+ * buffer zone). Inside either → resolved; both answered "no" → none; otherwise
+ * (one answered "no", the other could not be checked) → unknown, never "none".
+ */
+export function parseProtectedArea(
+  prot: ArcGisQueryResponse | string,
+  protSrc: LayerSource,
+  reserves: ArcGisQueryResponse | string | null,
+  reserveSrc: LayerSource,
+  retrieved_at: string
+): SiteLayerResult {
+  const p = parsePresence("protected_area", protSrc, prot, retrieved_at, [...PRESENCE_NAME_FIELDS.protected]);
+  if (p.status === "resolved" || reserves === null) return p;
+  const r = parsePresence("protected_area", reserveSrc, reserves, retrieved_at, [...PRESENCE_NAME_FIELDS.reserves]);
+  if (r.status === "resolved") return r;
+  return p.status === "unknown" ? p : r;
+}
+
 export function parsePresence(
   layer: "historic_zone" | "protected_area",
   src: LayerSource,
@@ -1767,8 +1808,8 @@ export function unavailableSiteLayers(latitude: number, longitude: number, reaso
     zoning: LAYER_SOURCES.jp_calificacion,
     land_class: LAYER_SOURCES.jp_calificacion,
     parcel: LAYER_SOURCES.crim_parcels,
-    historic_zone: LAYER_SOURCES.jp_zonas_historicas,
-    protected_area: LAYER_SOURCES.jp_areas_naturales,
+    historic_zone: LAYER_SOURCES.mipr_zona_historica,
+    protected_area: LAYER_SOURCES.jp_areas_protegidas,
   };
   const core: SiteLayerId[] = ["flood_zone", "flood_advisory", "coastal_zone", "zoning", "land_class", "parcel", "terrain"];
   return { latitude, longitude, resolved_at: at, results: core.map((l) => unknownLayer(l, src[l], reason, at)) };
