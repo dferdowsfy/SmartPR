@@ -9,6 +9,7 @@ export default function HandoffReview({ scenario, intent, expiresAt, selfPath, s
   const rows: Array<[string, string]> = [
     ["Activity", scenario.business_type || (scenario.business_type_input ? `${scenario.business_type_input} (to confirm)` : "Not provided")],
     ["Municipality", scenario.municipality || "Not provided"],
+    ["Site (map pin)", scenario.site ? `${scenario.site.barrio ? `${scenario.site.barrio}, ` : ""}${scenario.site.municipality} · ${scenario.site.latitude.toFixed(5)}, ${scenario.site.longitude.toFixed(5)}${scenario.site.near_boundary ? " (near a boundary — confirm)" : ""}` : "Not pinned"],
     ["Registration status", scenario.business_status === "unknown" ? "Not confirmed" : scenario.business_status === "existing" ? "Already registered" : "Not yet registered"],
     ["Premises", scenario.square_feet != null ? `${scenario.square_feet.toLocaleString("en-US")} sq ft` : "Not provided"],
     ["Employees", scenario.employees != null ? String(scenario.employees) : "Not provided"],

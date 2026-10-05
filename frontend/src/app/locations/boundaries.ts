@@ -191,3 +191,23 @@ export function boundaryDeterminations(latitude: number, longitude: number): Geo
   }
   return out;
 }
+
+const foldName = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+/**
+ * A point to centre a map on for a municipio: the middle of its downtown
+ * barrio-pueblo (LSAD 41), else of its main-island features. Display only —
+ * never a site determination.
+ */
+export function municipioFocus(name: string): { latitude: number; longitude: number } | null {
+  const target = foldName(name);
+  const fips = Object.entries(RAW.municipios).find(([, n]) => foldName(n) === target)?.[0];
+  if (!fips) return null;
+  const mine = RAW.features.filter((f) => f.c === fips);
+  const pueblo = mine.find((f) => f.l === "41");
+  const pick = pueblo ? [pueblo] : mine.filter((f) => f.bb[0] > -67.5); // skip Mona/Desecheo
+  if (!pick.length) return null;
+  const w = Math.min(...pick.map((f) => f.bb[0])), s = Math.min(...pick.map((f) => f.bb[1]));
+  const e = Math.max(...pick.map((f) => f.bb[2])), n = Math.max(...pick.map((f) => f.bb[3]));
+  return { latitude: Math.round(((s + n) / 2) * 1e5) / 1e5, longitude: Math.round(((w + e) / 2) * 1e5) / 1e5 };
+}

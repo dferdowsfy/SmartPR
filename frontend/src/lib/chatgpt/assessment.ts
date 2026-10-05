@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { puertoRicoPack } from "../../app/jurisdictions/pr/index";
 import { runRulesEngine, type KnowledgeBase, type BusinessStatus } from "../../app/rulesEngine";
 import { classifyEngineRequirements, type ClassifiedRequirement } from "../../app/requirementApplicability";
+import { BOUNDARY_SOURCE, locateInPuertoRico, municipioFocus } from "../../app/locations/boundaries";
 
 export const CHATGPT_SERVER_VERSION = "0.1.0";
 export const FREE_PREVIEW_LIMIT = 8;
@@ -30,6 +31,25 @@ export interface ScenarioInput {
   employees?: unknown;
   renovation?: unknown; // RenovationScope or boolean
   answers?: unknown; // { [question_id]: answer }
+  site?: unknown; // { latitude, longitude } map pin; null clears
+}
+
+/**
+ * Map pin, resolved server-side from the coordinates alone (Census TIGER
+ * municipio/barrio point-in-polygon — the same lookup the portal's intake
+ * pin uses). Client-supplied names are never trusted.
+ */
+export interface ScenarioSite {
+  latitude: number;
+  longitude: number;
+  municipality: string;
+  fips: string;
+  barrio: string | null;
+  barrio_geoid: string | null;
+  near_boundary: boolean;
+  boundary_distance_m: number;
+  designations: string[];
+  source: string;
 }
 
 export interface NormalizedScenario {
@@ -45,6 +65,7 @@ export interface NormalizedScenario {
   employees: number | null;
   renovation: RenovationScope;
   answers: Record<string, AnswerValue>;
+  site: ScenarioSite | null;
 }
 
 export interface ClarifyingQuestion {
@@ -83,6 +104,8 @@ export interface AssessmentResult {
   counts: { supported: number; conditional: number; unresolved: number; total: number };
   coverage_limits: string[];
   dropped_answers: string[];
+  /** Where the widget map opens (display only). */
+  map_focus: { latitude: number; longitude: number; zoom: number };
   versions: { generated_at: string; server: string; engine: string; kb: string; rules: number };
   message: string;
 }
@@ -133,6 +156,34 @@ function coerce(v: unknown): AnswerValue | undefined {
   return undefined;
 }
 
+const coord = (v: unknown, lim: number): number | null => {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  return Number.isFinite(n) && Math.abs(n) <= lim ? Math.round(n * 1e6) / 1e6 : null;
+};
+
+/** Resolve a pin to a Puerto Rico site, or null when it is not in Puerto Rico. */
+export function resolveSite(raw: unknown): ScenarioSite | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  const latitude = coord(r.latitude ?? r.lat, 90);
+  const longitude = coord(r.longitude ?? r.lng ?? r.lon, 180);
+  if (latitude == null || longitude == null) return null;
+  const p = locateInPuertoRico(latitude, longitude);
+  if (!p) return null;
+  const kbMuni = kb.municipalities.find((m) => norm(m.name) === norm(p.municipio.name));
+  return {
+    latitude, longitude,
+    municipality: kbMuni?.name ?? p.municipio.name,
+    fips: p.municipio.fips,
+    barrio: p.barrio?.name ?? null,
+    barrio_geoid: p.barrio?.geoid ?? null,
+    near_boundary: p.nearBoundary,
+    boundary_distance_m: p.boundaryDistanceM,
+    designations: (kbMuni as { flags?: string[] } | undefined)?.flags?.filter((f) => typeof f === "string").slice(0, 12) ?? [],
+    source: `${BOUNDARY_SOURCE.name ?? BOUNDARY_SOURCE.id}${BOUNDARY_SOURCE.version ? ` ${BOUNDARY_SOURCE.version}` : ""}`,
+  };
+}
+
 // Scenario-level clarification ids (not KB question ids).
 export const SCENARIO_QUESTION_IDS = ["activity", "business_status", "structural", "municipality"] as const;
 
@@ -175,7 +226,25 @@ export function normalizeScenario(input: ScenarioInput, prior?: Partial<Normaliz
     employees: num(input.employees) ?? p.employees ?? null,
     renovation,
     answers,
+    site: null,
   };
+  // Map pin: always re-resolved from coordinates (prior scenarios are
+  // untrusted too). An explicit `site: null` clears it. A resolved pin is
+  // authoritative for the municipality, as in the portal intake.
+  if (input.site !== undefined && input.site !== null) {
+    scenario.site = resolveSite(input.site);
+    if (!scenario.site) dropped.push("site");
+  } else if (input.site === undefined && p.site) {
+    scenario.site = resolveSite(p.site);
+  }
+  if (scenario.site && input.site === undefined && str(input.municipality, 80)) {
+    const m = matchName(kb.municipalities, str(input.municipality, 80)!);
+    if (m.kind !== "candidates" && norm(m.value.name) !== norm(scenario.site.municipality)) scenario.site = null; // user changed municipality in chat
+  }
+  if (scenario.site) {
+    scenario.municipality = scenario.site.municipality;
+    scenario.municipality_input = scenario.site.municipality;
+  }
   for (const [id, val] of Object.entries(raw).slice(0, 40)) {
     const v = coerce(val);
     if (id === "activity") {
@@ -194,7 +263,10 @@ export function normalizeScenario(input: ScenarioInput, prior?: Partial<Normaliz
     } else if (id === "municipality") {
       if (typeof v === "string") {
         const m = matchName(kb.municipalities, v);
-        if (m.kind !== "candidates") { scenario.municipality = m.value.name; scenario.municipality_input = v; } else dropped.push(id);
+        if (m.kind !== "candidates") {
+          scenario.municipality = m.value.name; scenario.municipality_input = v;
+          if (scenario.site && norm(scenario.site.municipality) !== norm(m.value.name)) scenario.site = null; // typed answer moved away from the pin
+        } else dropped.push(id);
       }
     } else if (kb.questions.some((q) => q.id === id)) {
       if (v === undefined) delete answers[id];
@@ -288,12 +360,20 @@ const QUESTION_PRIORITY: Array<[RegExp, string[]]> = [
 
 const yesNo = [{ value: "yes", label: "Yes" }, { value: "no", label: "No" }];
 
+export function mapFocus(s: NormalizedScenario): AssessmentResult["map_focus"] {
+  if (s.site) return { latitude: s.site.latitude, longitude: s.site.longitude, zoom: 16 };
+  const f = s.municipality ? municipioFocus(s.municipality) : null;
+  return f ? { ...f, zoom: 13 } : { latitude: 18.22, longitude: -66.45, zoom: 8 };
+}
+
 export function assessScenario(scenario: NormalizedScenario, dropped: string[] = [], now = new Date()): AssessmentResult {
   const versions = { generated_at: now.toISOString(), server: `smartpr-chatgpt@${CHATGPT_SERVER_VERSION}`, engine: "smartpr-rules-engine (portal intake)", kb: kbVersion(), rules: kb.rules.length };
   const coverage_limits = [
     "Puerto Rico state and municipal requirements in SmartPR's knowledge graph only; federal coverage is partial.",
     "Preliminary triage, not legal advice. Confirm every item with the issuing agency.",
-    "No parcel, zoning-map, flood-zone or site analysis in this preview.",
+    scenario.site
+      ? "The map pin sets the municipality (Census boundaries). Parcel, zoning, flood-zone and full site analysis for the pin are in SmartPR."
+      : "No parcel, zoning-map, flood-zone or site analysis in this preview.",
   ];
   const unresolved_facts: string[] = [];
   const questions: ClarifyingQuestion[] = [];
@@ -302,7 +382,7 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
     return {
       status: "unsupported", tier: "free_preview", scenario, assumptions: [], unresolved_facts: ["business activity"],
       clarifying_questions: [], requirements: [], gated: { hidden_requirement_count: 0, locked_features: [] },
-      counts: { supported: 0, conditional: 0, unresolved: 0, total: 0 }, coverage_limits, dropped_answers: dropped, versions,
+      counts: { supported: 0, conditional: 0, unresolved: 0, total: 0 }, coverage_limits, dropped_answers: dropped, map_focus: mapFocus(scenario), versions,
       message: scenario.business_type_input
         ? `SmartPR doesn't cover "${scenario.business_type_input}" yet. Describe the activity differently (e.g. "furniture manufacturing", "restaurant").`
         : "Describe the business activity to start a Puerto Rico requirements preview.",
@@ -315,7 +395,7 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
   }
   if (!scenario.municipality) {
     unresolved_facts.push("municipality");
-    questions.push({ id: "municipality", kind: "scenario", question: "Which municipality will the business operate in?", why: "Municipal licenses (patente) and permit offices depend on it.", options: [] });
+    questions.push({ id: "municipality", kind: "scenario", question: "Which municipality will the business operate in? (or drop a pin on the map)", why: "Municipal licenses (patente) and permit offices depend on it.", options: [] });
   }
   if (scenario.business_status === "unknown") {
     unresolved_facts.push("existing registrations");
@@ -327,6 +407,11 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
   }
 
   const { answers, projectFacts, assumptions } = engineInputs(scenario);
+  if (scenario.site) {
+    const st = scenario.site;
+    assumptions.unshift(`Municipality from map pin: ${st.barrio ? `${st.barrio}, ` : ""}${st.municipality} (${st.source}).`);
+    if (st.near_boundary) assumptions.unshift(`Pin is ~${st.boundary_distance_m} m from a municipal boundary — confirm the municipality.`);
+  }
   const businessStatus: BusinessStatus = scenario.business_status === "existing" ? "existing" : "new";
   const { requirements: generated } = runRulesEngine(kb, {
     municipalityName: scenario.municipality,
@@ -417,8 +502,8 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
     status, tier: "free_preview", scenario, assumptions, unresolved_facts,
     clarifying_questions: questions.slice(0, MAX_CLARIFYING_QUESTIONS + 1),
     requirements: visible,
-    gated: { hidden_requirement_count: reqs.length - visible.length, locked_features: ["full requirement list", "sequencing & dependencies across agencies", "downloadable report", "evidence tracking in SmartPR"] },
-    counts, coverage_limits, dropped_answers: dropped, versions,
+    gated: { hidden_requirement_count: reqs.length - visible.length, locked_features: ["full requirement list", "sequencing & dependencies across agencies", "site analysis (flood zone, zoning, parcel)", "downloadable report", "evidence tracking in SmartPR"] },
+    counts, coverage_limits, dropped_answers: dropped, map_focus: mapFocus(scenario), versions,
     message: status === "partial"
       ? `Preliminary: ${counts.total} requirements identified (${counts.unresolved} unresolved). Answer the clarifying questions to refine.`
       : `Preliminary: ${counts.total} requirements identified for this scenario.`,

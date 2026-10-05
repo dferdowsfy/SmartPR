@@ -8,6 +8,8 @@ export interface GuestDraft {
   incentiveFacts?: Record<string, string | number | boolean | string[] | null | undefined>;
   incentiveAssessmentHistory?: unknown[];
   pursuedIncentives?: unknown[];
+  /** Confirmed intake site (IntakeSite JSON; revalidated by restoreIntakeSite). */
+  intakeSite?: unknown;
   currentStep: number;
   language: string;
   savedAt: number;
