@@ -55,7 +55,7 @@ export function renderReportPdf(d: ReportDocument, doc: JsPDF): JsPDF {
   const font = (size: number, style: Style = "normal", c: Rgb = INK) => { doc.setFont("helvetica", style); doc.setFontSize(size); color(c); };
   const lh = (size: number) => size * 0.42 + 1.2;
   /** Wrap with the font the text will be drawn in. splitTextToSize breaks words longer than the width. */
-  const wrap = (t: string, w: number, size: number, style: Style = "normal") => { doc.setFont("helvetica", style); doc.setFontSize(size); return doc.splitTextToSize(pdfSafe(t), w - 1.5) as string[]; };
+  const wrap = (t: string, w: number, size: number, style: Style = "normal") => { doc.setFont("helvetica", style); doc.setFontSize(size); return doc.splitTextToSize(pdfSafe(t), w - 1.5, { fontSize: size, fontName: "helvetica", fontStyle: style }) as string[]; };
   const newPage = () => { doc.addPage(); y = TOP; };
   const ensure = (h: number) => { if (y + h > BOTTOM) newPage(); };
   /** A paragraph that flows across pages line by line. */
