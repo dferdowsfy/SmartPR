@@ -1,0 +1,121 @@
+{
+  "id": "KG43",
+  "title": "Restaurant with alcohol, new business in an existing building — Viejo San Juan historic zone (autonomous)",
+  "matrix": {
+    "businessType": "restaurant_with_alcohol",
+    "projectType": "new_business_existing_building",
+    "locationContext": "historic_zone_coastal"
+  },
+  "description": "We are opening a restaurant with a full bar in a leased colonial building in Old San Juan. No construction; we will add a new sign over the door.",
+  "profile": {
+    "business_type": "Restaurant",
+    "municipality": "San Juan",
+    "location_type": "Restaurant Location",
+    "number_of_employees": 12,
+    "industry": "Food & Beverage",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_FOOD_PREPARED": true,
+    "Q_FOOD_SOLD": true,
+    "Q_ALCOHOL_SOLD": true,
+    "Q_ALCOHOL_SERVED": true,
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased colonial building"
+    }
+  },
+  "site": {
+    "municipality": "San Juan",
+    "geo": "historic_zone_coastal"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN. (KB: RULE_0002, RULE_0620)"
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI). (KB: RULE_0003)"
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado). (KB: RULE_0651)"
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal). (KB: RULE_0004)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: a physical commercial premises (Q_PHYSICAL_LOCATION) -> Permiso Unico (Ley 161-2009). (KB: RULE_0007)"
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED -> Hacienda alcohol license. (KB: RULE_0013/0014)"
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "Restaurant prepares food -> Licencia Sanitaria. (KB: RULE_0009)"
+      },
+      {
+        "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
+        "confidence": "needs-expert-review",
+        "rationale": "Pin inside the Zona Histórica de San Juan: Ley 374-1949 Art. 1 requires the ICP's written recommendation before the use permit; RC-2023 Sec. 10.2.11.5 also lists signs and alcohol sales. (KB: RULE_0730)"
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "San Juan administers a delegation agreement (Jer. I-III, OE-2021-061): the municipal permits office evaluates the use permit.",
+        "agencyMatches": "munic"
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643/0644 need project_type new_construction / renovation."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "No construction: RULE_0708 needs construction-type work in the coastal zone."
+      },
+      {
+        "key": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the floodway."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "DOC_NET_METERING_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0611 needs Q_RENEWABLE_INSTALL=true."
+      },
+      {
+        "key": "process:PR_ENERGY_MICROGRID_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No microgrid stated: PT_MICROGRID needs microgrid_configuration=true."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-04 (KB gaps): historic-zone ICP review on a use permit (no construction) in an autonomous municipality."
+}

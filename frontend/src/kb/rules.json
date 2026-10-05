@@ -9307,6 +9307,905 @@
   ]
  },
  {
+  "id": "RULE_0730",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_ICP_HISTORIC_RECOMMENDATION",
+  "citation": "Ley Núm. 374 de 14 de mayo de 1949 (Ley de Zonas Históricas, Antiguas o de Interés Turístico), Art. 1 (23 L.P.R.A. § 161), según enmendada; Reglamento Conjunto 2023, Regla 10.2.11, Secs. 10.2.11.2 y 10.2.11.5",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Turismo/374-1949/374-1949.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "fact_key": "location.historic_zone.inside",
+  "trigger_summary": "The site is inside a historic zone on the Junta de Planificación map. Ley 374-1949 Art. 1 bars OGPe and the autonomous municipalities from issuing any construction or use permit in a historic zone without the Instituto de Cultura Puertorriqueña's prior written recommendation; RC-2023 Sec. 10.2.11.5 lists the recommendations (construction, use, demolition, signs, awnings, exterior paint, alcohol sales).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG14 / KG12: location.historic_zone was resolved at the pin but no rule consumed it. Primary-source check: Ley 374-1949 Art. 1 (official OGP compilation, rev. 2024-04-15) and RC-2023 Regla 10.2.11 (official OGPe PDF). Fires on use permits too, so no construction gate."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0731",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_SHPO_SECTION106_REVIEW",
+  "citation": "National Historic Preservation Act, Sec. 106 (54 U.S.C. § 306108); 36 C.F.R. Part 800 (Protection of Historic Properties)",
+  "citation_url": "https://www.ecfr.gov/current/title-36/chapter-VIII/part-800",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "fact_key": "location.historic_zone.inside",
+  "is_conditional": true,
+  "trigger_summary": "The site is inside a historic zone. If the project uses federal funds, needs a federal permit or holds a federal license, Section 106 of the National Historic Preservation Act requires the federal agency to consult the State Historic Preservation Office before approving it (36 CFR 800.3). Conditional: applies only to federal undertakings.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG14: the user asked for ICP / SHPO review for historic properties. The Section 106 duty is verified (36 CFR Part 800); whether a given project is a federal undertaking is a case fact, so the card is conditional."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0732",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+  "citation": "Reglamento de Planificación Núm. 13 (Octava Revisión, vigencia 9 de enero de 2021), Sec. 6.01 — desarrollos en el cauce mayor; 44 C.F.R. § 60.3(d)(3)",
+  "citation_url": "https://portaldeinundacion.jp.pr.gov/uploads/Documentos/Reglamento-Num-13-Octava-Revision-Vigencia-9-Enero-2021-1.pdf",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "fact_key": "location.flood_zone.floodway",
+  "any_of_facts": [
+   {
+    "fact_key": "project_type",
+    "expected_answer": "new_construction"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "renovation"
+   },
+   {
+    "fact_key": "project_type",
+    "expected_answer": "expansion"
+   },
+   {
+    "fact_key": "new_construction",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "expansion",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "structural_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "exterior_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "site_work",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "grading",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "excavation",
+    "expected_answer": "true"
+   },
+   {
+    "fact_key": "construction_approvals_required",
+    "expected_answer": "true"
+   }
+  ],
+  "trigger_summary": "Construction, fill or other development at a pin in the regulatory floodway (cauce mayor). Reg. 13 Sec. 6.01 prohibits encroachments there unless a hydrologic-hydraulic study evaluated by DRNA shows no rise in the base flood level, matching the NFIP floodway standard at 44 CFR 60.3(d)(3).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG37: the floodway rule (RULE_0707) produced only the general flood-zone review; the no-rise demonstration is a separate engineered deliverable (JP No-Rise Certificate, official docs.pr.gov PDF). Primary-source check: Reg. 13 (8th rev., 2021) Sec. 6.01; 44 CFR 60.3(d)(3)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0733",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_CONTROLLED_SUBSTANCES",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
+  "citation": "Ley Núm. 4 de 23 de junio de 1971 (Ley de Sustancias Controladas de Puerto Rico), Arts. 302–304 (24 L.P.R.A. §§ 2302–2304); Departamento de Salud, Formulario DS-DI-016",
+  "citation_url": "https://www.salud.pr.gov/CMS/DOWNLOAD/2563",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "excluded_business_types": [
+   "BT_MEDICAL_CANNABIS_DISPENSARY"
+  ],
+  "trigger_summary": "The business will store or dispense controlled substances. Ley 4-1971 Arts. 302–304 require every person who manufactures, distributes or dispenses controlled substances in Puerto Rico to hold a registration from the Secretario de Salud.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG08: pharmacy with controlled substances had no state controlled-substances registration. Primary-source check: Departamento de Salud form DS-DI-016 (salud.pr.gov) — the registration is issued by Salud's Controlled Substances Division (not ASSMCA)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0734",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_CONTROLLED_SUBSTANCES",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DEA_REGISTRATION",
+  "citation": "Controlled Substances Act, 21 U.S.C. §§ 822–823; 21 C.F.R. §§ 1301.11 and 1301.13",
+  "citation_url": "https://www.ecfr.gov/current/title-21/chapter-II/part-1301",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "excluded_business_types": [
+   "BT_MEDICAL_CANNABIS_DISPENSARY"
+  ],
+  "trigger_summary": "The business will store or dispense controlled substances. 21 U.S.C. § 822 and 21 CFR 1301.11 require every person who dispenses controlled substances to register with the DEA for each location; pharmacies file DEA Form 224 (21 CFR 1301.13).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG08: pharmacy with controlled substances had no DEA registration. Primary-source check: 21 CFR 1301.11 / 1301.13 (eCFR). Cannabis dispensaries are excluded — the DEA does not register state medical-cannabis dispensaries."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0735",
+  "rule_type": "business_type",
+  "business_type_id": "BT_MEDICAL_CANNABIS_DISPENSARY",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_CANNABIS_DISPENSARY_LICENSE",
+  "citation": "Ley Núm. 42-2017 (Ley para Manejar el Estudio, Desarrollo e Investigación del Cannabis para la Innovación, Normas Aplicables y Límites — Ley Medicinal), Arts. 2(m), 4 y 10; Formulario CM-D-01",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Sustancias/42-2017.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Medical cannabis dispensary. Ley 42-2017 Arts. 4 and 10 make the Junta Reglamentadora del Cannabis Medicinal the licensing authority and allow only licensed establishments to dispense medical cannabis.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG38: no business type or license for medical cannabis. Primary-source check: Ley 42-2017 (official OGP compilation) and the Junta's dispensary application form CM-D-01 (salud.pr.gov)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0736",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TELECOM_TOWER",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_TELECOM_TOWER_SITING",
+  "citation": "Ley Núm. 89 de 6 de junio de 2000 (Ley sobre la Ubicación de Torres de Telecomunicaciones), Arts. 5, 7 y 8; Reglamento Conjunto 2023",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Telecomunicaciones/89-2000.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Telecommunications tower. Ley 89-2000 sets siting rules every new tower must meet in its permit: setbacks (Art. 5), a sworn co-location statement (Art. 7) and notice to neighbors within 100 meters (Art. 8).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: no telecom business type or tower-siting rule. Primary-source check: Ley 89-2000 (official OGP compilation)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0737",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TELECOM_TOWER",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FAA_7460_NOTICE",
+  "citation": "14 C.F.R. § 77.9 (construction or alteration requiring notice)",
+  "citation_url": "https://www.ecfr.gov/current/title-14/chapter-I/subchapter-E/part-77",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "Telecommunications tower. 14 CFR 77.9 requires FAA notice for any structure more than 200 feet above ground level, and for shorter structures near airports that cross the notice slope. Conditional on the tower's height and location.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: a 250-foot tower needs FAA notice; the energy process graph models it only for energy facilities. Primary-source check: 14 CFR 77.9 (eCFR)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0738",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TELECOM_TOWER",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FCC_ASR",
+  "citation": "47 C.F.R. § 17.4 (antenna structure registration)",
+  "citation_url": "https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-17",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "Telecommunications tower. 47 CFR 17.4 requires the owner of an antenna structure that needs FAA notice to register it with the FCC. Conditional on the FAA notice applying.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: FCC antenna structure registration was missing. Primary-source check: 47 CFR 17.4 (eCFR)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0739",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TELECOM_TOWER",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_NET_TOWER_REGISTRY",
+  "citation": "Negociado de Telecomunicaciones de Puerto Rico — registro de torres de telecomunicaciones (orden administrativa); Ley Núm. 213-1996, según enmendada",
+  "citation_url": "https://wifi.jrtpr.pr.gov/towersapp/torres.aspx",
+  "citation_confidence": "review",
+  "citation_source": "review",
+  "verification": "heuristic",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Telecommunications tower. The Negociado de Telecomunicaciones runs a tower registry; whether entry is mandatory for every new tower comes from an administrative order, not a statute, and needs expert confirmation.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: the expectation names Negociado de Telecomunicaciones site registration. The official registry exists (wifi.jrtpr.pr.gov/towersapp), but the binding source (a 2006 administrative order) could not be retrieved; kept heuristic."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0740",
+  "rule_type": "business_type",
+  "business_type_id": "BT_WATER_SPORTS_RENTAL",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DRNA_VESSEL_REGISTRATION",
+  "citation": "Ley Núm. 430-2000 (Ley de Navegación y Seguridad Acuática de Puerto Rico), Art. 9 (12 L.P.R.A. § 1406)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2/0430-2000.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Water sports and watercraft rental. Ley 430-2000 Art. 9 requires every motorized vessel and jet ski used in Puerto Rico waters to be registered with the DRNA.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG25: no DRNA vessel documents. Primary-source check: Ley 430-2000 Art. 9 (official OGP compilation)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0741",
+  "rule_type": "business_type",
+  "business_type_id": "BT_WATER_SPORTS_RENTAL",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DRNA_BOAT_RENTAL_LICENSE",
+  "citation": "Ley Núm. 430-2000 (Ley de Navegación y Seguridad Acuática de Puerto Rico), Art. 9(6)(g); DRNA Formulario CP-10 (Solicitud de Licencia para Dueños de Bote de Alquiler)",
+  "citation_url": "https://www.drna.pr.gov/documentos/formularios/cp-10-solicitud-de-licencia-para-duenos-de-bote-de-alquiler/",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Water sports and watercraft rental. Ley 430-2000 Art. 9(6)(g) sets the duties of rental-vessel owners and the DRNA licenses them (form CP-10).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG25: no DRNA rental license. Primary-source check: Ley 430-2000 Art. 9(6)(g) and DRNA form CP-10 (drna.pr.gov)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0742",
+  "rule_type": "business_type",
+  "business_type_id": "BT_WATER_SPORTS_RENTAL",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DRNA_MARITIME_CONCESSION",
+  "citation": "Reglamento Núm. 4860 (Reglamento para el Aprovechamiento, Vigilancia, Conservación y Administración de las Aguas Territoriales, los Terrenos Sumergidos bajo éstas y la Zona Marítimo-Terrestre), Arts. 4.1–4.3; Ley Núm. 23 de 20 de junio de 1972, Art. 5(h)",
+  "citation_url": "https://www.drna.pr.gov/wp-content/uploads/2015/10/REGLAMENTO-4860-Version-Completa-y-enmiendas-Agosto-2015.pdf",
+  "citation_confidence": "regulation",
+  "citation_source": "review",
+  "verification": "heuristic",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Water sports rental operating from the shore or a dock: a DRNA concession or authorization is required if the business places structures or runs its commercial activity on the maritime-terrestrial zone or submerged lands (Reg. 4860 Arts. 4.1–4.3). A kiosk on private land inside a licensed marina may not need its own concession.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG25: operating from marine waters may need a DRNA concession. Whether a renter operating from a third-party marina needs its own authorization depends on the site; heuristic and conditional."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0743",
+  "rule_type": "business_type",
+  "business_type_id": "BT_MARINA",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DRNA_MARITIME_CONCESSION",
+  "citation": "Reglamento Núm. 4860 (Reglamento para el Aprovechamiento, Vigilancia, Conservación y Administración de las Aguas Territoriales, los Terrenos Sumergidos bajo éstas y la Zona Marítimo-Terrestre), Arts. 4.1–4.3; Ley Núm. 23 de 20 de junio de 1972, Art. 5(h)",
+  "citation_url": "https://www.drna.pr.gov/wp-content/uploads/2015/10/REGLAMENTO-4860-Version-Completa-y-enmiendas-Agosto-2015.pdf",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Marina or boat-dock operator. Docks, piers and slips over submerged lands and the maritime-terrestrial zone are public-domain uses that need a DRNA concession or authorization (Reg. 4860 Arts. 4.1–4.3).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "New marina scenario: no submerged-lands franchise / ZMT authorization in the KB. Primary-source check: DRNA Reg. 4860 (drna.pr.gov)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0744",
+  "rule_type": "business_type",
+  "business_type_id": "BT_MARINA",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_USACE_SECTION10",
+  "citation": "Rivers and Harbors Act of 1899, Sec. 10 (33 U.S.C. § 403); 33 C.F.R. Part 322",
+  "citation_url": "https://www.ecfr.gov/current/title-33/chapter-II/part-322",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Marina or boat-dock operator. Section 10 of the Rivers and Harbors Act requires a Corps of Engineers permit for docks, piers and other structures in navigable waters (33 CFR Part 322).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "New marina scenario: federal Section 10 permit for docks. Primary-source check: 33 U.S.C. 403 / 33 CFR 322 (eCFR)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0745",
+  "rule_type": "question_trigger",
+  "business_type_id": null,
+  "question_id": "Q_WATER_ACTIVITIES",
+  "expected_answer": "true",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DRNA_VESSEL_REGISTRATION",
+  "citation": "Ley Núm. 430-2000 (Ley de Navegación y Seguridad Acuática de Puerto Rico), Art. 9 (12 L.P.R.A. § 1406)",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/2/0430-2000.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "review",
+  "verification": "heuristic",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "excluded_business_types": [
+   "BT_WATER_SPORTS_RENTAL"
+  ],
+  "trigger_summary": "EXPERT VALIDATION NEEDED — The business offers water-based activities. If it operates its own motorized vessels or jet skis, each must be registered with the DRNA (Ley 430-2000 Art. 9); activities that use a third party's boats or no motorized craft do not.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "Generalizes the KG25 finding to tour operators and other businesses that answer the water-activities question. Heuristic: the answer does not say whether the business owns the vessels."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0746",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TEXTILE_RECYCLING",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT",
+  "citation": "Ley Núm. 70 de 18 de septiembre de 1992 (Ley para la Reducción y el Reciclaje de Desperdicios Sólidos), según enmendada; Reglamento para la Reducción, Reutilización y el Reciclaje de los Desperdicios Sólidos en Puerto Rico, Cap. VIII, Reglas 2 y 4",
+  "citation_url": "https://www.drna.pr.gov/wp-content/uploads/2019/09/ReglamentoReciclaje.pdf",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Textile recycling and materials-recovery facility. The recycling regulation (Cap. VIII, Reglas 2 and 4) bars any recycling facility from operating without the DRNA's endorsement, valid for two years.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG19: no recycling-facility authorization in the KB. Primary-source check: Reglamento para la Reducción, Reutilización y el Reciclaje (drna.pr.gov), adopted under Ley 70-1992."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0747",
+  "rule_type": "business_type",
+  "business_type_id": "BT_TEXTILE_RECYCLING",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_SAM_REGISTRATION",
+  "citation": "GSA: SAM.gov entity registration is required to receive federal grants and contracts (2 C.F.R. § 25.200; FAR 52.204-7)",
+  "citation_url": "https://www.gsa.gov/sell-to-government/step-3-manage-your-contract/comply-with-contractual-requirements",
+  "citation_confidence": "official",
+  "citation_source": "review",
+  "verification": "heuristic",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "negated_fact_keys": [
+   "Q_FEDERAL_CONTRACTS_GRANTS"
+  ],
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Textile recycler: SAM.gov registration is needed only to apply for federal recycling grants (for example EPA solid-waste infrastructure grants) or to sell to the federal government. A No to the federal-contracts question removes it.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG19 (Darius / Rosa intake): textile recyclers commonly register in SAM.gov for federal recycling grants. Heuristic and conditional — the legal trigger is the federal award, not the business type."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0748",
+  "rule_type": "business_type",
+  "business_type_id": "BT_FOOD_MANUFACTURING",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FDA_FOOD_FACILITY_REGISTRATION",
+  "citation": "FD&C Act § 415 (21 U.S.C. § 350d); 21 C.F.R. § 1.225 — domestic facilities that manufacture, process, pack or hold food for U.S. consumption must register with FDA",
+  "citation_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-1/subpart-H",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Food manufacturing. FD&C Act § 415 and 21 CFR 1.225 require every domestic facility that manufactures or processes food for U.S. consumption, Puerto Rico included, to register with FDA and renew every two years.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG18: food manufacturing had no FDA facility registration (only beverage manufacturing did). Primary-source check: 21 CFR 1.225 (eCFR)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0749",
+  "rule_type": "business_type",
+  "business_type_id": "BT_FOOD_MANUFACTURING",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_NPDES_INDUSTRIAL_STORMWATER",
+  "citation": "Clean Water Act § 402(p); 40 C.F.R. § 122.26(b)(14)(xi) (SIC 20, food and kindred products) and § 122.26(g) (no-exposure exclusion); EPA Multi-Sector General Permit, which EPA administers in Puerto Rico",
+  "citation_url": "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-D/part-122/subpart-B/section-122.26",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Food manufacturing (SIC 20) is a regulated industrial-stormwater category under 40 CFR 122.26(b)(14)(xi): the facility needs EPA Multi-Sector General Permit coverage, or must certify no exposure under § 122.26(g).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG18: food manufacturing had no industrial-stormwater requirement. Primary-source check: 40 CFR 122.26 (eCFR)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0750",
+  "rule_type": "business_type",
+  "business_type_id": "BT_BODY_SHOP",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_AIR_PERMIT",
+  "citation": "Reglamento para el Control de la Contaminación Atmosférica (DRNA), Reglas 201 y 203 — location and construction permits for emission sources; Ley 416-2004",
+  "citation_url": "https://www.drna.pr.gov/acai/permisos/",
+  "citation_confidence": "regulation",
+  "citation_source": "review",
+  "verification": "heuristic",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "missing_fact_keys": [
+   "air_emissions"
+  ],
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Body shop with a paint booth: spray painting emits volatile organic compounds and particulates. Whether the shop needs a DRNA air permit or qualifies as an exempt minor source depends on its paint and solvent use.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG40: a spray paint booth is an air-emission source. Kept heuristic: the RCAP permit trigger is the shop's actual emissions, not the business type."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0751",
+  "rule_type": "business_type",
+  "business_type_id": "BT_BODY_SHOP",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_EPA_AUTOBODY_NESHAP_NOTICE",
+  "citation": "40 C.F.R. Part 63, Subpart HHHHHH (National Emission Standards for Paint Stripping and Miscellaneous Surface Coating at Area Sources), §§ 63.11169, 63.11173 and 63.11175",
+  "citation_url": "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-C/part-63/subpart-HHHHHH",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "verify_existing",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "Body shop. 40 CFR 63 Subpart HHHHHH covers every area-source shop that spray-applies coatings to motor vehicles (§ 63.11169): a filtered booth, high-efficiency spray guns, trained painters, and an initial notification to EPA.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG40: no federal auto-body paint-booth requirement. Primary-source check: 40 CFR 63.11169 / 63.11175 (eCFR)."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0752",
+  "rule_type": "business_type",
+  "business_type_id": "BT_BODY_SHOP",
+  "question_id": null,
+  "expected_answer": null,
+  "municipality_flag": null,
+  "requires_document_id": "DOC_EPA_HAZARDOUS_WASTE_ID",
+  "citation": "RCRA, 40 C.F.R. § 262.18 — small- and large-quantity generators must obtain an EPA identification number (EPA Form 8700-12); Ley 70-1992",
+  "citation_url": "https://www.epa.gov/hwgenerators/hazardous-waste-generator-regulatory-summary",
+  "citation_confidence": "regulation",
+  "citation_source": "review",
+  "verification": "heuristic",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "missing_fact_keys": [
+   "hazardous_waste_generation"
+  ],
+  "trigger_summary": "EXPERT VALIDATION NEEDED — Body shop: waste paint, thinners and spray-gun cleaning solvents are often ignitable or listed hazardous waste. An EPA ID is needed only if the shop generates more than 100 kg of hazardous waste in a month.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG40: paint and solvent waste triggers the RCRA generator ID question. Heuristic: 40 CFR 262.18 requires the ID only for small- and large-quantity generators."
+   }
+  ]
+ },
+ {
+  "id": "RULE_0753",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "tower",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_TELECOM_TOWER_SITING",
+  "citation": "Ley Núm. 89 de 6 de junio de 2000 (Ley sobre la Ubicación de Torres de Telecomunicaciones), Arts. 5, 7 y 8; Reglamento Conjunto 2023",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Telecomunicaciones/89-2000.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "The project is a telecommunications tower. Ley 89-2000 sets siting rules every new tower must meet in its permit: setbacks (Art. 5), a sworn co-location statement (Art. 7) and notice to neighbors within 100 meters (Art. 8).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: no telecom business type or tower-siting rule. Primary-source check: Ley 89-2000 (official OGP compilation). Project-fact twin of RULE_0736: a tower can be filed as a property project with no business (project-only intake), so the proposed use triggers it too."
+   }
+  ],
+  "fact_key": "proposed_use",
+  "any_of_facts": [
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "communication"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "telecom"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "cell"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "antenna"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "wireless"
+   }
+  ]
+ },
+ {
+  "id": "RULE_0754",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "torre",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_TELECOM_TOWER_SITING",
+  "citation": "Ley Núm. 89 de 6 de junio de 2000 (Ley sobre la Ubicación de Torres de Telecomunicaciones), Arts. 5, 7 y 8; Reglamento Conjunto 2023",
+  "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Telecomunicaciones/89-2000.pdf",
+  "citation_confidence": "statute",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "trigger_summary": "The project is a telecommunications tower. Ley 89-2000 sets siting rules every new tower must meet in its permit: setbacks (Art. 5), a sworn co-location statement (Art. 7) and notice to neighbors within 100 meters (Art. 8).",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: no telecom business type or tower-siting rule. Primary-source check: Ley 89-2000 (official OGP compilation). Project-fact twin of RULE_0736: a tower can be filed as a property project with no business (project-only intake), so the proposed use triggers it too."
+   }
+  ],
+  "fact_key": "proposed_use",
+  "any_of_facts": [
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "comunicaci"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "telecomunicaci"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "celular"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "antena"
+   }
+  ]
+ },
+ {
+  "id": "RULE_0755",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "tower",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FAA_7460_NOTICE",
+  "citation": "14 C.F.R. § 77.9 (construction or alteration requiring notice)",
+  "citation_url": "https://www.ecfr.gov/current/title-14/chapter-I/subchapter-E/part-77",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "The project is a telecommunications tower. 14 CFR 77.9 requires FAA notice for any structure more than 200 feet above ground level, and for shorter structures near airports that cross the notice slope. Conditional on the tower's height and location.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: a 250-foot tower needs FAA notice; the energy process graph models it only for energy facilities. Primary-source check: 14 CFR 77.9 (eCFR). Project-fact twin of RULE_0737: a tower can be filed as a property project with no business (project-only intake), so the proposed use triggers it too."
+   }
+  ],
+  "fact_key": "proposed_use",
+  "any_of_facts": [
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "communication"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "telecom"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "cell"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "antenna"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "wireless"
+   }
+  ]
+ },
+ {
+  "id": "RULE_0756",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "torre",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FAA_7460_NOTICE",
+  "citation": "14 C.F.R. § 77.9 (construction or alteration requiring notice)",
+  "citation_url": "https://www.ecfr.gov/current/title-14/chapter-I/subchapter-E/part-77",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "The project is a telecommunications tower. 14 CFR 77.9 requires FAA notice for any structure more than 200 feet above ground level, and for shorter structures near airports that cross the notice slope. Conditional on the tower's height and location.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: a 250-foot tower needs FAA notice; the energy process graph models it only for energy facilities. Primary-source check: 14 CFR 77.9 (eCFR). Project-fact twin of RULE_0737: a tower can be filed as a property project with no business (project-only intake), so the proposed use triggers it too."
+   }
+  ],
+  "fact_key": "proposed_use",
+  "any_of_facts": [
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "comunicaci"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "telecomunicaci"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "celular"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "antena"
+   }
+  ]
+ },
+ {
+  "id": "RULE_0757",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "tower",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FCC_ASR",
+  "citation": "47 C.F.R. § 17.4 (antenna structure registration)",
+  "citation_url": "https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-17",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "The project is a telecommunications tower. 47 CFR 17.4 requires the owner of an antenna structure that needs FAA notice to register it with the FCC. Conditional on the FAA notice applying.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: FCC antenna structure registration was missing. Primary-source check: 47 CFR 17.4 (eCFR). Project-fact twin of RULE_0738: a tower can be filed as a property project with no business (project-only intake), so the proposed use triggers it too."
+   }
+  ],
+  "fact_key": "proposed_use",
+  "any_of_facts": [
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "communication"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "telecom"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "cell"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "antenna"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "wireless"
+   }
+  ]
+ },
+ {
+  "id": "RULE_0758",
+  "rule_type": "project_fact",
+  "business_type_id": null,
+  "question_id": null,
+  "expected_answer": "torre",
+  "municipality_flag": null,
+  "requires_document_id": "DOC_FCC_ASR",
+  "citation": "47 C.F.R. § 17.4 (antenna structure registration)",
+  "citation_url": "https://www.ecfr.gov/current/title-47/chapter-I/subchapter-A/part-17",
+  "citation_confidence": "regulation",
+  "citation_source": "rule",
+  "verification": "verified",
+  "compliance_mode": "new_application",
+  "reviewed_at": "2026-10-04",
+  "is_conditional": true,
+  "trigger_summary": "The project is a telecommunications tower. 47 CFR 17.4 requires the owner of an antenna structure that needs FAA notice to register it with the FCC. Conditional on the FAA notice applying.",
+  "change_log": [
+   {
+    "date": "2026-10-04",
+    "change": "rule added (REG-KB-GAPS-001, KG scenario suite)",
+    "reason": "KG27: FCC antenna structure registration was missing. Primary-source check: 47 CFR 17.4 (eCFR). Project-fact twin of RULE_0738: a tower can be filed as a property project with no business (project-only intake), so the proposed use triggers it too."
+   }
+  ],
+  "fact_key": "proposed_use",
+  "any_of_facts": [
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "comunicaci"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "telecomunicaci"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "celular"
+   },
+   {
+    "fact_key": "proposed_use",
+    "expected_answer": "antena"
+   }
+  ]
+ },
+ {
   "id": "RULE_0713",
   "rule_type": "business_type",
   "business_type_id": "BT_BEAUTY_SALON",

@@ -8,7 +8,7 @@
   },
   "description": "We are starting a water sports company in Fajardo renting kayaks and jet skis and offering snorkel tours from a small leased kiosk at the marina. No construction.",
   "profile": {
-    "business_type": "Tour Operator",
+    "business_type": "Water Sports & Watercraft Rental",
     "municipality": "Fajardo",
     "location_type": "Retail Storefront",
     "number_of_employees": 5,
@@ -64,9 +64,14 @@
         "rationale": "Tour operator in a tourism municipio: Compania de Turismo tour-operator endorsement. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]"
       },
       {
-        "key": "gap:drna_vessel_and_concession",
+        "key": "DOC_DRNA_VESSEL_REGISTRATION",
         "confidence": "needs-expert-review",
-        "rationale": "Renting jet skis/kayaks needs DRNA vessel registration and the Navigation and Aquatic Safety Law (Ley 430-2000) rental-operator permit; operating from marine waters may need a DRNA concession. No KB documents cover these."
+        "rationale": "Ley 430-2000 Art. 9: each jet ski and motorized vessel is registered with the DRNA. (KB: RULE_0740)"
+      },
+      {
+        "key": "DOC_DRNA_BOAT_RENTAL_LICENSE",
+        "confidence": "needs-expert-review",
+        "rationale": "Ley 430-2000 Art. 9(6)(g) and DRNA form CP-10: rental-vessel owners are licensed by the DRNA. (KB: RULE_0741)"
       }
     ],
     "mustNotInclude": [
@@ -112,5 +117,6 @@
       }
     ],
     "ordering": []
-  }
+  },
+  "notes": "2026-10-04: profile moved from the Tour Operator proxy to the new Water Sports & Watercraft Rental business type. DOC_TOURISM_REGISTRATION stays an expert call (no KB rule ties a tourism endorsement to water-sports rental)."
 }

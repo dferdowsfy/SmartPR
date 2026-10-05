@@ -100,6 +100,17 @@
       "historic": "Zona Histórica de Ponce",
       "protected": null
     },
+    "historic_zone_coastal": {
+      "label": "JP historic zone inside the coastal zone (Viejo San Juan), FEMA zone X",
+      "description": "Lot inside a JP-designated historic zone (Zona Histórica de San Juan) and inside the official coastal zone, on high ground (zone X), traditional urban center zoning.",
+      "fema": { "FLD_ZONE": "X", "ZONE_SUBTY": "AREA OF MINIMAL FLOOD HAZARD", "SFHA_TF": "F", "DFIRM_ID": "72000C" },
+      "advisory": null,
+      "jp": { "num_catast": "040-050-060-09", "cali": "CUT", "descrip": "Centro Urbano Tradicional", "clasi": "SU", "descrip1": "Suelo Urbano", "vigencia": "27-DIC-2024" },
+      "crim": { "NUM_CATASTRO": "040-050-060-09", "TIPO": "P" },
+      "coastal": "inside",
+      "historic": "Zona Histórica de San Juan",
+      "protected": null
+    },
     "rural_srep_agricultural": {
       "label": "Rural SREP-A (specially protected agricultural land), zone X",
       "description": "Rural lot on Suelo Rústico Especialmente Protegido - Agrícola with agricultural zoning (A-P), zone X, inland.",

@@ -1,10 +1,10 @@
 {
   "summary": {
-    "scenarios": 40,
-    "pass": 23,
-    "fail": 17,
-    "expectations": 617,
-    "verified": 571,
+    "scenarios": 44,
+    "pass": 37,
+    "fail": 7,
+    "expectations": 680,
+    "verified": 618,
     "lint": []
   },
   "results": [
@@ -38,7 +38,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Caguas"
         },
         {
           "key": "DOC_HEALTH_PERMIT",
@@ -475,7 +475,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_HEALTH_PERMIT",
@@ -587,7 +587,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de San Juan"
         },
         {
           "key": "DOC_PROFESSIONAL_LICENSE",
@@ -764,7 +764,7 @@
         "projectType": "expansion",
         "locationContext": "flood_ae"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -779,7 +779,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 1,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Bayamón"
         },
         {
           "key": "DOC_PROPERTY_DEED",
@@ -807,7 +807,7 @@
           "group": "registrations",
           "applicability": "verify_existing",
           "position": 5,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Bayamón"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -859,18 +859,7 @@
       ],
       "discardedModelFacts": [],
       "testName": "KG07 kg-scenario: retail_store / expansion / flood_ae",
-      "findingsClassified": [
-        {
-          "kind": "agency",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
-          "confidence": "needs-expert-review",
-          "rationale": "Bayamón is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Bayamón's current delegation level.",
-          "cause": "kb-gap",
-          "note": "Bayamon permits office not modeled (surfaced once the expansion permit started rendering).",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG08",
@@ -880,7 +869,7 @@
         "projectType": "new_business_existing_building",
         "locationContext": "urban_zone_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -902,7 +891,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos Urbanísticos — Municipio Autónomo de Guaynabo"
         },
         {
           "key": "DOC_PROFESSIONAL_LICENSE",
@@ -940,31 +929,45 @@
           "agency": "Department of State"
         },
         {
-          "key": "DOC_PHARMACY_PERMIT",
+          "key": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
           "group": "required_now",
           "applicability": "required",
           "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PHARMACY_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
           "agency": "Departamento de Salud (Secretario de Salud)"
         },
         {
           "key": "DOC_HEALTH_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 9,
+          "position": 10,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 10,
+          "position": 11,
           "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_DEA_REGISTRATION",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "U.S. Drug Enforcement Administration (DEA)"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 11,
+          "position": 13,
           "agency": "Property Owner"
         }
       ],
@@ -973,18 +976,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG08 kg-scenario: pharmacy / new_business_existing_building / urban_zone_x",
-      "findingsClassified": [
-        {
-          "kind": "gap",
-          "key": "gap:pharmacy_controlled_substance_registrations",
-          "message": "KB gap: no requirement models gap:pharmacy_controlled_substance_registrations",
-          "confidence": "needs-expert-review",
-          "rationale": "A PR pharmacy needs a Salud pharmacy-establishment license (Ley 247-2004), a PR controlled-substances registration (Ley 4-1971) and a DEA registration; the KB only has a generic DOC_PROFESSIONAL_LICENSE.",
-          "cause": "kb-gap",
-          "note": "No PR controlled-substances / DEA registration documents.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG09",
@@ -1051,7 +1043,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 7,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
@@ -1121,7 +1113,7 @@
           "group": "prerequisites",
           "applicability": "required",
           "position": 17,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -1298,7 +1290,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_WORKERS_COMP",
@@ -1387,7 +1379,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_HEALTH_PERMIT",
@@ -1460,52 +1452,66 @@
           "agency": "Department of the Treasury (Hacienda)"
         },
         {
+          "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Instituto de Cultura Puertorriqueña (ICP)"
+        },
+        {
           "key": "DOC_CFPM",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 13,
+          "position": 14,
           "agency": "Departamento de Salud"
         },
         {
           "key": "DOC_ENTERTAINMENT_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 14,
+          "position": 15,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_ALCOHOL_SALES_PROJECTION",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 15,
+          "position": 16,
           "agency": "Department of the Treasury (Hacienda)"
         },
         {
           "key": "DOC_NOISE_VARIANCE",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 16,
+          "position": 17,
           "agency": "DRNA + Municipal Permits Office"
+        },
+        {
+          "key": "DOC_SHPO_SECTION106_REVIEW",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 18,
+          "agency": "Oficina Estatal de Conservación Histórica (SHPO)"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 17,
+          "position": 19,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_ALCOHOL_LICENSE",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 18,
+          "position": 20,
           "agency": "Departamento de Hacienda"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 19,
+          "position": 21,
           "agency": "Property Owner"
         }
       ],
@@ -1664,7 +1670,7 @@
         "projectType": "renovation",
         "locationContext": "historic_zone"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -1728,7 +1734,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 8,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
@@ -1745,31 +1751,45 @@
           "agency": "Department of State"
         },
         {
+          "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Instituto de Cultura Puertorriqueña (ICP)"
+        },
+        {
+          "key": "DOC_SHPO_SECTION106_REVIEW",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 12,
+          "agency": "Oficina Estatal de Conservación Histórica (SHPO)"
+        },
+        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 11,
+          "position": 13,
           "agency": "Property Owner"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 12,
-          "agency": "OGPe"
+          "position": 14,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 13,
+          "position": 15,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_PROPERTY_DEED",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 14,
+          "position": 16,
           "agency": "Property Registry"
         }
       ],
@@ -1780,18 +1800,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG14 kg-scenario: guesthouse / renovation / historic_zone",
-      "findingsClassified": [
-        {
-          "kind": "gap",
-          "key": "gap:historic_zone_review",
-          "message": "KB gap: no requirement models gap:historic_zone_review",
-          "confidence": "needs-expert-review",
-          "rationale": "Exterior work in a JP historic zone needs ICP (Instituto de Cultura Puertorriquena) endorsement / historic-zone review (Reglamento de Planificacion 5; Ley 89-1955). The historic_zone layer is resolved at the pin but no KB rule or document consumes location.historic_zone.",
-          "cause": "kb-gap",
-          "note": "location.historic_zone is resolved but no rule/document consumes it (ICP review).",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG15",
@@ -1905,7 +1914,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Bayamón"
         },
         {
           "key": "DOC_WORKERS_COMP",
@@ -2197,31 +2206,45 @@
           "agency": "OGPe / Junta de Planificación"
         },
         {
+          "key": "DOC_FDA_FOOD_FACILITY_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "U.S. FDA"
+        },
+        {
+          "key": "DOC_NPDES_INDUSTRIAL_STORMWATER",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "U.S. EPA / DRNA"
+        },
+        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 11,
+          "position": 13,
           "agency": "Property Owner"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 12,
+          "position": 14,
           "agency": "OGPe"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 13,
+          "position": 15,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_PROPERTY_DEED",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 14,
+          "position": 16,
           "agency": "Property Registry"
         }
       ],
@@ -2233,26 +2256,6 @@
       "discardedModelFacts": [],
       "testName": "KG18 kg-scenario: manufacturing / new_construction / rural_srep_agricultural",
       "findingsClassified": [
-        {
-          "kind": "missing",
-          "key": "DOC_FDA_FOOD_FACILITY_REGISTRATION",
-          "message": "missing DOC_FDA_FOOD_FACILITY_REGISTRATION",
-          "confidence": "needs-expert-review",
-          "rationale": "A facility that manufactures food for US commerce registers with FDA (21 CFR 1.225, FD&C Act s.415).",
-          "cause": "kb-gap",
-          "note": "Document exists in the KB but no rule attaches it to Food Manufacturing.",
-          "triaged": true
-        },
-        {
-          "kind": "missing",
-          "key": "DOC_NPDES_INDUSTRIAL_STORMWATER",
-          "message": "missing DOC_NPDES_INDUSTRIAL_STORMWATER",
-          "confidence": "needs-expert-review",
-          "rationale": "New industrial facility: EPA NPDES Multi-Sector General Permit for industrial stormwater (PR is EPA-administered).",
-          "cause": "kb-gap",
-          "note": "Document exists but no rule attaches it to a new food plant (expert to confirm MSGP sector applicability).",
-          "triaged": true
-        },
         {
           "kind": "ordering",
           "key": "DOC_CONSULTA_UBICACION<DOC_OGPE_CONSTRUCTION_PERMIT",
@@ -2273,7 +2276,7 @@
         "projectType": "change_of_use",
         "locationContext": "urban_industrial_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -2333,17 +2336,31 @@
           "agency": "Department of State"
         },
         {
+          "key": "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "DRNA — Área de Control de Contaminación de Terrenos (antigua Autoridad de Desperdicios Sólidos)"
+        },
+        {
+          "key": "DOC_SAM_REGISTRATION",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 9,
+          "agency": "System for Award Management (SAM.gov)"
+        },
+        {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 8,
+          "position": 10,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 9,
+          "position": 11,
           "agency": "Property Owner"
         }
       ],
@@ -2352,28 +2369,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG19 kg-scenario: textile_recycler / change_of_use / urban_industrial_x",
-      "findingsClassified": [
-        {
-          "kind": "missing",
-          "key": "DOC_SAM_REGISTRATION",
-          "message": "missing DOC_SAM_REGISTRATION",
-          "confidence": "needs-expert-review",
-          "rationale": "Darius / Rosa intake: textile recyclers register in SAM.gov for federal recycling grants and DACO marketplace programs; the KB has BT_TEXTILE_RECYCLING but no business_type rules attach it.",
-          "cause": "kb-gap",
-          "note": "BT_TEXTILE_RECYCLING exists but no business_type rule attaches any document to it (SAM only fires via Q_FEDERAL_CONTRACTS_GRANTS); expert to confirm SAM is expected without federal funding.",
-          "triaged": true
-        },
-        {
-          "kind": "gap",
-          "key": "gap:recycling_facility_authorization",
-          "message": "KB gap: no requirement models gap:recycling_facility_authorization",
-          "confidence": "needs-expert-review",
-          "rationale": "A materials-recovery / recycling facility needs DRNA solid-waste authorization (Reglamento 5717, Ley 70-1992 recycling law) and recycler registration; no KB document exists for it.",
-          "cause": "kb-gap",
-          "note": "No DRNA solid-waste / recycler authorization document.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG20",
@@ -2447,7 +2443,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 8,
-          "agency": "OGPe / Municipality"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
         },
         {
           "key": "DOC_VEHICLE_REGISTRATION",
@@ -2508,7 +2504,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 3,
-          "agency": "OGPe / Municipality"
+          "agency": "Oficina de Permisos Urbanísticos — Municipio Autónomo de Guaynabo"
         },
         {
           "key": "DOC_EIN",
@@ -2616,7 +2612,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 3,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de San Juan"
         },
         {
           "key": "DOC_SAM_REGISTRATION",
@@ -2854,7 +2850,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Fajardo"
         },
         {
           "key": "DOC_WORKERS_COMP",
@@ -2885,17 +2881,38 @@
           "agency": "Department of State"
         },
         {
+          "key": "DOC_DRNA_VESSEL_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "DRNA — Cuerpo de Vigilantes / Comisionado de Navegación"
+        },
+        {
+          "key": "DOC_DRNA_MARITIME_CONCESSION",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 8,
+          "agency": "DRNA"
+        },
+        {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 7,
+          "position": 9,
           "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_DRNA_BOAT_RENTAL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "DRNA — Cuerpo de Vigilantes / Comisionado de Navegación"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 8,
+          "position": 11,
           "agency": "Property Owner"
         }
       ],
@@ -2913,16 +2930,6 @@
           "rationale": "Tour operator in a tourism municipio: Compania de Turismo tour-operator endorsement. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]",
           "cause": "likely-wrong-expectation",
           "note": "No KB rule covers Tour Operator; whether a water-sports rental operator must register with Turismo (vs. voluntary endorsement) is an expert call.",
-          "triaged": true
-        },
-        {
-          "kind": "gap",
-          "key": "gap:drna_vessel_and_concession",
-          "message": "KB gap: no requirement models gap:drna_vessel_and_concession",
-          "confidence": "needs-expert-review",
-          "rationale": "Renting jet skis/kayaks needs DRNA vessel registration and the Navigation and Aquatic Safety Law (Ley 430-2000) rental-operator permit; operating from marine waters may need a DRNA concession. No KB documents cover these.",
-          "cause": "kb-gap",
-          "note": "No DRNA vessel / rental-operator / concession documents.",
           "triaged": true
         }
       ]
@@ -3068,7 +3075,7 @@
         "projectType": "new_construction",
         "locationContext": "rural_src"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -3079,10 +3086,31 @@
           "agency": "OGPe"
         },
         {
+          "key": "DOC_TELECOM_TOWER_SITING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_FAA_7460_NOTICE",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 2,
+          "agency": "Federal Aviation Administration (FAA)"
+        },
+        {
+          "key": "DOC_FCC_ASR",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 3,
+          "agency": "Federal Communications Commission (FCC)"
+        },
+        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 1,
+          "position": 4,
           "agency": "Property Owner"
         }
       ],
@@ -3091,28 +3119,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG27 kg-scenario: telecom_tower / new_construction / rural_src",
-      "findingsClassified": [
-        {
-          "kind": "missing",
-          "key": "process:PR_FAA_OBSTRUCTION_NOTICE",
-          "message": "missing process:PR_FAA_OBSTRUCTION_NOTICE",
-          "confidence": "needs-expert-review",
-          "rationale": "A 250 ft structure exceeds 200 ft AGL, so FAA Form 7460-1 notice is required (14 CFR 77.9(a)); the process graph models this notice only for energy facilities.",
-          "cause": "kb-gap",
-          "note": "FAA 7460-1 is modeled only inside the energy process graph; non-energy tall structures never get it.",
-          "triaged": true
-        },
-        {
-          "kind": "gap",
-          "key": "gap:telecom_siting",
-          "message": "KB gap: no requirement models gap:telecom_siting",
-          "confidence": "needs-expert-review",
-          "rationale": "Telecom towers need JRT (Negociado de Telecomunicaciones) site registration, OGPe tower consulta under Ley 89-2000 / RC-2023 and FCC ASR/NEPA review; no KB business type or documents cover telecom.",
-          "cause": "kb-gap",
-          "note": "No telecom business type, JRT registration or tower siting rule.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG28",
@@ -3186,7 +3193,7 @@
           "group": "registrations",
           "applicability": "verify_existing",
           "position": 8,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos Urbanísticos — Municipio Autónomo de Guaynabo"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -3312,7 +3319,7 @@
           "group": "registrations",
           "applicability": "verify_existing",
           "position": 7,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Caguas"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -3791,10 +3798,17 @@
           "agency": "LUMA / OGPe"
         },
         {
+          "key": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "DRNA / Junta de Planificación"
+        },
+        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 12,
+          "position": 13,
           "agency": "Property Owner"
         }
       ],
@@ -3816,7 +3830,7 @@
         "projectType": "new_construction",
         "locationContext": "road_pin_residential"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -3873,7 +3887,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 7,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Bayamón"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
@@ -3901,7 +3915,7 @@
           "group": "prerequisites",
           "applicability": "required",
           "position": 11,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Bayamón"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -3925,18 +3939,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG34 kg-scenario: cafe_no_alcohol / new_construction / road_pin_residential",
-      "findingsClassified": [
-        {
-          "kind": "agency",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
-          "confidence": "needs-expert-review",
-          "rationale": "Bayamón is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Bayamón's current delegation level.",
-          "cause": "kb-gap",
-          "note": "No autonomous-municipality model: the card always says OGPe even in Bayamon (municipal Oficina de Permisos with delegated jerarquia). Expert to confirm delegation levels.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG35",
@@ -4024,7 +4027,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 10,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de San Juan"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
@@ -4073,7 +4076,7 @@
           "group": "prerequisites",
           "applicability": "required",
           "position": 17,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de San Juan"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -4103,16 +4106,6 @@
       "discardedModelFacts": [],
       "testName": "KG35 kg-scenario: restaurant_with_alcohol / renovation / water_pin",
       "findingsClassified": [
-        {
-          "kind": "agency",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
-          "confidence": "needs-expert-review",
-          "rationale": "San Juan is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm San Juan's current delegation level.",
-          "cause": "kb-gap",
-          "note": "Same: San Juan permits office not modeled.",
-          "triaged": true
-        },
         {
           "kind": "unexpected",
           "key": "DOC_JP_FLOOD_REG13",
@@ -4215,7 +4208,7 @@
         "projectType": "new_construction",
         "locationContext": "floodway"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -4317,10 +4310,17 @@
           "agency": "Municipal Government"
         },
         {
+          "key": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 14,
+          "agency": "DRNA / Junta de Planificación"
+        },
+        {
           "key": "DOC_PROPERTY_DEED",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 14,
+          "position": 15,
           "agency": "Property Registry"
         }
       ],
@@ -4331,18 +4331,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG37 kg-scenario: medical_office / new_construction / floodway",
-      "findingsClassified": [
-        {
-          "kind": "gap",
-          "key": "gap:floodway_no_rise_certification",
-          "message": "KB gap: no requirement models gap:floodway_no_rise_certification",
-          "confidence": "needs-expert-review",
-          "rationale": "New construction in a regulatory floodway is prohibited unless a no-rise (encroachment) certification is approved (44 CFR 60.3(d)(3); Reg. 13 s.7); the card should state this, not just 'flood review'.",
-          "cause": "kb-gap",
-          "note": "Floodway is treated like any SFHA; no no-rise/encroachment requirement.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG38",
@@ -4352,7 +4341,7 @@
         "projectType": "new_business_existing_building",
         "locationContext": "urban_zone_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -4374,7 +4363,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 2,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Humacao"
         },
         {
           "key": "DOC_PROFESSIONAL_LICENSE",
@@ -4412,31 +4401,24 @@
           "agency": "Department of State"
         },
         {
-          "key": "DOC_PHARMACY_PERMIT",
+          "key": "DOC_CANNABIS_DISPENSARY_LICENSE",
           "group": "required_now",
           "applicability": "required",
           "position": 8,
-          "agency": "Departamento de Salud (Secretario de Salud)"
-        },
-        {
-          "key": "DOC_HEALTH_PERMIT",
-          "group": "conditional",
-          "applicability": "needs_more_information",
-          "position": 9,
-          "agency": "Departamento de Salud"
+          "agency": "Junta Reglamentadora del Cannabis Medicinal (Departamento de Salud)"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 10,
+          "position": 9,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 11,
+          "position": 10,
           "agency": "Property Owner"
         }
       ],
@@ -4445,18 +4427,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG38 kg-scenario: cannabis_medicinal / new_business_existing_building / urban_zone_x",
-      "findingsClassified": [
-        {
-          "kind": "gap",
-          "key": "gap:medical_cannabis_license",
-          "message": "KB gap: no requirement models gap:medical_cannabis_license",
-          "confidence": "needs-expert-review",
-          "rationale": "Medical cannabis dispensaries need a Junta Reglamentadora del Cannabis Medicinal license (Ley 42-2017, Reglamento 9038); the KB has no cannabis business type (modeled here as Pharmacy) or document.",
-          "cause": "kb-gap",
-          "note": "No cannabis business type or Junta de Cannabis license.",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG39",
@@ -4466,7 +4437,7 @@
         "projectType": "expansion",
         "locationContext": "coastal_zone_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -4481,7 +4452,7 @@
           "group": "required_now",
           "applicability": "required",
           "position": 1,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
         },
         {
           "key": "DOC_ALCOHOL_SALES_PROJECTION",
@@ -4516,7 +4487,7 @@
           "group": "registrations",
           "applicability": "verify_existing",
           "position": 6,
-          "agency": "OGPe"
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -4622,18 +4593,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG39 kg-scenario: restaurant_with_alcohol / expansion / coastal_zone_x",
-      "findingsClassified": [
-        {
-          "kind": "agency",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
-          "confidence": "needs-expert-review",
-          "rationale": "Carolina is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Carolina's current delegation level.",
-          "cause": "kb-gap",
-          "note": "Carolina permits office not modeled (surfaced once the expansion permit started rendering).",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG40",
@@ -4643,7 +4603,236 @@
         "projectType": "new_construction",
         "locationContext": "coastal_zone_x"
       },
-      "status": "fail",
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CZM_COASTAL_REVIEW",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 7,
+          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
+        },
+        {
+          "key": "DOC_EPA_AUTOBODY_NESHAP_NOTICE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "U.S. EPA (Region 2) / DRNA"
+        },
+        {
+          "key": "DOC_HAZMAT_HANDLER",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 9,
+          "agency": "EPA / DRNA"
+        },
+        {
+          "key": "DOC_AIR_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "DRNA"
+        },
+        {
+          "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 11,
+          "agency": "U.S. EPA / DRNA"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 12,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 14,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 15,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG40 kg-scenario: auto_repair / new_construction / coastal_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG41",
+      "title": "Marina with boat slips, new operator of an existing marina — Fajardo (autonomous), coastal zone + VE",
+      "matrix": {
+        "businessType": "marina",
+        "projectType": "new_business_existing_building",
+        "locationContext": "coastal_ve"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Fajardo"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_DRNA_MARITIME_CONCESSION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "DRNA"
+        },
+        {
+          "key": "DOC_USACE_SECTION10",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "U.S. Army Corps of Engineers (Jacksonville District, Antilles Section)"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG41 kg-scenario: marina / new_business_existing_building / coastal_ve",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG42",
+      "title": "Retail store, new construction — Mayagüez (no delegation agreement on file), urban zone X",
+      "matrix": {
+        "businessType": "retail_store",
+        "projectType": "new_construction",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -4696,45 +4885,31 @@
           "agency": "Department of State"
         },
         {
-          "key": "DOC_CZM_COASTAL_REVIEW",
-          "group": "required_now",
-          "applicability": "likely_required",
-          "position": 7,
-          "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
-        },
-        {
-          "key": "DOC_HAZMAT_HANDLER",
-          "group": "conditional",
-          "applicability": "conditional",
-          "position": 8,
-          "agency": "EPA / DRNA"
-        },
-        {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 9,
+          "position": 7,
           "agency": "Property Owner"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 10,
+          "position": 8,
           "agency": "OGPe"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 11,
+          "position": 9,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_PROPERTY_DEED",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 12,
+          "position": 10,
           "agency": "Property Registry"
         }
       ],
@@ -4744,39 +4919,277 @@
       "energyQuestionsUncapped": 0,
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
-      "testName": "KG40 kg-scenario: auto_repair / new_construction / coastal_zone_x",
-      "findingsClassified": [
+      "testName": "KG42 kg-scenario: retail_store / new_construction / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG43",
+      "title": "Restaurant with alcohol, new business in an existing building — Viejo San Juan historic zone (autonomous)",
+      "matrix": {
+        "businessType": "restaurant_with_alcohol",
+        "projectType": "new_business_existing_building",
+        "locationContext": "historic_zone_coastal"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
         {
-          "kind": "agency",
-          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
-          "message": "DOC_OGPE_CONSTRUCTION_PERMIT agency is \"OGPe\", expected /munic/i",
-          "confidence": "needs-expert-review",
-          "rationale": "Ponce is an autonomous municipality with its own Oficina de Permisos (delegated jerarquia under the Codigo Municipal, Ley 107-2020): the construction permit may be issued by the municipality, so the card should name it (or 'OGPe / Municipio'). Expert: confirm Ponce's current delegation level.",
-          "cause": "kb-gap",
-          "note": "Same: Ponce permits office not modeled.",
-          "triaged": true
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
         },
         {
-          "kind": "missing",
-          "key": "DOC_AIR_EMISSION_PERMIT",
-          "message": "missing DOC_AIR_EMISSION_PERMIT",
-          "confidence": "needs-expert-review",
-          "rationale": "A spray paint booth is an air-emission source: DRNA air permit / registration (Reglamento para el Control de la Contaminacion Atmosferica) and 40 CFR 63 subpart HHHHHH.",
-          "cause": "kb-gap",
-          "note": "Paint booth: no rule attaches the air permit to Body Shop.",
-          "triaged": true
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
         },
         {
-          "kind": "missing",
-          "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
-          "message": "missing DOC_EPA_HAZARDOUS_WASTE_ID",
-          "confidence": "needs-expert-review",
-          "rationale": "Paint/solvent waste -> EPA hazardous-waste generator ID (RCRA 40 CFR 262).",
-          "cause": "kb-gap",
-          "note": "Auto Repair Shop gets the EPA ID (needs-more-info) but Body Shop does not: inconsistent BT coverage.",
-          "triaged": true
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Oficina de Permisos — Municipio Autónomo de San Juan"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 14,
+          "agency": "Instituto de Cultura Puertorriqueña (ICP)"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 15,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_SHPO_SECTION106_REVIEW",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 16,
+          "agency": "Oficina Estatal de Conservación Histórica (SHPO)"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 17,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 18,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 19,
+          "agency": "Property Owner"
         }
-      ]
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG43 kg-scenario: restaurant_with_alcohol / new_business_existing_building / historic_zone_coastal",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG44",
+      "title": "Medical office dispensing controlled substances, new business — Carolina (autonomous), urban zone X",
+      "matrix": {
+        "businessType": "medical_office",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Oficina de Permisos — Municipio Autónomo de Carolina"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_DEA_REGISTRATION",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "U.S. Drug Enforcement Administration (DEA)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 12,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG44 kg-scenario: medical_office / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
     }
   ]
 }
