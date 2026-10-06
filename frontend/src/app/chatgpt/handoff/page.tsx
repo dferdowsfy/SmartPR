@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { verifyHandoffToken, HandoffError } from "../../../lib/chatgpt/handoff";
 import { getCurrentUser } from "../../../lib/supabase/server";
+import { describeAnswers } from "../../../lib/chatgpt/assessment";
 import HandoffReview from "./HandoffReview";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
           <Link href="/?entry=new-business" style={{ color: "#0f766e", fontWeight: 600 }}>Start a new assessment</Link>
         </div>
       ) : (
-        <HandoffReview scenario={payload.scenario} intent={payload.intent} expiresAt={new Date(payload.exp * 1000).toISOString()} selfPath={selfPath} signedIn={signedIn} />
+        <HandoffReview scenario={payload.scenario} intent={payload.intent} expiresAt={new Date(payload.exp * 1000).toISOString()} selfPath={selfPath} signedIn={signedIn} answerRows={describeAnswers(payload.scenario)} />
       )}
     </main>
   );

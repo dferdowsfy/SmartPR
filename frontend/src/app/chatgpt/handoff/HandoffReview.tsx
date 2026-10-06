@@ -5,7 +5,9 @@ import type { NormalizedScenario } from "../../../lib/chatgpt/assessment";
 import type { HandoffIntent } from "../../../lib/chatgpt/handoff";
 import { HANDOFF_INTAKE_PATH, handoffActions, scenarioToGuestDraft } from "../../../lib/chatgpt/handoffActions";
 
-export default function HandoffReview({ scenario, intent, expiresAt, selfPath, signedIn = false }: { scenario: NormalizedScenario; intent: HandoffIntent; expiresAt: string; selfPath: string; signedIn?: boolean }) {
+const RENOVATION: Record<string, string> = { none: "No renovation", interior: "Interior / non-structural", structural: "Structural changes" };
+
+export default function HandoffReview({ scenario, intent, expiresAt, selfPath, signedIn = false, answerRows = [] }: { scenario: NormalizedScenario; intent: HandoffIntent; expiresAt: string; selfPath: string; signedIn?: boolean; answerRows?: Array<{ id: string; question: string; answer: string }> }) {
   const rows: Array<[string, string]> = [
     ["Activity", scenario.business_type || (scenario.business_type_input ? `${scenario.business_type_input} (to confirm)` : "Not provided")],
     ["Municipality", scenario.municipality || "Not provided"],
@@ -13,9 +15,8 @@ export default function HandoffReview({ scenario, intent, expiresAt, selfPath, s
     ["Registration status", scenario.business_status === "unknown" ? "Not confirmed" : scenario.business_status === "existing" ? "Already registered" : "Not yet registered"],
     ["Premises", scenario.square_feet != null ? `${scenario.square_feet.toLocaleString("en-US")} sq ft` : "Not provided"],
     ["Employees", scenario.employees != null ? String(scenario.employees) : "Not provided"],
-    ["Renovation", scenario.renovation === "unknown" ? "Not confirmed" : scenario.renovation],
+    ["Renovation", scenario.renovation === "unknown" ? "Not confirmed" : RENOVATION[scenario.renovation] ?? scenario.renovation],
   ];
-  const answered = Object.keys(scenario.answers || {}).length;
   function proceed() {
     saveGuestDraft(scenarioToGuestDraft(scenario));
     window.location.assign(HANDOFF_INTAKE_PATH);
@@ -34,7 +35,9 @@ export default function HandoffReview({ scenario, intent, expiresAt, selfPath, s
         {rows.map(([k, v]) => (
           <div key={k} style={{ display: "contents" }}><dt style={{ color: "#64748b" }}>{k}</dt><dd style={{ margin: 0, fontWeight: 500 }}>{v}</dd></div>
         ))}
-        <dt style={{ color: "#64748b" }}>Clarifying answers</dt><dd style={{ margin: 0 }}>{answered}</dd>
+        {answerRows.length ? answerRows.map((a) => (
+          <div key={a.id} style={{ display: "contents" }}><dt style={{ color: "#64748b" }}>{a.question}</dt><dd style={{ margin: 0, fontWeight: 500 }}>{a.answer}</dd></div>
+        )) : <><dt style={{ color: "#64748b" }}>Clarifying answers</dt><dd style={{ margin: 0 }}>None yet — you can answer them in the intake</dd></>}
       </dl>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
         {signIn === "primary" && <a href={loginHref} style={solid}>Sign in to use my plan</a>}

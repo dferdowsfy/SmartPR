@@ -7,9 +7,12 @@
 import { handleChatgptMcp } from "../../../../lib/chatgpt/mcp";
 import { rateLimitAllow } from "../../../../lib/rateLimit";
 import { portalUrlForRequest } from "../../../../lib/chatgpt/portalUrl";
+import { defaultSiteLookups } from "../../../../lib/chatgpt/siteLookup";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Pin lookups are bounded at ~4.5 s inside the handler. */
+export const maxDuration = 20;
 
 const rpcError = (code: number, message: string, status: number) =>
   Response.json({ jsonrpc: "2.0", id: null, error: { code, message } }, { status });
@@ -32,7 +35,9 @@ export async function POST(request: Request) {
     }
     let body: unknown;
     try { body = await request.json(); } catch { return rpcError(-32700, "Parse error.", 400); }
-    const result = handleChatgptMcp(body, { siteUrl: portalUrlForRequest(request) }); // public portal, never localhost/tunnel
+    // siteUrl: public portal, never localhost/tunnel. siteLookups: street +
+    // official-map chips for a pinned site (same code as the portal intake).
+    const result = await handleChatgptMcp(body, { siteUrl: portalUrlForRequest(request), siteLookups: defaultSiteLookups() });
     if (result.body === null) return new Response(null, { status: result.status });
     return Response.json(result.body, { status: result.status });
   } catch (e) {

@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- JSON-RPC test payloads */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite } from "./assessment";
+import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite, describeAnswers } from "./assessment";
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
 import { handleChatgptMcp, TOOLS, widgetResourceMeta } from "./mcp";
-import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM, municipioCentroid } from "./widget";
+import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM, SVG_MAP_MAX_ZOOM, TILE_TIMEOUT_MS } from "./widget";
+import { tileAllowed, tileTemplates, upstreamUrl } from "./tiles";
+import { chipsFromLayers, siteDetailsFor, _resetSiteDetailsCache, type SiteLookups } from "./siteLookup";
 import { PR_MUNICIPIO_SHAPES } from "./prMapShapes";
 import { municipioFocus } from "../../app/locations/boundaries";
 import { restoreIntakeSite } from "../../app/locations/intakeLocation";
@@ -19,7 +21,7 @@ const GUAYNABO = { business_type: "manufacturing", municipality: "Guaynabo", squ
 const rpc = (method: string, params: Record<string, unknown> = {}, id: number | undefined = 1) => handleChatgptMcp({ jsonrpc: "2.0", id, method, params }, SITE);
 type Body = { result: any; error?: { code: number } };
 
-test("assess: generic manufacturing → partial, activity unresolved, real engine output", () => {
+test("assess: generic manufacturing → partial, activity unresolved, real engine output", async () => {
   const { scenario } = normalizeScenario(GUAYNABO);
   const a = assessScenario(scenario);
   assert.equal(a.status, "partial");
@@ -37,7 +39,7 @@ test("assess: generic manufacturing → partial, activity unresolved, real engin
   assert.ok(!("readiness" in a) && !JSON.stringify(a).includes("readiness_percent"));
 });
 
-test("missing facts are unresolved, never a silent no", () => {
+test("missing facts are unresolved, never a silent no", async () => {
   const { scenario } = normalizeScenario({ business_type: "Furniture Manufacturing", municipality: "Guaynabo" });
   const a = assessScenario(scenario);
   const imp = a.requirements.find((r) => r.dependencies.includes("Q_IMPORT_EXPORT"));
@@ -45,7 +47,7 @@ test("missing facts are unresolved, never a silent no", () => {
   assert.ok(a.unresolved_facts.length > 0);
 });
 
-test("clarifying answers change applicability and refine preserves prior answers", () => {
+test("clarifying answers change applicability and refine preserves prior answers", async () => {
   const first = assessScenario(normalizeScenario(GUAYNABO).scenario);
   const r1 = normalizeScenario({ answers: { activity: "Furniture Manufacturing", Q_IMPORT_EXPORT: "yes" } }, first.scenario);
   const second = assessScenario(r1.scenario);
@@ -67,13 +69,13 @@ test("clarifying answers change applicability and refine preserves prior answers
   assert.deepEqual(bogus.dropped, ["Q_NOT_REAL"]);
 });
 
-test("unsupported activity", () => {
+test("unsupported activity", async () => {
   const a = assessScenario(normalizeScenario({ business_type: "zzqx" }).scenario);
   assert.equal(a.status, "unsupported");
   assert.equal(a.requirements.length, 0);
 });
 
-test("handoff token: roundtrip, tamper, expiry", () => {
+test("handoff token: roundtrip, tamper, expiry", async () => {
   const { scenario } = normalizeScenario(GUAYNABO);
   const { token } = createHandoffToken(scenario, "continue", 1_000_000);
   assert.equal(verifyHandoffToken(token, 1_000_000 + 1000).scenario.municipality, "Guaynabo");
@@ -82,46 +84,38 @@ test("handoff token: roundtrip, tamper, expiry", () => {
   assert.ok(!token.includes("@"));
 });
 
-test("MCP: initialize, tools/list, resources, tools/call", () => {
-  const init = rpc("initialize", { protocolVersion: "2025-06-18" }).body as Body;
+test("MCP: initialize, tools/list, resources, tools/call", async () => {
+  const init = (await rpc("initialize", { protocolVersion: "2025-06-18" })).body as Body;
   assert.equal(init.result.protocolVersion, "2025-06-18");
-  const tools = (rpc("tools/list").body as Body).result.tools;
+  const tools = ((await rpc("tools/list")).body as Body).result.tools;
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v6.html");
-  assert.deepEqual([...WIDGET_URI_ALIASES], [
-    "ui://smartpr/requirements-v1.html",
-    "ui://smartpr/requirements-v2.html",
-    "ui://smartpr/requirements-v3.html",
-    "ui://smartpr/requirements-v4.html",
-    "ui://smartpr/requirements-v5.html",
-    "ui://smartpr/requirements-v6.html",
-  ]);
-  const listed = (rpc("resources/list").body as Body).result.resources.map((r: any) => r.uri);
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v7.html");
+  const listed = ((await rpc("resources/list")).body as Body).result.resources.map((r: any) => r.uri);
   assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
-  const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
+  const res = ((await rpc("resources/read", { uri: WIDGET_URI })).body as Body).result.contents[0];
   assert.equal(res.mimeType, WIDGET_MIME);
-  assert.ok(!/<script[^>]+src=|<link|<img|https?:\/\/(?!www\.w3\.org\/2000\/svg)/.test(widgetHtml()), "widget loads nothing external (no URLs except the SVG namespace)");
-  const a = (rpc("tools/call", { name: "assess_scenario", arguments: GUAYNABO }).body as Body).result;
+  assert.ok(!/<script[^>]+src=|<link[\s>]/i.test(res.text), "Leaflet + widget JS/CSS are inlined (no external script or stylesheet)");
+  const a = ((await rpc("tools/call", { name: "assess_scenario", arguments: GUAYNABO })).body as Body).result;
   assert.equal(a.structuredContent.status, "partial");
-  const r = (rpc("tools/call", { name: "refine_scenario", arguments: { scenario: a.structuredContent.scenario, answers: { activity: "Furniture Manufacturing" } } }).body as Body).result;
+  const r = ((await rpc("tools/call", { name: "refine_scenario", arguments: { scenario: a.structuredContent.scenario, answers: { activity: "Furniture Manufacturing" } } })).body as Body).result;
   assert.equal(r.structuredContent.scenario.business_type, "Furniture Manufacturing");
-  const h = (rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: r.structuredContent.scenario } }).body as Body).result;
+  const h = ((await rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: r.structuredContent.scenario } })).body as Body).result;
   assert.match(h.structuredContent.url, /^https:\/\/smartpr\.example\/chatgpt\/handoff\?t=/);
-  assert.equal((rpc("tools/call", { name: "run_sql", arguments: {} }).body as Body).error?.code, -32602);
-  assert.equal(rpc("notifications/initialized", {}, undefined).status, 202);
+  assert.equal(((await rpc("tools/call", { name: "run_sql", arguments: {} })).body as Body).error?.code, -32602);
+  assert.equal((await rpc("notifications/initialized", {}, undefined)).status, 202);
 });
 
-test("handoff fails closed without secret", () => {
+test("handoff fails closed without secret", async () => {
   const saved = process.env.CHATGPT_HANDOFF_SECRET;
   delete process.env.CHATGPT_HANDOFF_SECRET;
-  const out = (rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: normalizeScenario(GUAYNABO).scenario } }).body as Body).result;
+  const out = ((await rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: normalizeScenario(GUAYNABO).scenario } })).body as Body).result;
   process.env.CHATGPT_HANDOFF_SECRET = saved;
   assert.equal(out.isError, true);
 });
 
-test("portal URL: production by default, never localhost or the dev tunnel", () => {
+test("portal URL: production by default, never localhost or the dev tunnel", async () => {
   const NGROK = "passenger-hence-sprinkler.ngrok-free.dev";
   // The reported bug: NEXT_PUBLIC_SITE_URL inlined as localhost (or set to the tunnel), MCP via ngrok.
   assert.equal(resolvePortalUrl({ siteUrl: "http://localhost:3000", requestHost: NGROK }), PORTAL_DEFAULT);
@@ -142,7 +136,7 @@ test("portal URL: production by default, never localhost or the dev tunnel", () 
   assert.equal(resolvePortalUrl({ requestHost: "evil.example" }), PORTAL_DEFAULT, "arbitrary Host header is not reflected");
 });
 
-test("portal URL from a live request (forwarded headers + runtime env)", () => {
+test("portal URL from a live request (forwarded headers + runtime env)", async () => {
   const saved = { o: process.env.CHATGPT_PORTAL_URL, s: process.env.NEXT_PUBLIC_SITE_URL };
   try {
     delete process.env.CHATGPT_PORTAL_URL;
@@ -158,11 +152,11 @@ test("portal URL from a live request (forwarded headers + runtime env)", () => {
   }
 });
 
-test("Unlock / Use my plan / Continue: server-built handoff URL carries intent + scenario", () => {
+test("Unlock / Use my plan / Continue: server-built handoff URL carries intent + scenario", async () => {
   const prod = { siteUrl: resolvePortalUrl({ siteUrl: "http://localhost:3000", requestHost: "x.ngrok-free.dev" }) };
   const scenario = normalizeScenario({ ...GUAYNABO, business_type: "Furniture Manufacturing" }).scenario;
   for (const intent of ["unlock", "use_plan", "continue"] as const) {
-    const out = (handleChatgptMcp({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_portal_handoff", arguments: { scenario, intent } } }, prod).body as Body).result;
+    const out = ((await handleChatgptMcp({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_portal_handoff", arguments: { scenario, intent } } }, prod)).body as Body).result;
     const url = new URL(out.structuredContent.url);
     assert.equal(url.origin, "https://www.getsmartpr.com");
     assert.equal(url.pathname, "/chatgpt/handoff");
@@ -173,14 +167,15 @@ test("Unlock / Use my plan / Continue: server-built handoff URL carries intent +
     assert.equal(p.scenario.business_type, "Furniture Manufacturing");
   }
   // Widget opens exactly the URL the server returned — no hard-coded host.
-  const html = widgetHtml();
-  assert.ok(!/localhost|127\.0\.0\.1|ngrok|getsmartpr\.com/.test(html), "widget never hard-codes a portal host");
-  assert.match(html, /callTool\("create_portal_handoff",\{scenario:scenarioPayload\(\)\|\|r\.scenario,intent:kind\}\)/);
-  assert.match(html, /var u=res&&res\.structuredContent&&res\.structuredContent\.url;if\(u\)\{openLink\(u\)/);
+  const html = widgetHtml({ assetOrigin: "https://smartpr.example" });
+  assert.ok(!/localhost|127\.0\.0\.1|ngrok|getsmartpr\.com/.test(html), "widget never hard-codes a portal host (tile origin is injected)");
+  // v7: the CURRENT scenario (incl. pin) plus any unsent dropdown answers.
+  assert.match(html, /callTool\("create_portal_handoff",\{scenario:scenarioPayload\(\)\|\|r\.scenario,intent:kind,answers:drafts\(\)\}\)/);
+  assert.match(html, /var u=sc&&sc\.url;if\(u\)\{[\s\S]{0,120}?openLink\(u\)/);
   for (const k of ["unlock", "use_plan", "continue"]) assert.ok(html.includes(`act("${k}")`), `button wired: ${k}`);
 });
 
-test("handoff review: sign-in round trip + intake prefill", () => {
+test("handoff review: sign-in round trip + intake prefill", async () => {
   const { token } = createHandoffToken(normalizeScenario(GUAYNABO).scenario, "use_plan");
   const self = `/chatgpt/handoff?t=${encodeURIComponent(token)}`;
   // /auth/login?next=<self> must send the user back to the handoff page.
@@ -205,7 +200,7 @@ test("handoff review: sign-in round trip + intake prefill", () => {
   assert.equal(d.discoveryAnswers.Q_IMPORT_EXPORT, true);
 });
 
-test("map pin: resolved server-side, authoritative for municipality, carried to the portal intake", () => {
+test("map pin: resolved server-side, authoritative for municipality, carried to the portal intake", async () => {
   const g = municipioFocus("Guaynabo")!;
   assert.ok(g && Math.abs(g.latitude - 18.36) < 0.1 && Math.abs(g.longitude + 66.11) < 0.1, "Guaynabo pueblo focus");
   const site = resolveSite({ latitude: g.latitude, longitude: g.longitude })!;
@@ -238,10 +233,10 @@ test("map pin: resolved server-side, authoritative for municipality, carried to 
   assert.equal(assessScenario(normalizeScenario({ business_type: "Furniture Manufacturing" }).scenario).map_focus.zoom, 8);
 
   // MCP: refine with a pin, then handoff carries it; the intake accepts the site.
-  const r = (rpc("tools/call", { name: "refine_scenario", arguments: { scenario: first.scenario, site: { latitude: g.latitude, longitude: g.longitude } } }).body as Body).result;
+  const r = ((await rpc("tools/call", { name: "refine_scenario", arguments: { scenario: first.scenario, site: { latitude: g.latitude, longitude: g.longitude } } })).body as Body).result;
   assert.equal(r.structuredContent.scenario.site.municipality, "Guaynabo");
   assert.match(r.content[0].text, /Site \(map pin\):.*Guaynabo/);
-  const h = (rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: r.structuredContent.scenario, intent: "unlock" } }).body as Body).result;
+  const h = ((await rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: r.structuredContent.scenario, intent: "unlock" } })).body as Body).result;
   const payload = verifyHandoffToken(new URL(h.structuredContent.url).searchParams.get("t"));
   assert.equal(payload.scenario.site?.municipality, "Guaynabo");
   const draft = scenarioToGuestDraft(payload.scenario) as ReturnType<typeof scenarioToGuestDraft> & { intakeSite?: unknown };
@@ -250,52 +245,40 @@ test("map pin: resolved server-side, authoritative for municipality, carried to 
   assert.equal(Math.round(restored!.latitude * 1e5), Math.round(g.latitude * 1e5));
 });
 
-test("widget map: CSP-safe vector map — empty CSP allowlists, no tiles/images, pin drop over the bridge", () => {
-  const meta = widgetResourceMeta("https://www.getsmartpr.com");
-  assert.deepEqual(meta.ui.csp, { connectDomains: [], resourceDomains: [] });
-  assert.deepEqual(meta["openai/widgetCSP"], { connect_domains: [], resource_domains: [], redirect_domains: ["https://www.getsmartpr.com"] });
-  const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
-  assert.deepEqual(res._meta.ui.csp, { connectDomains: [], resourceDomains: [] });
-  assert.deepEqual(res._meta["openai/widgetCSP"].resource_domains, []);
-  const html = widgetHtml();
-  assert.ok(!/arcgisonline|tile\.openstreetmap|mapbox|googleapis|<img|\.src=|url\(/i.test(html), "no raster tiles, images or CSS urls");
-  assert.ok(!/fetch\(|XMLHttpRequest|EventSource|WebSocket|importScripts/.test(html), "no network calls from the widget");
-  assert.match(html, /createElementNS\(SVGNS,"path"\)/);
-  assert.ok(!html.includes("__MAP_SHAPES__") && !html.includes("__ZMAX__"), "map data injected");
-  assert.ok(html.includes(JSON.stringify(PR_MUNICIPIO_SHAPES[0][3]).slice(1, 40)), "municipio geometry inlined");
-  assert.ok(html.length < 120_000, `widget stays small (${html.length} bytes)`);
-  assert.match(html, /callTool\("refine_scenario",\{scenario:scenarioPayload\(\)\|\|r\.scenario,site:p\?\{latitude:p\.lat,longitude:p\.lng\}:null\}\)/);
+test("widget CSP v7: only the portal origin, declared in resource + connect (+redirect) and as widget domain", async () => {
+  const portal = "https://www.getsmartpr.com";
+  const meta = widgetResourceMeta(portal);
+  assert.deepEqual(meta.ui.csp, { connectDomains: [portal], resourceDomains: [portal] });
+  assert.equal(meta.ui.domain, portal);
+  assert.equal(meta["openai/widgetDomain"], portal);
+  assert.deepEqual(meta["openai/widgetCSP"], { connect_domains: [portal], resource_domains: [portal], redirect_domains: [portal] });
+  const res = ((await rpc("resources/read", { uri: WIDGET_URI })).body as Body).result.contents[0];
+  assert.deepEqual(res._meta.ui.csp, { connectDomains: [SITE.siteUrl], resourceDomains: [SITE.siteUrl] });
+  // Every absolute URL the widget can request is on the declared origin.
+  const tpl = tileTemplates(SITE.siteUrl);
+  assert.ok(res.text.includes(JSON.stringify(tpl.streets).slice(1, -1)), "streets template injected");
+  assert.ok(res.text.includes(JSON.stringify(tpl.satellite).slice(1, -1)), "satellite template injected");
+  for (const t of [tpl.streets, tpl.satellite]) assert.equal(new URL(t.replace(/[{}]/g, "")).origin, SITE.siteUrl);
+  assert.ok(!/arcgisonline|tile\.openstreetmap|openfreemap|mapbox|googleapis|unpkg|jsdelivr|cdnjs/i.test(res.text), "no third-party hosts in the widget");
+  assert.ok(!/url\((?!["']?(?:data:|#))[^)]*\)/.test(res.text), "no CSS urls (Leaflet image refs stripped)");
+  assert.ok(!res.text.includes("__CFG__"), "config injected");
+  assert.match(res.text, /L\.tileLayer/);
   const site = (TOOLS[1].inputSchema.properties as Record<string, any>).site;
   assert.deepEqual(site.required, ["latitude", "longitude"]);
 });
 
-test("widget v6: auto-drop suggested pin on municipality + draggable pins", () => {
-  // Centroid anchors: label point per municipio, accent/case-insensitive lookup.
-  const bayamon = municipioCentroid("Bayamón");
-  assert.ok(bayamon, "Bayamón resolves");
-  assert.equal(bayamon!.name, "Bayamón");
-  assert.ok(Math.abs(bayamon!.lat - 18.3445) < 1e-9 && Math.abs(bayamon!.lng - -66.1687) < 1e-9, "label point");
-  assert.deepEqual(municipioCentroid("bayamon"), bayamon, "folded lookup");
-  assert.deepEqual(municipioCentroid("SAN JUAN")?.name, "San Juan");
-  assert.equal(municipioCentroid("Notaplace"), null);
-  // Every municipio has an anchor inside the PR bbox.
-  for (const [name] of PR_MUNICIPIO_SHAPES) {
-    const c = municipioCentroid(name);
-    assert.ok(c && c.lat > 17.8 && c.lat < 18.6 && c.lng > -68.1 && c.lng < -65.1, `${name} anchor in PR`);
-  }
-  // Widget HTML carries the injected anchors and the new interaction code.
-  const html = widgetHtml();
-  assert.ok(!html.includes("__MUNI_CENTROIDS__"), "centroids injected");
-  assert.ok(html.includes('"bayamon":{"lat":18.3445,"lng":-66.1687'), "Bayamón anchor inlined");
-  assert.match(html, /auto-drop a suggested pin/, "auto-suggest logic present");
-  assert.match(html, /function dragPin\(node\)/, "draggable pin handler present");
-  assert.match(html, /Drag to move the pin/, "pin drag affordance present");
-  assert.match(html, /stashConfirmed\(\)/, "confirmed-pin stash on new pending pin");
-  assert.ok(!/fetch\(|XMLHttpRequest|EventSource|WebSocket/.test(html), "still no network calls");
-  assert.ok(html.length < 125_000, `widget stays small (${html.length} bytes)`);
+test("tile proxy: Puerto Rico only, zoom-bounded, upstream overridable server-side", async () => {
+  assert.ok(tileAllowed(15, 10362, 14679), "Bayamón tile");
+  assert.ok(tileAllowed(7, 39, 57), "PR at z7");
+  assert.ok(!tileAllowed(15, 0, 0), "outside PR");
+  assert.ok(!tileAllowed(6, 19, 28) && !tileAllowed(20, 1, 1), "zoom bounds");
+  assert.ok(!tileAllowed(15.5, 10362, 14679) && !tileAllowed(15, -1, 14679));
+  assert.match(upstreamUrl("streets", 15, 10362, 14679, {}), /World_Street_Map\/MapServer\/tile\/15\/14679\/10362$/);
+  assert.match(upstreamUrl("satellite", 15, 10362, 14679, {}), /World_Imagery\/MapServer\/tile\/15\/14679\/10362$/);
+  assert.equal(upstreamUrl("streets", 9, 1, 2, { CHATGPT_TILE_URL_STREETS: "https://t.example/{z}/{x}/{y}.png?key=k" }), "https://t.example/9/1/2.png?key=k");
+  assert.equal(TILE_TIMEOUT_MS, 3000);
 });
-
-test("widget map data: 78 municipios, decodable polyline rings inside Puerto Rico", () => {
+test("widget map data: 78 municipios, decodable polyline rings inside Puerto Rico", async () => {
   assert.equal(PR_MUNICIPIO_SHAPES.length, 78);
   const names = new Set(PR_MUNICIPIO_SHAPES.map((m) => m[0]));
   for (const n of ["San Juan", "Guaynabo", "Mayagüez", "Bayamón", "Vieques", "Culebra"]) assert.ok(names.has(n), n);
@@ -316,67 +299,63 @@ test("widget map data: 78 municipios, decodable polyline rings inside Puerto Ric
   }
 });
 
-test("widget map: visible after assess — size-changed, muni question embeds map, URI v6, map_focus in schema", () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v6.html");
+test("widget v7: map visible after assess, auto-pin for a named municipality (approximate), map_focus in schema", async () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v7.html");
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(MAP_MAX_ZOOM, 14);
+  assert.equal(MAP_MAX_ZOOM, 19);
+  assert.equal(SVG_MAP_MAX_ZOOM, 14);
   const html = widgetHtml();
   assert.match(html, /ui\/notifications\/size-changed/);
   assert.match(html, /notifyIntrinsicHeight/);
-  assert.match(html, /Drop a pin on the site/);
-  assert.match(html, /needsMuni/);
   assert.match(html, /Where is the site\?/);
-  assert.match(html, /min-height/);
   assert.match(html, /touch-action:none/);
-  // Municipality clarifying question must not be the only control — map is primary.
-  assert.match(html, /Or type a municipality name/);
+  assert.match(html, /draggable:true/);
   const schema = TOOLS[0].outputSchema as { required: string[]; properties: Record<string, unknown> };
   assert.ok(schema.required.includes("map_focus"));
-  assert.ok(schema.properties.map_focus);
+  assert.ok(schema.properties.map_focus && schema.properties.approximate_site && schema.properties.site_details);
   const a = assessScenario(normalizeScenario({ business_type: "Furniture Manufacturing" }).scenario);
   assert.ok(a.clarifying_questions.some((q) => q.id === "municipality"));
-  assert.match(a.clarifying_questions.find((q) => q.id === "municipality")!.question, /Pin the site on the map/i);
   assert.equal(a.map_focus.zoom, 8);
-  const withMuni = (rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } }).body as Body).result;
-  assert.ok(withMuni.structuredContent.map_focus);
+  assert.equal(a.approximate_site, null, "no municipality → no pin; user taps the map");
+  // "I want to open a bar in Bayamón" → pin already dropped downtown Bayamón, flagged approximate.
+  const bar = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "bar", municipality: "Bayamón" } })).body as Body).result;
+  const ap = bar.structuredContent.approximate_site;
+  assert.ok(ap && ap.approximate === true && ap.municipality === "Bayamón", JSON.stringify(ap));
+  assert.ok(Math.abs(ap.latitude - 18.39) < 0.05 && Math.abs(ap.longitude + 66.16) < 0.05, "downtown Bayamón");
+  assert.equal(bar.structuredContent.scenario.site, null, "approximate pin is not a confirmed site");
+  assert.match(bar.content[0].text, /approximate/i);
+  assert.match(html, /approximate_site/);
+  const withMuni = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } })).body as Body).result;
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
 });
-
-test("widget URI aliases: resources/read serves current HTML + empty CSP for v1–v6; tools advertise v6 only", () => {
-  assert.deepEqual([...WIDGET_URI_ALIASES], [
-    "ui://smartpr/requirements-v1.html",
-    "ui://smartpr/requirements-v2.html",
-    "ui://smartpr/requirements-v3.html",
-    "ui://smartpr/requirements-v4.html",
-    "ui://smartpr/requirements-v5.html",
-    "ui://smartpr/requirements-v6.html",
-  ]);
+test("widget URI aliases: resources/read serves current HTML + v7 CSP for v1–v7; tools advertise v7 only", async () => {
+  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7].map((n) => `ui://smartpr/requirements-v${n}.html`));
   assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
-  // tools/list stays on the canonical v6 pointer — do not advertise older URIs there.
   for (const t of TOOLS.slice(0, 2)) {
     const meta = t._meta as Record<string, unknown>;
     assert.equal((meta.ui as { resourceUri: string }).resourceUri, WIDGET_URI);
     assert.equal(meta["openai/outputTemplate"], WIDGET_URI);
   }
-  const current = widgetHtml();
-  const emptyCsp = widgetResourceMeta(SITE.siteUrl);
+  const current = widgetHtml({ assetOrigin: SITE.siteUrl });
+  const expected = widgetResourceMeta(SITE.siteUrl);
+  const listed = ((await rpc("resources/list")).body as Body).result.resources;
+  for (const r of listed) assert.deepEqual(r._meta["openai/widgetCSP"], expected["openai/widgetCSP"]);
   for (const uri of WIDGET_URI_ALIASES) {
-    const out = rpc("resources/read", { uri }).body as Body;
+    const out = (await rpc("resources/read", { uri })).body as Body;
     assert.ok(!out.error, `resources/read ${uri}`);
     const c = out.result.contents[0];
     assert.equal(c.uri, uri, "echo requested alias so cached template_pointer binds");
     assert.equal(c.mimeType, WIDGET_MIME);
     assert.equal(c.text, current, `${uri} serves current widget HTML`);
-    assert.deepEqual(c._meta.ui.csp, emptyCsp.ui.csp);
-    assert.deepEqual(c._meta["openai/widgetCSP"].connect_domains, []);
-    assert.deepEqual(c._meta["openai/widgetCSP"].resource_domains, []);
+    assert.deepEqual(c._meta.ui.csp, expected.ui.csp);
+    assert.deepEqual(c._meta["openai/widgetCSP"], expected["openai/widgetCSP"]);
+    assert.equal(c._meta["openai/widgetDomain"], SITE.siteUrl);
   }
-  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" }).body as Body).error?.code, -32602);
-  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v7.html" }).body as Body).error?.code, -32602);
+  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" })).body as Body).error?.code, -32602);
+  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v8.html" })).body as Body).error?.code, -32602);
 });
 
-
-test("free preview surfaces at least 5 requirements for a typical restaurant scenario", () => {
+test("free preview surfaces at least 5 requirements for a typical restaurant scenario", async () => {
   const a = assessScenario(normalizeScenario({
     business_type: "restaurant", municipality: "San Juan", square_feet: 2500, employees: 12, renovation: "interior",
   }).scenario);
@@ -386,34 +365,117 @@ test("free preview surfaces at least 5 requirements for a typical restaurant sce
   assert.equal(FREE_PREVIEW_LIMIT >= 5, true);
 });
 
-test("widget v5: sticky confirmed pin + portal-style location panel + expanded requirements", () => {
+test("widget v7 state model: forward-only results, pin/answers survive host globals, persisted via setWidgetState", async () => {
   const html = widgetHtml();
-  assert.match(html, /state\.map\.confirmed/);
-  assert.match(html, /function toConfirmed\(/);
-  assert.match(html, /function scenarioPayload\(/);
-  assert.match(html, /Location confirmed/);
-  assert.match(html, /View full property report/);
-  assert.match(html, /Project location/);
-  assert.match(html, /map \.callout/);
-  assert.match(html, /grp open/);
-  assert.match(html, /Keep scenario\.site/);
-  // Sticky: same-municipality re-assess without site must not clear the pin.
-  assert.match(html, /Sticky pin/);
-  assert.match(html, /callTool\("refine_scenario",\{scenario:scenarioPayload\(\)/);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v6.html");
-  assert.ok((WIDGET_URI_ALIASES as readonly string[]).includes("ui://smartpr/requirements-v4.html"));
-  assert.ok(!/arcgisonline|tile\.openstreetmap/i.test(html), "still CSP-safe / no tiles");
+  // Root cause of "tap doesn't stick": v5 re-applied the ORIGINAL toolOutput on every openai:set_globals.
+  assert.match(html, /function rTime\(/);
+  assert.match(html, /addEventListener\("openai:set_globals",function\(\)\{fromGlobals\(\)\}/);
+  assert.match(html, /function fromGlobals\(/);
+  assert.match(html, /setWidgetState\(ws\)/);
+  assert.match(html, /\{v:6,at:state\.result\.versions\.generated_at,scenario:scenarioPayload\(\),pin:state\.pin,answers:drafts\(\)\}/);
+  assert.match(html, /function restore\(/);
+  // Drag end and tap share movePin → refine_scenario with the site.
+  assert.match(html, /function movePin\(/);
+  assert.match(html, /callTool\("refine_scenario",\{scenario:scenarioPayload\(\)\|\|state\.result\.scenario,site:\{latitude:lat,longitude:lng\},answers:drafts\(\)/);
+  assert.match(html, /on\("dragend"/);
+  assert.match(html, /map\.on\("click"/);
+  // Production-style location panel; unresolved chips say "See full report", never invented.
+  for (const t of ["Location confirmed", "Approximate location", "Project location", "View full property report", "See full report", "Municipality", "Barrio", "Coordinates"]) assert.ok(html.includes(t), t);
+  // Fallbacks: outline map when tiles don't load, SVG map if Leaflet itself fails.
+  assert.match(html, /function toOutline\(/);
+  assert.match(html, /function svgInit\(/);
+  // Refine with nothing selected must say so instead of silently doing nothing (v5 bug).
+  assert.ok(!/if\(!Object\.keys\(ans\)\.length\)return;/.test(html));
 });
 
-test("refine_scenario keeps site lat/lng and place labels after pin", () => {
+test("refine_scenario with a pin returns site_details from the portal layer lookups (never invented)", async () => {
+  _resetSiteDetailsCache();
+  let layerCalls = 0;
+  const lookups: SiteLookups = {
+    layers: async () => { layerCalls++; return { results: [
+      { layer: "zoning", status: "resolved", code: "C-L", name: "Comercial Liviano", tags: [], source: { name: "JP" } },
+      { layer: "flood_zone", status: "resolved", code: "AE", tags: ["SFHA"], source: { name: "FEMA" } },
+      { layer: "terrain", status: "unavailable", code: null, tags: [] },
+      { layer: "coastal_zone", status: "none", code: null, tags: [] },
+      { layer: "parcel", status: "resolved", code: "085-015-036-01", tags: [] },
+    ] } as any; },
+    reverse: async () => ({ address_line_1: "Calle Degetau", formatted_address: "Calle Degetau, Bayamón, PR 00961", postal_code: "00961", place_source: "openstreetmap" } as any),
+  };
+  const g = municipioFocus("Bayamón")!;
+  const first = normalizeScenario({ business_type: "bar", municipality: "Bayamón" }).scenario;
+  const r = ((await handleChatgptMcp({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "refine_scenario", arguments: { scenario: first, site: { latitude: g.latitude, longitude: g.longitude } } } }, { ...SITE, siteLookups: lookups })).body as Body).result;
+  const d = r.structuredContent.site_details;
+  assert.equal(d.pending, false);
+  assert.equal(d.street, "Calle Degetau");
+  assert.equal(d.parcel, "085-015-036-01");
+  assert.deepEqual(d.chips.map((c: any) => [c.id, c.value]), [["zoning", "C-L"], ["flood", "Zone AE"], ["landslide", null], ["coastal", "Outside coastal zone"]]);
+  assert.equal(d.complete, false, "an unavailable layer stays unknown (widget shows 'See full report')");
+  assert.match(r.content[0].text, /Zoning: C-L/);
+  // Without lookups configured (or no pin) there are no site details at all.
+  const none = ((await rpc("tools/call", { name: "refine_scenario", arguments: { scenario: first, site: { latitude: g.latitude, longitude: g.longitude } } })).body as Body).result;
+  assert.equal(none.structuredContent.site_details, null);
+  assert.equal(layerCalls, 1);
+  // Never invent: empty / failed layer results give null chips.
+  assert.ok(chipsFromLayers(null).chips.every((c) => c.value === null && c.status === "unavailable"));
+  assert.ok(chipsFromLayers({ results: [{ layer: "zoning", status: "error", code: "X", tags: [] }] } as any).chips.every((c) => c.value === null));
+});
+
+test("site details: slow lookups return pending, then the finished result on the next refine", async () => {
+  _resetSiteDetailsCache();
+  let release!: () => void;
+  const gate = new Promise<void>((res) => { release = res; });
+  const lookups: SiteLookups = { layers: async () => { await gate; return { results: [{ layer: "flood_zone", status: "resolved", code: "X", tags: [] }] } as any; } };
+  const p1 = await siteDetailsFor(18.4, -66.15, lookups, { waitMs: 20 });
+  assert.equal(p1.pending, true);
+  assert.ok(p1.chips.every((c) => c.value === null));
+  release();
+  await new Promise((r) => setTimeout(r, 10));
+  const p2 = await siteDetailsFor(18.4, -66.15, lookups, { waitMs: 20 });
+  assert.equal(p2.pending, false);
+  assert.equal(p2.chips.find((c) => c.id === "flood")!.value, "Zone X");
+});
+
+test("handoff carries the CURRENT answers + pin (Darius demo bug: 'Not pinned' / 'Not provided')", async () => {
+  const g = municipioFocus("Bayamón")!;
+  const first = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "bar", municipality: "Bayamón" } })).body as Body).result.structuredContent;
+  // Widget sends the scenario plus unsent dropdown answers and the pin in one call.
+  const h = ((await rpc("tools/call", { name: "create_portal_handoff", arguments: {
+    scenario: first.scenario, intent: "unlock",
+    answers: { business_status: "new", structural: "none", Q_ALCOHOL_SOLD: "yes" },
+    site: { latitude: g.latitude, longitude: g.longitude },
+  } })).body as Body).result;
+  assert.ok(!h.isError, JSON.stringify(h.content));
+  const p = verifyHandoffToken(new URL(h.structuredContent.url).searchParams.get("t"));
+  assert.equal(p.intent, "unlock");
+  assert.equal(p.scenario.business_status, "new");
+  assert.equal(p.scenario.renovation, "none");
+  assert.equal(p.scenario.answers.Q_ALCOHOL_SOLD, true);
+  assert.equal(p.scenario.site?.municipality, "Bayamón");
+  assert.deepEqual(h.structuredContent.carried, { site: true, answers: 1, business_status: "new", renovation: "none" });
+  // The review page renders each answer (question → value), not "Not provided".
+  const rows = describeAnswers(p.scenario);
+  const alc = rows.find((r) => r.id === "Q_ALCOHOL_SOLD");
+  assert.ok(alc && alc.answer === "Yes" && /alcohol/i.test(alc.question), JSON.stringify(rows));
+  // Intake prefill keeps both.
+  const draft = scenarioToGuestDraft(p.scenario) as ReturnType<typeof scenarioToGuestDraft> & { intakeSite?: unknown };
+  assert.equal(draft.discoveryAnswers.Q_ALCOHOL_SOLD, true);
+  assert.ok(restoreIntakeSite(draft.intakeSite));
+  // A prior pin in the scenario survives a handoff with no extra args.
+  const pinned = ((await rpc("tools/call", { name: "refine_scenario", arguments: { scenario: first.scenario, site: { latitude: g.latitude, longitude: g.longitude }, answers: { Q_ALCOHOL_SOLD: "yes" } } })).body as Body).result.structuredContent;
+  const h2 = ((await rpc("tools/call", { name: "create_portal_handoff", arguments: { scenario: pinned.scenario, intent: "continue" } })).body as Body).result;
+  const p2 = verifyHandoffToken(new URL(h2.structuredContent.url).searchParams.get("t"));
+  assert.equal(p2.scenario.site?.municipality, "Bayamón");
+  assert.equal(p2.scenario.answers.Q_ALCOHOL_SOLD, true);
+});
+test("refine_scenario keeps site lat/lng and place labels after pin", async () => {
   const first = normalizeScenario({ business_type: "coffee shop", municipality: "Orocovis" }).scenario;
   const site = resolveSite({ latitude: 18.2, longitude: -66.4 })!;
   assert.equal(site.municipality, "Orocovis");
   assert.ok(site.barrio);
-  const r = (rpc("tools/call", {
+  const r = ((await rpc("tools/call", {
     name: "refine_scenario",
     arguments: { scenario: first, site: { latitude: site.latitude, longitude: site.longitude } },
-  }).body as Body).result;
+  })).body as Body).result;
   const sc = r.structuredContent;
   assert.equal(sc.scenario.site.municipality, "Orocovis");
   assert.equal(sc.scenario.site.barrio, site.barrio);
@@ -422,10 +484,10 @@ test("refine_scenario keeps site lat/lng and place labels after pin", () => {
   assert.equal(sc.map_focus.latitude, site.latitude);
   assert.equal(sc.map_focus.longitude, site.longitude);
   // Further refine with answers must preserve the pin.
-  const r2 = (rpc("tools/call", {
+  const r2 = ((await rpc("tools/call", {
     name: "refine_scenario",
     arguments: { scenario: sc.scenario, answers: { business_status: "new" } },
-  }).body as Body).result;
+  })).body as Body).result;
   assert.equal(r2.structuredContent.scenario.site.latitude, site.latitude);
   assert.equal(r2.structuredContent.scenario.site.municipality, "Orocovis");
   assert.ok(r2.structuredContent.requirements.length >= 5);
