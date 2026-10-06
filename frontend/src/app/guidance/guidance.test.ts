@@ -137,11 +137,19 @@ const TOBACCO_GATED = new Set(["DOC_TOBACCO_RETAIL_LICENSE", "DOC_TOBACCO_SALES_
 // provisional for it (MATCH_TRACE_MISSING, never a placeholder).
 const KB_GAPS_GATED = new Set(["DOC_ICP_HISTORIC_RECOMMENDATION", "DOC_SHPO_SECTION106_REVIEW", "DOC_FLOODWAY_NO_RISE_CERTIFICATION", "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION", "DOC_DEA_REGISTRATION", "DOC_CANNABIS_DISPENSARY_LICENSE", "DOC_TELECOM_TOWER_SITING", "DOC_FAA_7460_NOTICE", "DOC_FCC_ASR", "DOC_NET_TOWER_REGISTRY", "DOC_DRNA_VESSEL_REGISTRATION", "DOC_DRNA_BOAT_RENTAL_LICENSE", "DOC_DRNA_MARITIME_CONCESSION", "DOC_USACE_SECTION10", "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT", "DOC_EPA_AUTOBODY_NESHAP_NOTICE"]);
 
-test("same Bayamón bar: all sixty-two source-backed explanations are distinct and actionable in EN/ES", () => {
+// Ambulant-gated: the municipal ambulant-business license applies only to
+// mobile/ambulant businesses (RULE_0653, Q_FOOD_TRUCK_MOBILE/BT_FOOD_TRUCK)
+// — the Bayamón bar profile is a fixed restaurant location, so the validated
+// concept stays provisional for it (correct — MATCH_TRACE_MISSING, not a
+// placeholder). Added with the Ley 81-1991-validated ambulant concept
+// (REG-GUIDE-AMBULANT-001, 2026-10-06).
+const AMBULANT_GATED = new Set(["DOC_AMBULANT_BUSINESS_LICENSE"]);
+
+test("same Bayamón bar: all sixty-three source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId) || FOREIGN_CORP_GATED.has(g.requirementId) || TOBACCO_GATED.has(g.requirementId) || KB_GAPS_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId) || FOREIGN_CORP_GATED.has(g.requirementId) || TOBACCO_GATED.has(g.requirementId) || KB_GAPS_GATED.has(g.requirementId) || AMBULANT_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -157,7 +165,7 @@ test("same Bayamón bar: all sixty-two source-backed explanations are distinct a
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 62);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 63);
   }
 });
 
@@ -1011,4 +1019,30 @@ test("REG-GUIDE-CERTORG-001: LLC Certificate of Organization citation names Ley 
   const doc = KB.documents.find(d => d.id === "DOC_CERT_ORGANIZATION");
   assert.match(doc?.citation ?? "", /144-1995/);
   assert.doesNotMatch(doc?.citation ?? "", /164-2009/);
+});
+
+// REG-GUIDE-AMBULANT-001 (2026-10-06 QA): a live filing audit (S454 Toa Baja
+// food truck, 03:00 cycle) showed the Municipal Ambulant-Business License
+// card rendering the unvalidated-description placeholder
+// ("SmartPR hasn't validated the exact regulatory basis yet") while its own
+// citation names a genuine statute. Ley 81-1991, Art. 20.003 (21 L.P.R.A.
+// § 4952) — verified 2026-10-06 via LexJuris compiled statute text —
+// empowers municipalities to regulate ambulant-business location/operation
+// and to issue/deny/suspend/revoke/amend/modify the licenses, with each
+// license type valid up to one year. The card now renders validated content.
+test("REG-GUIDE-AMBULANT-001: ambulant-business license renders validated guidance with the Ley 81-1991 citation (live S454 finding 2026-10-06)", () => {
+  const src = PR_GUIDANCE_SOURCES.ambulant;
+  assert.match(src.citation, /Ley 81-1991/);
+  assert.match(src.citation, /20\.003/);
+  assert.match(src.citation, /21 L\.P\.R\.A\. § 4952/);
+  const profile = { municipality: "Toa Baja", business_type: "Food Truck", business_structure: "LLC", location_type: "Mobile / Food Truck", number_of_employees: 2 };
+  const answers = { Q_FOOD_TRUCK_MOBILE: true, Q_FOOD_PREPARED: true, Q_FOOD_SOLD: true };
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = { language, municipality: profile.municipality, businessTypeName: profile.business_type, profile, discoveryAnswers: answers, entityType: "limited_liability_company", kb: KB, engineInput: buildEngineInput(profile, answers) };
+    const doc = KB.documents.find(d => d.id === "DOC_AMBULANT_BUSINESS_LICENSE")!;
+    const g = buildRequirementGuidance({ document_id: "DOC_AMBULANT_BUSINESS_LICENSE", code: "doc_ambulant_business_license", name: doc.name, agency: doc.agency ?? "", reason: "fired by RULE_0653", applicability: "required", triggerFacts: [] }, ctx);
+    assert.equal(g.status, "VALIDATED", `${language}: ${g.reviewReasons}`);
+    assert.doesNotMatch(JSON.stringify(g), /hasn't validated|still pending/i, `${language}: no placeholder copy`);
+    assert.match(JSON.stringify(g), /20\.003/, `${language}: statute cited`);
+  }
 });

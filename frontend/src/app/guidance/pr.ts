@@ -11,6 +11,16 @@ export const PR_GUIDANCE_SOURCES = {
   merchantLaw: source("SRC_GUIDANCE_MERCHANT_RULE", "Departamento de Hacienda", "Regulation 8942 — Merchant Registration Certificate", "https://hacienda.pr.gov/sites/default/files/8942.pdf", "Merchant registration identifies each commercial location and whether the merchant is an IVU withholding agent."),
   permiso: source("SRC_GUIDANCE_PU", "OGPe", "Nonresidential use — permits for a business or activity", "https://www.permisos.pr.gov/", "Nonresidential uses require the Permiso Único process; check permitted use and applicable special licenses in SBP."),
   codigoMunicipal: source("SRC_GUIDANCE_CODIGO_MUNICIPAL", "Oficina de Gerencia y Presupuesto (OGP)", "Código Municipal de Puerto Rico — Ley 107-2020, según enmendada", "https://docs.pr.gov/files/JP-Junta%20de%20Planificacion/Leyes/Codigo-Municipal-de-Puerto-Rico-Ley-107-2020.pdf", "Ley 107-2020, Arts. 7.200–7.207: la patente municipal grava el volumen de negocios de la actividad comercial en el municipio."),
+  // REG-GUIDE-AMBULANT-001 (2026-10-06 QA, live S454): the Municipal
+  // Ambulant-Business License card rendered the unvalidated-description
+  // placeholder on a live Toa Baja food-truck filing while its own citation
+  // (Ley 81-1991, Art. 20.003) is a genuine statute. Verified 2026-10-06
+  // (LexJuris compiled Ley 81-1991 text; 21 L.P.R.A. § 4952): municipalities
+  // regulate the location and operation of ambulant businesses within their
+  // territorial limits and may issue/deny/suspend/revoke/amend/modify the
+  // licenses for any ambulant business; each license type is valid for up to
+  // one year.
+  ambulant: source("SRC_GUIDANCE_AMBULANT", "Legislatura de Puerto Rico", "Ley 81-1991, Artículo 20.003 — Reglamentación de Negocios Ambulantes (21 L.P.R.A. § 4952)", "https://agencias.pr.gov/agencias/JACL/Documents/LeyesReglamentos/Ley%20de%20Municipios%20Autonomos.pdf", "Municipalities regulate the location and operation of ambulant businesses within their territorial limits and may issue, deny, suspend, revoke, amend or modify the licenses required for any ambulant business; each license type is valid for up to one year."),
   ogpCarta: source("SRC_GUIDANCE_OGP_CC_002_2022", "Oficina de Gerencia y Presupuesto (OGP)", "Carta Circular 002-2022 — disposiciones sobre cumplimiento contributivo municipal", "https://docs.pr.gov/files/OGP/Website_OGP/CartasCirculares/CC2022/CC-002-2022.pdf", "La Carta Circular 002-2022 de OGP establece las disposiciones sobre la certificación de cumplimiento contributivo municipal."),
   propertyEvidence: source("SRC_GUIDANCE_PROPERTY_EVIDENCE", "OGPe", "Single Business Portal — evidencia de la propiedad en las solicitudes de permiso", "https://www.permisos.pr.gov/", "La evidencia de control del predio (escritura o contrato de arrendamiento) forma parte del expediente de permisos."),
   // REG-GUIDE-DTRH-SOURCE-001 (2026-10-04 QA): a live filing audit
@@ -342,6 +352,11 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   DOC_ANNUAL_REPORT: { en: ["annual report", "annual fee"], es: ["informe anual", "anualidad"] },
   DOC_VEHICLE_REGISTRATION: { en: ["vehicle registration", "dtop", "marbete"], es: ["registro de vehículos", "vehículo comercial", "dtop", "marbete"] },
   DOC_TRANSPORT_PERMIT: { en: ["transport", "ntsp", "franchise", "porteador"], es: ["transporte", "ntsp", "franquicia", "porteador", "acarreo"] },
+  // REG-GUIDE-AMBULANT-001 (2026-10-06 QA, live S454): validated subject
+  // terms for the Municipal Ambulant-Business License card that rendered
+  // the unvalidated-description placeholder on a live Toa Baja food-truck
+  // filing while citing a genuine statute (Ley 81-1991, Art. 20.003).
+  DOC_AMBULANT_BUSINESS_LICENSE: { en: ["ambulant business", "mobile business", "food truck license"], es: ["negocio ambulante", "licencia de negocio ambulante", "vendedor ambulante"] },
   DOC_AGRICULTURE_REGISTRATION: { en: ["bona fide", "farmer", "agriculture"], es: ["bona fide", "agricultor", "agricultura", "finca"] },
   // REG-GUIDE-TOURISM-001 (2026-09-18 QA): validated subject terms for the
   // PRTC innkeeper registration and room-tax return cards that were
@@ -728,6 +743,22 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The vehicle registration documents that that specific vehicle is authorized for road use with its registration current — it does not license the business activity itself.", "El registro de un vehículo comercial acredita que ese vehículo en particular está autorizado para transitar con su registro y marbete al día — no licencia la actividad del negocio por sí solo."),
     text("Verify each commercial vehicle the business runs is registered with DTOP and its marbete is current; handle registrations, renewals, and transfers through CESCO.", "Verifica que cada vehículo comercial que opere el negocio esté registrado en el DTOP y tenga el marbete al día; gestiona los registros, renovaciones y traspasos en CESCO."),
     text("An unregistered commercial vehicle cannot legally operate on public roads; keep each vehicle the business runs current on registration and marbete.", "Un vehículo comercial sin registrar no puede operar legalmente en las vías públicas; mantén al día el registro y el marbete de cada vehículo que opere el negocio."),
+  ]),
+  // REG-GUIDE-AMBULANT-001 (2026-10-06 QA): the Municipal Ambulant-Business
+  // License card rendered the unvalidated-description placeholder on a live
+  // Toa Baja food-truck filing (S454) while citing a genuine statute
+  // (Ley 81-1991, Art. 20.003, 21 L.P.R.A. § 4952 — verified 2026-10-06 via
+  // LexJuris compiled statute text). Municipalities regulate ambulant
+  // businesses' location and operation and issue the license, so the card
+  // now carries validated content instead of the "hasn't validated" caveat.
+  DOC_AMBULANT_BUSINESS_LICENSE: concept("DOC_AMBULANT_BUSINESS_LICENSE", [
+    [condition("businessType", "Food Truck", "Food truck", "BT_FOOD_TRUCK")],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.ambulant], [
+    text("Puerto Rico's municipalities regulate where ambulant (mobile) businesses may locate and operate within their territorial limits, and each municipality may issue, deny, suspend, revoke, amend or modify the licenses for any ambulant business (Ley 81-1991, Art. 20.003, 21 L.P.R.A. § 4952).", "Los municipios de Puerto Rico reglamentan la ubicación y operación de los negocios ambulantes dentro de sus límites territoriales, y cada municipio puede expedir, denegar, suspender, revocar, enmendar o modificar las licencias para cualquier negocio ambulante (Ley 81-1991, Art. 20.003, 21 L.P.R.A. § 4952)."),
+    text("The municipal ambulant business license authorizes the mobile unit to operate — park, set up and sell — in that municipality, on the terms, locations and hours the municipal ordinance allows.", "La licencia municipal de negocio ambulante autoriza a la unidad móvil a operar — estacionarse, ubicarse y vender — en ese municipio, bajo los términos, ubicaciones y horarios que permita la ordenanza municipal."),
+    text("Check with the municipality where the unit will operate which ambulant business license and periodic fee apply, and what location, hours and health-and-sanitation rules the municipal ordinance sets; each license type is valid for up to one year, so plan renewals.", "Verifica con el municipio donde operará la unidad qué licencia de negocio ambulante y qué canon periódico aplican, y qué reglas de ubicación, horario y salubridad establece la ordenanza municipal; cada tipo de licencia es válida por hasta un año, así que planifica las renovaciones."),
+    text("Operating without the municipal ambulant business license can lead the municipality to intervene and order the unit to stop operating until the license is in place.", "Operar sin la licencia municipal de negocio ambulante puede llevar al municipio a intervenir y ordenar que la unidad cese operaciones hasta tener la licencia."),
   ]),
   // REG-GUIDE-TRANSPORT-001 (2026-09-18 QA): the Transportation / PUC Permit
   // card rendered the unvalidated-description placeholder on a Bayamón
