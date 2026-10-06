@@ -52,6 +52,14 @@ export interface ScenarioSite {
   source: string;
 }
 
+export interface ApproximateSite {
+  latitude: number;
+  longitude: number;
+  municipality: string;
+  approximate: true;
+  basis: string;
+}
+
 export interface NormalizedScenario {
   jurisdiction: "Puerto Rico";
   business_type: string | null;
@@ -106,6 +114,14 @@ export interface AssessmentResult {
   dropped_answers: string[];
   /** Where the widget map opens (display only). */
   map_focus: { latitude: number; longitude: number; zoom: number };
+  /**
+   * Municipality known but no pin yet: downtown (barrio-pueblo) of that
+   * municipio, so the widget can show a draggable starting pin. Display only —
+   * never a site, never sent to the portal as a pin.
+   */
+  approximate_site: ApproximateSite | null;
+  /** Street + official-map answers for scenario.site (filled by the MCP layer; null when not looked up). */
+  site_details?: import("./siteLookup").SiteDetails | null;
   versions: { generated_at: string; server: string; engine: string; kb: string; rules: number };
   message: string;
 }
@@ -366,13 +382,19 @@ export function mapFocus(s: NormalizedScenario): AssessmentResult["map_focus"] {
   return f ? { ...f, zoom: 13 } : { latitude: 18.22, longitude: -66.45, zoom: 8 };
 }
 
+export function approximateSite(s: NormalizedScenario): ApproximateSite | null {
+  if (s.site || !s.municipality) return null;
+  const f = municipioFocus(s.municipality);
+  return f ? { ...f, municipality: s.municipality, approximate: true, basis: `Downtown ${s.municipality} (barrio-pueblo) — approximate; drag the pin to the exact site.` } : null;
+}
+
 export function assessScenario(scenario: NormalizedScenario, dropped: string[] = [], now = new Date()): AssessmentResult {
   const versions = { generated_at: now.toISOString(), server: `smartpr-chatgpt@${CHATGPT_SERVER_VERSION}`, engine: "smartpr-rules-engine (portal intake)", kb: kbVersion(), rules: kb.rules.length };
   const coverage_limits = [
     "Puerto Rico state and municipal requirements in SmartPR's knowledge graph only; federal coverage is partial.",
     "Preliminary triage, not legal advice. Confirm every item with the issuing agency.",
     scenario.site
-      ? "The map pin sets the municipality (Census boundaries). Parcel, zoning, flood-zone and full site analysis for the pin are in SmartPR."
+      ? "The map pin sets the municipality (Census boundaries). Site chips (zoning, flood, landslide, coastal) come from official map services when they answer in time; the full site report is in SmartPR."
       : "No parcel, zoning-map, flood-zone or site analysis in this preview.",
   ];
   const unresolved_facts: string[] = [];
@@ -382,7 +404,7 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
     return {
       status: "unsupported", tier: "free_preview", scenario, assumptions: [], unresolved_facts: ["business activity"],
       clarifying_questions: [], requirements: [], gated: { hidden_requirement_count: 0, locked_features: [] },
-      counts: { supported: 0, conditional: 0, unresolved: 0, total: 0 }, coverage_limits, dropped_answers: dropped, map_focus: mapFocus(scenario), versions,
+      counts: { supported: 0, conditional: 0, unresolved: 0, total: 0 }, coverage_limits, dropped_answers: dropped, map_focus: mapFocus(scenario), approximate_site: approximateSite(scenario), versions,
       message: scenario.business_type_input
         ? `SmartPR doesn't cover "${scenario.business_type_input}" yet. Describe the activity differently (e.g. "furniture manufacturing", "restaurant").`
         : "Describe the business activity to start a Puerto Rico requirements preview.",
@@ -503,9 +525,19 @@ export function assessScenario(scenario: NormalizedScenario, dropped: string[] =
     clarifying_questions: questions.slice(0, MAX_CLARIFYING_QUESTIONS + 1),
     requirements: visible,
     gated: { hidden_requirement_count: reqs.length - visible.length, locked_features: ["full requirement list", "sequencing & dependencies across agencies", "site analysis (flood zone, zoning, parcel)", "downloadable report", "evidence tracking in SmartPR"] },
-    counts, coverage_limits, dropped_answers: dropped, map_focus: mapFocus(scenario), versions,
+    counts, coverage_limits, dropped_answers: dropped, map_focus: mapFocus(scenario), approximate_site: approximateSite(scenario), versions,
     message: status === "partial"
       ? `Preliminary: ${counts.total} requirements identified (${counts.unresolved} unresolved). Answer the clarifying questions to refine.`
       : `Preliminary: ${counts.total} requirements identified for this scenario.`,
   };
+}
+
+/** Human-readable clarifying answers (question → answer) for the handoff
+ *  review page. Server-side only (keeps the KB out of client bundles). */
+export function describeAnswers(s: NormalizedScenario): Array<{ id: string; question: string; answer: string }> {
+  return Object.entries(s.answers || {}).map(([id, v]) => {
+    const q = kb.questions.find((qq) => qq.id === id);
+    const answer = v === true ? "Yes" : v === false ? "No" : Array.isArray(v) ? v.join(", ") : String(v);
+    return { id, question: q?.question ?? id, answer };
+  });
 }
