@@ -8,6 +8,7 @@
 import { assessScenario, normalizeScenario, CHATGPT_SERVER_VERSION, type NormalizedScenario, type ScenarioInput } from "./assessment";
 import { createHandoffToken, HandoffError, type HandoffIntent } from "./handoff";
 import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml } from "./widget";
+import { siteDetailsFor, type SiteLookups } from "./siteLookup";
 
 export const PROTOCOL_VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 export const SERVER_NAME = "smartpr-chatgpt";
@@ -15,7 +16,7 @@ export const SERVER_NAME = "smartpr-chatgpt";
 const INSTRUCTIONS =
   "SmartPR gives preliminary Puerto Rico business permit/registration requirements from SmartPR's deterministic rules engine — never answer requirements from model knowledge. " +
   "Call assess_scenario with the facts the user stated (leave unknowns out; never guess). Ask the returned clarifying questions, then call refine_scenario with the previous scenario plus answers. " +
-  "The widget lets the user drop a map pin; the pin sets the municipality. When scenario.site is present, ALWAYS pass site {latitude, longitude} (or the full prior scenario including site) on every later assess_scenario/refine_scenario call — never replace a pin with municipality text alone. " +
+  "The widget shows a draggable map pin (an approximate downtown pin when only the municipality is known); dropping or dragging it sets the exact site and municipality. When scenario.site is present, ALWAYS pass site {latitude, longitude} (or the full prior scenario including site) on every later assess_scenario/refine_scenario call — never replace a pin with municipality text alone. " +
   "Use create_portal_handoff only when the user wants to continue, unlock the full assessment, or use their SmartPR plan. Results are a free preview, not legal advice.";
 
 const scenarioProps = {
@@ -59,6 +60,8 @@ const resultSchema = {
     clarifying_questions: { type: "array" }, requirements: { type: "array" }, gated: { type: "object" },
     counts: { type: "object" }, coverage_limits: { type: "array" }, versions: { type: "object" }, message: { type: "string" },
     map_focus: { type: "object", description: "Where the widget map should open (lat/lng/zoom).", properties: { latitude: { type: "number" }, longitude: { type: "number" }, zoom: { type: "number" } } },
+    approximate_site: { type: ["object", "null"], description: "Display-only starting pin (downtown of the stated municipality) when no exact site is pinned. Not a site — never pass it as scenario.site." },
+    site_details: { type: ["object", "null"], description: "For scenario.site: street/address and official-map chips (zoning, FEMA flood, landslide, coastal). A chip with value null was not available — say 'see the full report', never guess." },
     dropped_answers: { type: "array" }, tier: { type: "string" },
   },
   required: ["status", "scenario", "requirements", "versions", "map_focus"],
@@ -102,7 +105,12 @@ export const TOOLS = [
     description: "Use only when the user asks to continue, save, unlock the full assessment, or use their SmartPR plan. Returns a short-lived link to SmartPR where they review the scenario before anything is saved.",
     inputSchema: {
       type: "object",
-      properties: { scenario: { type: "object", description: "The `scenario` object from the latest assess/refine result." }, intent: { type: "string", enum: ["continue", "unlock", "use_plan"] } },
+      properties: {
+        scenario: { type: "object", description: "The `scenario` object from the latest assess/refine result (keep site and answers)." },
+        intent: { type: "string", enum: ["continue", "unlock", "use_plan"] },
+        answers: { ...answersProp, description: "Optional clarifying answers not yet applied with refine_scenario; merged into the scenario." },
+        site: scenarioProps.site,
+      },
       required: ["scenario"],
       additionalProperties: false,
     },
@@ -122,29 +130,48 @@ function asScenario(v: unknown): Partial<NormalizedScenario> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Partial<NormalizedScenario>) : null;
 }
 
-export function callTool(name: string, args: Record<string, unknown>, opts: { siteUrl: string }) {
+export interface ChatgptMcpOptions {
+  siteUrl: string;
+  /** Street + official-map lookups for a pinned site (route passes the real ones; tests inject fakes; omitted → none). */
+  siteLookups?: SiteLookups | null;
+}
+
+export async function callTool(name: string, args: Record<string, unknown>, opts: ChatgptMcpOptions) {
   if (name === "assess_scenario" || name === "refine_scenario") {
     const prior = name === "refine_scenario" ? asScenario(args.scenario) : null;
     if (name === "refine_scenario" && !prior) return toolError("refine_scenario needs the previous result's `scenario` object.");
     const { scenario, dropped } = normalizeScenario(args as ScenarioInput, prior);
     const result = assessScenario(scenario, dropped);
+    if (scenario.site && opts.siteLookups) {
+      result.site_details = await siteDetailsFor(scenario.site.latitude, scenario.site.longitude, opts.siteLookups);
+    } else result.site_details = null;
+    const sd = result.site_details;
     const top = result.requirements.slice(0, 5).map((r) => `- ${r.name} (${r.agency}) — ${r.applicability}`).join("\n");
     const qs = result.clarifying_questions.map((q) => `- [${q.id}] ${q.question}`).join("\n");
+    const siteLine = scenario.site
+      ? `\nSite (map pin): ${sd?.street ? `${sd.street}, ` : ""}${scenario.site.barrio ? `${scenario.site.barrio}, ` : ""}${scenario.site.municipality} (${scenario.site.latitude}, ${scenario.site.longitude})${scenario.site.near_boundary ? " — near a municipal boundary, confirm" : ""}` +
+        (sd ? (sd.pending ? "\nSite chips (zoning, flood, landslide, coastal) are still loading." : `\nSite chips: ${sd.chips.map((c) => `${c.label}: ${c.value ?? "see full report"}`).join("; ")}`) : "")
+      : result.approximate_site ? `\nMap shows an approximate pin in downtown ${result.approximate_site.municipality}; the user can drag it to the exact site.` : "";
     return {
       structuredContent: result,
-      content: [{ type: "text", text: `${result.message}${scenario.site ? `\nSite (map pin): ${scenario.site.barrio ? `${scenario.site.barrio}, ` : ""}${scenario.site.municipality}${scenario.site.near_boundary ? " — near a municipal boundary, confirm" : ""}` : ""}${dropped.includes("site") ? "\nThe pin is outside Puerto Rico and was ignored." : ""}\n${top}${qs ? `\nClarifying questions:\n${qs}` : ""}\n(Free preview from SmartPR's rules engine — not legal advice.)` }],
+      content: [{ type: "text", text: `${result.message}${siteLine}${dropped.includes("site") ? "\nThe pin is outside Puerto Rico and was ignored." : ""}\n${top}${qs ? `\nClarifying questions:\n${qs}` : ""}\n(Free preview from SmartPR's rules engine — not legal advice.)` }],
     };
   }
   if (name === "create_portal_handoff") {
     const prior = asScenario(args.scenario);
     if (!prior) return toolError("create_portal_handoff needs the latest `scenario` object.");
-    const { scenario } = normalizeScenario({}, prior); // re-validate untrusted scenario
+    // Re-validate the untrusted scenario; merge answers / pin the widget had
+    // not yet applied so the portal always gets the CURRENT scenario.
+    const extra: ScenarioInput = {};
+    if (args.answers && typeof args.answers === "object" && !Array.isArray(args.answers)) extra.answers = args.answers;
+    if (args.site !== undefined) extra.site = args.site;
+    const { scenario } = normalizeScenario(extra, prior);
     const intent: HandoffIntent = args.intent === "unlock" || args.intent === "use_plan" ? args.intent : "continue";
     try {
       const { token, expires_at } = createHandoffToken(scenario, intent);
       const url = `${opts.siteUrl.replace(/\/$/, "")}/chatgpt/handoff?t=${encodeURIComponent(token)}`;
       return {
-        structuredContent: { url, expires_at, intent, saves_nothing_until_confirmed: true },
+        structuredContent: { url, expires_at, intent, saves_nothing_until_confirmed: true, carried: { site: !!scenario.site, answers: Object.keys(scenario.answers).length, business_status: scenario.business_status, renovation: scenario.renovation } },
         content: [{ type: "text", text: `Open SmartPR to review this scenario before anything is saved (link expires ${expires_at}): ${url}` }],
       };
     } catch (e) {
@@ -156,25 +183,33 @@ export function callTool(name: string, args: Record<string, unknown>, opts: { si
 }
 
 /**
- * Widget CSP: strict and empty. The widget is fully self-contained (inline
- * CSS/JS, inline-SVG vector map of the municipios — no remote tiles, fonts or
- * images, no fetch), so there is nothing for ChatGPT's sandbox CSP to block.
- * v3 loaded Esri raster tiles via resource_domains and ChatGPT showed
- * "Couldn't open …" (CSP off) instead of the widget; v4 removed every external
- * load. The only non-empty entry is redirect_domains (the SmartPR portal that
- * handoff links open via openExternal) — `_meta.ui.csp` has no redirect field.
+ * Widget CSP (v6). The widget is still self-contained (inline CSS/JS incl.
+ * vendored Leaflet, inline-SVG municipio fallback, no fetch/XHR). The only
+ * remote loads are basemap tile IMAGES from SmartPR's own tile proxy
+ * (`<portal>/api/tiles/{z}/{x}/{y}.png` → Esri World Street Map / World
+ * Imagery), so a single first-party origin is declared:
+ *  - resource_domains / resourceDomains → img-src for the tiles (the field
+ *    ChatGPT documents for images and reliably honors);
+ *  - connect_domains / connectDomains → same origin, declared for
+ *    completeness (the widget makes no fetch/XHR calls);
+ *  - redirect_domains → openExternal targets (handoff links);
+ *  - ui.domain / openai/widgetDomain → dedicated sandbox origin (required
+ *    for submission).
+ * If ChatGPT blocks the tiles anyway, the widget switches to the inline-SVG
+ * municipio map after ~3 s — it never depends on the network to render.
  */
 export function widgetResourceMeta(siteUrl: string) {
   const portal = new URL(siteUrl).origin;
   return {
-    ui: { prefersBorder: true, csp: { connectDomains: [] as string[], resourceDomains: [] as string[] } },
-    "openai/widgetCSP": { connect_domains: [] as string[], resource_domains: [] as string[], redirect_domains: [portal] },
-    "openai/widgetDescription": "SmartPR preliminary Puerto Rico requirements with a site map pin and refine controls.",
+    ui: { prefersBorder: true, domain: portal, csp: { connectDomains: [portal], resourceDomains: [portal] } },
+    "openai/widgetDomain": portal,
+    "openai/widgetCSP": { connect_domains: [portal], resource_domains: [portal], redirect_domains: [portal] },
+    "openai/widgetDescription": "SmartPR preliminary Puerto Rico requirements with a draggable site map pin, site chips and refine controls.",
     "openai/widgetPrefersBorder": true,
   };
 }
 
-export function handleChatgptMcp(body: unknown, opts: { siteUrl: string }): McpResult {
+export async function handleChatgptMcp(body: unknown, opts: ChatgptMcpOptions): Promise<McpResult> {
   if (Array.isArray(body)) return err(null, -32600, "Batch requests are not supported.", 400);
   const msg = (body || {}) as Rpc;
   if (msg.jsonrpc !== "2.0" || typeof msg.method !== "string") return err(msg.id, -32600, "Invalid Request", 400);
@@ -199,6 +234,7 @@ export function handleChatgptMcp(body: unknown, opts: { siteUrl: string }): McpR
           name: "smartpr-requirements",
           title: "SmartPR requirements preview",
           mimeType: WIDGET_MIME,
+          _meta: widgetResourceMeta(opts.siteUrl),
           ...(uri === WIDGET_URI ? {} : { description: `Alias of ${WIDGET_URI} (ChatGPT cached template_pointer)` }),
         })),
       });
@@ -207,14 +243,14 @@ export function handleChatgptMcp(body: unknown, opts: { siteUrl: string }): McpR
       const uri = typeof params.uri === "string" ? params.uri : "";
       if (!(WIDGET_URI_ALIASES as readonly string[]).includes(uri)) return err(msg.id, -32602, "Unknown resource");
       // Echo the requested URI so a cached template_pointer=v1/v2/v3 still binds;
-      // HTML + empty CSP meta are always the current widget.
-      return ok(msg.id, { contents: [{ uri, mimeType: WIDGET_MIME, text: widgetHtml(), _meta: widgetResourceMeta(opts.siteUrl) }] });
+      // HTML + CSP meta are always the current widget.
+      return ok(msg.id, { contents: [{ uri, mimeType: WIDGET_MIME, text: widgetHtml({ assetOrigin: new URL(opts.siteUrl).origin }), _meta: widgetResourceMeta(opts.siteUrl) }] });
     }
     case "tools/call": {
       const name = typeof params.name === "string" ? params.name : "";
       const args = params.arguments && typeof params.arguments === "object" && !Array.isArray(params.arguments) ? (params.arguments as Record<string, unknown>) : {};
       if (JSON.stringify(args).length > 20000) return err(msg.id, -32602, "Arguments too large");
-      const result = callTool(name, args, opts);
+      const result = await callTool(name, args, opts);
       if (!result) return err(msg.id, -32602, `Unknown tool: ${name}`);
       return ok(msg.id, result);
     }
