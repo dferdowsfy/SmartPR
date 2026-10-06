@@ -1,6 +1,6 @@
 "use client";
 
-import { saveGuestDraft } from "../../../lib/guestDraft";
+import { saveHandoffDraft } from "../../../lib/guestDraft";
 import type { NormalizedScenario } from "../../../lib/chatgpt/assessment";
 import type { HandoffIntent } from "../../../lib/chatgpt/handoff";
 import { HANDOFF_INTAKE_PATH, handoffActions, scenarioToGuestDraft } from "../../../lib/chatgpt/handoffActions";
@@ -18,7 +18,7 @@ export default function HandoffReview({ scenario, intent, expiresAt, selfPath, s
     ["Renovation", scenario.renovation === "unknown" ? "Not confirmed" : RENOVATION[scenario.renovation] ?? scenario.renovation],
   ];
   function proceed() {
-    saveGuestDraft(scenarioToGuestDraft(scenario));
+    saveHandoffDraft(scenarioToGuestDraft(scenario));
     window.location.assign(HANDOFF_INTAKE_PATH);
   }
   const { primary, signIn } = handoffActions(intent, signedIn);

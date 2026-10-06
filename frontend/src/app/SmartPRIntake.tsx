@@ -151,7 +151,8 @@ import { EnergyProcessesSection, energySummaryQuestions, type EnergyLegacyCard }
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
-import { saveGuestDraft, loadGuestDraft, clearGuestDraft } from '../lib/guestDraft';
+import { saveGuestDraft, loadGuestDraft, clearGuestDraft, takeHandoffDraft, matterKeyForSearch, draftMatchesUrl } from '../lib/guestDraft';
+import type { GuestDraft } from '../lib/guestDraft';
 import { useDeliverablesAccess } from '../lib/billing/useDeliverablesAccess';
 import { readRestaurantHandoff } from './restaurants/model';
 import { readClinicHandoff } from './clinics/model';
@@ -2571,6 +2572,25 @@ export default function SmartPRIntake() {
     return () => clearTimeout(id);
   }, [uploadNotice]);
 
+  // Hydrate intake state from a draft object (guest draft or one-time
+  // ChatGPT handoff). Shared by both restore paths so they stay identical.
+  const hydrateDraftState = (draft: GuestDraft) => {
+    if (draft.profile) setProfile((prev) => ({ ...prev, ...(draft.profile as Partial<BusinessProfile>) }));
+    if (draft.discoveryAnswers) setDiscoveryAnswers(draft.discoveryAnswers);
+    if (draft.potentialDecisions) setPotentialDecisions(draft.potentialDecisions as Record<string, PotentialDecision>);
+    if (Array.isArray(draft.requirements)) setRequirements(draft.requirements as Requirement[]);
+    if (draft.incentiveFacts) setIncentiveFacts(draft.incentiveFacts as Record<string, ProjectFactValue>);
+    if (Array.isArray(draft.incentiveAssessmentHistory)) setIncentiveAssessmentHistory(draft.incentiveAssessmentHistory as IncentiveAssessment[]);
+    if (Array.isArray(draft.pursuedIncentives)) setPursuedIncentives(draft.pursuedIncentives as IncentiveEligibilityResult[]);
+    // Site pinned before sign-in / handed off from ChatGPT's map pin.
+    const draftSite = restoreIntakeSite(draft.intakeSite);
+    if (draftSite) {
+      setIntakeSite(draftSite);
+      setSiteOrigin('restored');
+    }
+    if (draft.currentStep) setCurrentStep(draft.currentStep as Step);
+    if (draft.language === 'es' || draft.language === 'en') setLanguage(draft.language);
+  };
   useEffect(() => {
     if (me === undefined || guestRestoredRef.current) return;
     const params = new URLSearchParams(window.location.search);
@@ -2599,24 +2619,24 @@ export default function SmartPRIntake() {
       trackAcquisition('intake_opened', params.get('source') || 'direct', clinic.language);
       return;
     }
+    // One-time ChatGPT handoff (REG-LIVE-CROSSMATTER-LEAK-001): read-and-delete,
+    // so the handed-off scenario hydrates exactly once and can never leak
+    // into a later, unrelated intake.
+    const handoffDraft = takeHandoffDraft();
+    if (handoffDraft) {
+      guestRestoredRef.current = true;
+      hydrateDraftState(handoffDraft);
+      return;
+    }
     const draft = loadGuestDraft();
     if (!draft) return;
+    // Matter-scoped drafts only (REG-LIVE-CROSSMATTER-LEAK-001): a stale
+    // draft saved from another matter's URL must never hydrate here and win
+    // the mount race against the authoritative snapshot restore. Legacy
+    // drafts (no key) are treated as param-less sessions.
+    if (!draftMatchesUrl(draft, window.location.search)) return;
     guestRestoredRef.current = true;
-    if (draft.profile) setProfile((prev) => ({ ...prev, ...(draft.profile as Partial<BusinessProfile>) }));
-    if (draft.discoveryAnswers) setDiscoveryAnswers(draft.discoveryAnswers);
-    if (draft.potentialDecisions) setPotentialDecisions(draft.potentialDecisions as Record<string, PotentialDecision>);
-    if (Array.isArray(draft.requirements)) setRequirements(draft.requirements as Requirement[]);
-    if (draft.incentiveFacts) setIncentiveFacts(draft.incentiveFacts as Record<string, ProjectFactValue>);
-    if (Array.isArray(draft.incentiveAssessmentHistory)) setIncentiveAssessmentHistory(draft.incentiveAssessmentHistory as IncentiveAssessment[]);
-    if (Array.isArray(draft.pursuedIncentives)) setPursuedIncentives(draft.pursuedIncentives as IncentiveEligibilityResult[]);
-    // Site pinned before sign-in / handed off from ChatGPT's map pin.
-    const draftSite = restoreIntakeSite(draft.intakeSite);
-    if (draftSite) {
-      setIntakeSite(draftSite);
-      setSiteOrigin('restored');
-    }
-    if (draft.currentStep) setCurrentStep(draft.currentStep as Step);
-    if (draft.language === 'es' || draft.language === 'en') setLanguage(draft.language);
+    hydrateDraftState(draft);
   }, [me]);
 
   useEffect(() => {
@@ -2626,6 +2646,8 @@ export default function SmartPRIntake() {
     }
     if (me === undefined) return;
     const timer = window.setTimeout(() => {
+      // Stamp the draft with the current matter identity so a later mount
+      // for a different matter never restores it (REG-LIVE-CROSSMATTER-LEAK-001).
       saveGuestDraft({
         profile: profile as unknown as Record<string, unknown>,
         discoveryAnswers,
@@ -2637,6 +2659,7 @@ export default function SmartPRIntake() {
         intakeSite,
         currentStep,
         language,
+        matterKey: matterKeyForSearch(window.location.search),
       });
     }, 400);
     return () => window.clearTimeout(timer);
