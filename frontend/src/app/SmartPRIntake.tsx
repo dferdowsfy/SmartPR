@@ -5316,13 +5316,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Live rules-engine output while the user is still in intake, so the
   // intelligence panel and progress stats update as they answer.
+  // NOTE (QA 2026-10-06 00:00, S453 diagnosis): requirementOptions() closes
+  // over projectContext, so it MUST be a memo dep — otherwise the panel
+  // keeps showing pre-project requirements after the renovation bridge (or
+  // any project-fact change) fires. Stale project facts here also feed
+  // intakeRuleQuestions below.
   const liveReqs = React.useMemo(() => {
     try {
       return computeRequirements(profile, discoveryAnswers, potentialDecisions, requirementOptions());
     } catch {
       return [] as Requirement[];
     }
-  }, [profile, discoveryAnswers, potentialDecisions, intakeSite]);
+  }, [profile, discoveryAnswers, potentialDecisions, intakeSite, projectContext]);
 
   // Some conditional rule questions are outside the business type's guided
   // list. Ask those here too, using the same write keys as the rule engine.
