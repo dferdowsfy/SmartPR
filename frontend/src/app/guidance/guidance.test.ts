@@ -145,11 +145,21 @@ const KB_GAPS_GATED = new Set(["DOC_ICP_HISTORIC_RECOMMENDATION", "DOC_SHPO_SECT
 // (REG-GUIDE-AMBULANT-001, 2026-10-06).
 const AMBULANT_GATED = new Set(["DOC_AMBULANT_BUSINESS_LICENSE"]);
 
-test("same Bayamón bar: all sixty-three source-backed explanations are distinct and actionable in EN/ES", () => {
+// Used-oil/hazmat-gated: the DRNA used-oil generator ID and EPA/DRNA
+// hazardous-waste generator ID apply only to businesses that generate used
+// oil or hazardous waste (RULE_0679/0680/0681/0682 — auto-repair business
+// types or the vehicle-repair/hazardous-materials/hazardous-fluids
+// questions) — the Bayamón bar profile triggers none of them, so the
+// validated concepts stay provisional for it (correct — MATCH_TRACE_MISSING,
+// not a placeholder). Added with the Ley 172-1996 / RCRA-validated concepts
+// (REG-GUIDE-USEDOIL-001, 2026-10-06).
+const USEDOIL_HAZMAT_GATED = new Set(["DOC_USED_OIL_GENERATOR_ID", "DOC_EPA_HAZARDOUS_WASTE_ID"]);
+
+test("same Bayamón bar: all sixty-five source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
-      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId) || FOREIGN_CORP_GATED.has(g.requirementId) || TOBACCO_GATED.has(g.requirementId) || KB_GAPS_GATED.has(g.requirementId) || AMBULANT_GATED.has(g.requirementId)) {
+      if (SOLAR_GATED.has(g.requirementId) || CONTRACTOR_GATED.has(g.requirementId) || NMI_GATED.has(g.requirementId) || VEHICLE_GATED.has(g.requirementId) || TRANSPORT_AGRI_GATED.has(g.requirementId) || ENTITY_GATED.has(g.requirementId) || TOURISM_GATED.has(g.requirementId) || SIGN_ANNUAL_GATED.has(g.requirementId) || OUTDOOR_GATED.has(g.requirementId) || BEVERAGE_MFG_GATED.has(g.requirementId) || CHILDCARE_GATED.has(g.requirementId) || HOA_GATED.has(g.requirementId) || ENTERTAINMENT_GATED.has(g.requirementId) || DEALER_GATED.has(g.requirementId) || FOREIGN_CORP_GATED.has(g.requirementId) || TOBACCO_GATED.has(g.requirementId) || KB_GAPS_GATED.has(g.requirementId) || AMBULANT_GATED.has(g.requirementId) || USEDOIL_HAZMAT_GATED.has(g.requirementId)) {
         assert.equal(g.status, "GUIDANCE_NEEDS_REVIEW", `${g.requirementId}: ${g.reviewReasons}`);
         assert.ok(g.regulatoryReason && g.purpose && g.nextAction && g.consequenceOrNextStep);
         continue;
@@ -165,7 +175,7 @@ test("same Bayamón bar: all sixty-three source-backed explanations are distinct
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 63);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 65);
   }
 });
 
@@ -1044,5 +1054,40 @@ test("REG-GUIDE-AMBULANT-001: ambulant-business license renders validated guidan
     assert.equal(g.status, "VALIDATED", `${language}: ${g.reviewReasons}`);
     assert.doesNotMatch(JSON.stringify(g), /hasn't validated|still pending/i, `${language}: no placeholder copy`);
     assert.match(JSON.stringify(g), /20\.003/, `${language}: statute cited`);
+  }
+});
+
+// REG-GUIDE-USEDOIL-001 (2026-10-06 QA): a live filing audit (S467 Toa Baja
+// auto repair & tire shop, 15:00 cycle) showed the DRNA Used-Oil Generator
+// Identification and EPA/DRNA Hazardous-Waste Generator ID cards rendering
+// the unvalidated-description placeholder ("A validated description of this
+// document is still pending" / "Confirm with DRNA/EPA exactly what is
+// required in your case before acting") while citing genuine statutes.
+// Ley 172-1996 ("Ley para el Manejo Adecuado de Aceite Usado en Puerto
+// Rico") — verified 2026-10-06 via the OGP-compiled statute PDF — prohibits
+// dumping used oil on land, in sewers/septics, or in water bodies and
+// requires its proper collection, recovery and disposal (Reglamento 5717,
+// Cap. VII). The hazardous-waste card cites RCRA 40 CFR 262 and Ley
+// 70-1992 (EPA generator summary page verified 200 OK 2026-10-06). Both
+// cards now render validated content.
+test("REG-GUIDE-USEDOIL-001: used-oil and hazardous-waste generator cards render validated guidance with the Ley 172-1996 / RCRA citations (live S467 finding 2026-10-06)", () => {
+  const srcOil = PR_GUIDANCE_SOURCES.usedOil;
+  assert.match(srcOil.citation, /Ley N[uú]m\. 172-1996/);
+  assert.match(srcOil.url, /bvirtualogp\.pr\.gov/);
+  const srcHaz = PR_GUIDANCE_SOURCES.hazmat;
+  assert.match(srcHaz.citation, /40 CFR Part 262/);
+  assert.match(srcHaz.citation, /Ley N[uú]m\. 70-1992/);
+  const profile = { municipality: "Toa Baja", business_type: "Auto Repair", business_structure: "LLC", location_type: "Industrial Space", number_of_employees: 5 };
+  const answers = { Q_VEHICLE_REPAIR: true, Q_HAZARDOUS_FLUIDS: true, Q_HAZARDOUS_MATERIALS: true, Q_RETAIL_SALES: true };
+  for (const language of ["en", "es"] as const) {
+    const ctx: GuidanceContext = { language, municipality: profile.municipality, businessTypeName: profile.business_type, profile, discoveryAnswers: answers, entityType: "limited_liability_company", kb: KB, engineInput: buildEngineInput(profile, answers) };
+    for (const docId of ["DOC_USED_OIL_GENERATOR_ID", "DOC_EPA_HAZARDOUS_WASTE_ID"] as const) {
+      const doc = KB.documents.find(d => d.id === docId)!;
+      const g = buildRequirementGuidance({ document_id: docId, code: docId.toLowerCase(), name: doc.name, agency: doc.agency ?? "", reason: "fired by RULE_0679/RULE_0681", applicability: "needs_more_information", triggerFacts: [] }, ctx);
+      assert.equal(g.status, "VALIDATED", `${language} ${docId}: ${g.reviewReasons}`);
+      assert.doesNotMatch(JSON.stringify(g), /hasn't validated|still pending|before acting/i, `${language} ${docId}: no placeholder copy`);
+    }
+    const gOil = buildRequirementGuidance({ document_id: "DOC_USED_OIL_GENERATOR_ID", code: "doc_used_oil_generator_id", name: "DRNA Used-Oil Generator Identification", agency: "DRNA", reason: "x", applicability: "needs_more_information", triggerFacts: [] }, ctx);
+    assert.match(JSON.stringify(gOil), /172-1996/, `${language}: used-oil statute cited`);
   }
 });

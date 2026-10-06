@@ -21,6 +21,22 @@ export const PR_GUIDANCE_SOURCES = {
   // licenses for any ambulant business; each license type is valid for up to
   // one year.
   ambulant: source("SRC_GUIDANCE_AMBULANT", "Legislatura de Puerto Rico", "Ley 81-1991, Artículo 20.003 — Reglamentación de Negocios Ambulantes (21 L.P.R.A. § 4952)", "https://agencias.pr.gov/agencias/JACL/Documents/LeyesReglamentos/Ley%20de%20Municipios%20Autonomos.pdf", "Municipalities regulate the location and operation of ambulant businesses within their territorial limits and may issue, deny, suspend, revoke, amend or modify the licenses required for any ambulant business; each license type is valid for up to one year."),
+  // REG-GUIDE-USEDOIL-001 (2026-10-06 QA, live S467): the DRNA Used-Oil
+  // Generator Identification and EPA/DRNA Hazardous-Waste Generator ID cards
+  // rendered the unvalidated-description placeholder on a live Toa Baja
+  // auto-repair filing while citing genuine statutes. Ley 172-1996
+  // ("Ley para el Manejo Adecuado de Aceite Usado en Puerto Rico") — verified
+  // 2026-10-06 via the OGP-compiled statute PDF — prohibits dumping used oil
+  // on land, in sewers/septics, or in water bodies and requires its proper
+  // collection, recovery and disposal (Reglamento 5717, Cap. VII).
+  usedOil: source("SRC_GUIDANCE_USEDOIL", "Departamento de Recursos Naturales y Ambientales (DRNA)", "Ley Núm. 172-1996 — Ley para el Manejo Adecuado de Aceite Usado en Puerto Rico; Reglamento 5717, Cap. VII", "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/Ambientales/172-1996/172-1996.pdf", "Art. 16 prohibitions: no person may discharge, dump, spill or deposit used oil on land, into sanitary or storm sewers, septic tanks, surface or ground waters, or marine waters; collection, storage, use and disposal must follow the applicable laws and regulations."),
+  // REG-GUIDE-USEDOIL-001 (2026-10-06 QA, live S467): the hazardous-waste
+  // generator card rendered the "confirm with the agency" placeholder while
+  // citing a genuine statute pair. EPA's hazardous-waste generator regulatory
+  // summary — verified 200 OK 2026-10-06 — documents the RCRA generator
+  // obligations; Ley 70-1992 is the PR solid/hazardous-waste framework the
+  // DRNA administers locally.
+  hazmat: source("SRC_GUIDANCE_HAZMAT", "U.S. Environmental Protection Agency", "Hazardous waste generators — 40 CFR Part 262; Ley Núm. 70-1992 (Puerto Rico)", "https://www.epa.gov/hwgenerators/hazardous-waste-generator-regulatory-summary", "EPA's regulatory summary of hazardous-waste generator requirements under RCRA: identification numbers, accumulation, manifesting and recordkeeping by generator category."),
   ogpCarta: source("SRC_GUIDANCE_OGP_CC_002_2022", "Oficina de Gerencia y Presupuesto (OGP)", "Carta Circular 002-2022 — disposiciones sobre cumplimiento contributivo municipal", "https://docs.pr.gov/files/OGP/Website_OGP/CartasCirculares/CC2022/CC-002-2022.pdf", "La Carta Circular 002-2022 de OGP establece las disposiciones sobre la certificación de cumplimiento contributivo municipal."),
   propertyEvidence: source("SRC_GUIDANCE_PROPERTY_EVIDENCE", "OGPe", "Single Business Portal — evidencia de la propiedad en las solicitudes de permiso", "https://www.permisos.pr.gov/", "La evidencia de control del predio (escritura o contrato de arrendamiento) forma parte del expediente de permisos."),
   // REG-GUIDE-DTRH-SOURCE-001 (2026-10-04 QA): a live filing audit
@@ -357,6 +373,12 @@ const SUBJECTS: Record<string, { en: string[]; es: string[] }> = {
   // the unvalidated-description placeholder on a live Toa Baja food-truck
   // filing while citing a genuine statute (Ley 81-1991, Art. 20.003).
   DOC_AMBULANT_BUSINESS_LICENSE: { en: ["ambulant business", "mobile business", "food truck license"], es: ["negocio ambulante", "licencia de negocio ambulante", "vendedor ambulante"] },
+  // REG-GUIDE-USEDOIL-001 (2026-10-06 QA, live S467): validated subject terms
+  // for the DRNA used-oil generator ID and EPA/DRNA hazardous-waste generator
+  // ID cards that rendered the unvalidated-description placeholder on a live
+  // Toa Baja auto-repair filing (Ley 172-1996; RCRA 40 CFR 262 / Ley 70-1992).
+  DOC_USED_OIL_GENERATOR_ID: { en: ["used oil", "oil generator", "aceite usado"], es: ["aceite usado", "generador de aceite", "drna"] },
+  DOC_EPA_HAZARDOUS_WASTE_ID: { en: ["hazardous waste", "hazardous waste generator", "rcra"], es: ["desperdicios peligrosos", "generador de desperdicios", "rcra"] },
   DOC_AGRICULTURE_REGISTRATION: { en: ["bona fide", "farmer", "agriculture"], es: ["bona fide", "agricultor", "agricultura", "finca"] },
   // REG-GUIDE-TOURISM-001 (2026-09-18 QA): validated subject terms for the
   // PRTC innkeeper registration and room-tax return cards that were
@@ -759,6 +781,44 @@ export const PR_REQUIREMENT_GUIDANCE: Record<string, GuidanceConcept> = {
     text("The municipal ambulant business license authorizes the mobile unit to operate — park, set up and sell — in that municipality, on the terms, locations and hours the municipal ordinance allows.", "La licencia municipal de negocio ambulante autoriza a la unidad móvil a operar — estacionarse, ubicarse y vender — en ese municipio, bajo los términos, ubicaciones y horarios que permita la ordenanza municipal."),
     text("Check with the municipality where the unit will operate which ambulant business license and periodic fee apply, and what location, hours and health-and-sanitation rules the municipal ordinance sets; each license type is valid for up to one year, so plan renewals.", "Verifica con el municipio donde operará la unidad qué licencia de negocio ambulante y qué canon periódico aplican, y qué reglas de ubicación, horario y salubridad establece la ordenanza municipal; cada tipo de licencia es válida por hasta un año, así que planifica las renovaciones."),
     text("Operating without the municipal ambulant business license can lead the municipality to intervene and order the unit to stop operating until the license is in place.", "Operar sin la licencia municipal de negocio ambulante puede llevar al municipio a intervenir y ordenar que la unidad cese operaciones hasta tener la licencia."),
+  ]),
+  // REG-GUIDE-USEDOIL-001 (2026-10-06 QA): the DRNA Used-Oil Generator
+  // Identification card rendered the unvalidated-description placeholder on
+  // a live Toa Baja auto-repair filing (S467) while citing a genuine statute
+  // (Ley 172-1996; Reglamento 5717 Cap. VII — verified 2026-10-06 via the
+  // OGP-compiled statute PDF). Shops that generate used oil must manage it
+  // through authorized handlers, so the card now carries validated content
+  // instead of the "hasn't validated" caveat. Conditions cover every firing
+  // path: the auto-repair business type (RULE_0679/0680), the vehicle-repair
+  // and hazardous-fluids questions, plus the generic businessType fallback.
+  DOC_USED_OIL_GENERATOR_ID: concept("DOC_USED_OIL_GENERATOR_ID", [
+    [condition("businessType", "Auto Repair Shop", "Taller de mecánica", "BT_AUTO_REPAIR_SHOP")],
+    [condition("Q_VEHICLE_REPAIR", "Vehicle repair: Yes", "Reparación de vehículos: Sí", true)],
+    [condition("Q_HAZARDOUS_FLUIDS", "Hazardous fluids: Yes", "Fluidos peligrosos: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.usedOil], [
+    text("Puerto Rico's used-oil law (Ley 172-1996, the \"Ley para el Manejo Adecuado de Aceite Usado en Puerto Rico\") prohibits dumping used oil on the ground, in sewers or septic tanks, or in any water body, and requires its proper collection, recovery and disposal — shops that generate used oil (oil changes, transmission service) must manage it through authorized handlers (Reglamento 5717, Cap. VII).", "La Ley 172-1996 (\"Ley para el Manejo Adecuado de Aceite Usado en Puerto Rico\") prohíbe botar aceite usado en el terreno, en alcantarillados o pozos sépticos, o en cualquier cuerpo de agua, y exige su recogido, recuperación y disposición adecuada — los talleres que generan aceite usado (cambios de aceite, servicio de transmisión) tienen que manejarlo con transportistas autorizados (Reglamento 5717, Cap. VII)."),
+    text("The DRNA used-oil generator identification registers the business as a generator of used oil so the oil is tracked from generation to proper disposal or recycling.", "La identificación de generador de aceite usado del DRNA registra al negocio como generador de aceite usado para que el aceite se rastree desde su generación hasta su disposición o reciclaje adecuado."),
+    text("Confirm with DRNA whether your volume of used oil requires generator identification, arrange pickup by an authorized used-oil transporter, and keep the pickup receipts on file.", "Confirma con el DRNA si tu volumen de aceite usado requiere la identificación de generador, coordina el recogido con un transportista de aceite usado autorizado, y guarda los recibos de recogido."),
+    text("Dumping used oil on the ground or into drains can lead to DRNA enforcement action and cleanup liability.", "Botar aceite usado en el terreno o por el desagüe puede llevar a acción de fiscalización del DRNA y a responsabilidad por la limpieza."),
+  ]),
+  // REG-GUIDE-USEDOIL-001 (2026-10-06 QA): the EPA/DRNA Hazardous-Waste
+  // Generator ID card rendered the "confirm with the agency" placeholder on
+  // the same live S467 filing while citing a genuine statute pair (RCRA
+  // 40 CFR 262; Ley 70-1992 — EPA summary page verified 200 OK 2026-10-06).
+  // Conditions cover every firing path: the auto-repair business type
+  // (RULE_0681/0682), the hazardous-materials and hazardous-fluids
+  // questions, plus the generic businessType fallback.
+  DOC_EPA_HAZARDOUS_WASTE_ID: concept("DOC_EPA_HAZARDOUS_WASTE_ID", [
+    [condition("businessType", "Auto Repair Shop", "Taller de mecánica", "BT_AUTO_REPAIR_SHOP")],
+    [condition("Q_HAZARDOUS_MATERIALS", "Hazardous materials: Yes", "Materiales peligrosos: Sí", true)],
+    [condition("Q_HAZARDOUS_FLUIDS", "Hazardous fluids: Yes", "Fluidos peligrosos: Sí", true)],
+    [business],
+  ], [PR_GUIDANCE_SOURCES.hazmat], [
+    text("Under RCRA, businesses that generate hazardous waste must obtain an EPA identification number and manage the waste under the generator standards (40 CFR Part 262); in Puerto Rico the DRNA administers the local program under the island's waste framework (Ley 70-1992).", "Bajo RCRA, los negocios que generan desperdicios peligrosos tienen que obtener un número de identificación de la EPA y manejarlos según las normas para generadores (40 CFR Parte 262); en Puerto Rico el DRNA administra el programa local bajo el marco de desperdicios de la isla (Ley 70-1992)."),
+    text("The EPA/DRNA hazardous-waste generator ID registers the business as a generator so its hazardous waste is tracked from generation to disposal.", "El ID de generador de desperdicios peligrosos de la EPA/DRNA registra al negocio como generador para que sus desperdicios peligrosos se rastreen desde su generación hasta su disposición."),
+    text("Determine whether your waste streams (solvents, paints, contaminated fluids) count as hazardous under RCRA; if they do, obtain the generator ID through the EPA's RCRAInfo system and follow the storage, labeling and manifest rules for your generator category.", "Determina si tus corrientes de desperdicios (solventes, pinturas, fluidos contaminados) cuentan como peligrosos bajo RCRA; si es así, obtén el ID de generador por el sistema RCRAInfo de la EPA y sigue las reglas de almacenaje, etiquetado y manifiestos de tu categoría de generador."),
+    text("Generating hazardous waste without the required identification and manifests can lead to EPA/DRNA enforcement and penalties.", "Generar desperdicios peligrosos sin la identificación y los manifiestos requeridos puede llevar a fiscalización y multas de la EPA/DRNA."),
   ]),
   // REG-GUIDE-TRANSPORT-001 (2026-09-18 QA): the Transportation / PUC Permit
   // card rendered the unvalidated-description placeholder on a Bayamón

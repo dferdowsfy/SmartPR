@@ -116,6 +116,12 @@ function factValue(key: GuidanceFactKey, ctx: GuidanceContext): string | boolean
     // REG-GUIDE-ENTERTAINMENT-001 (2026-09-22 QA): the live-entertainment
     // question fires RULE_0032; the bundled flow answers it by writeKey.
     Q_LIVE_ENTERTAINMENT: ["live_entertainment"],
+    // REG-GUIDE-USEDOIL-001 (2026-10-06 QA): the vehicle-repair and
+    // hazardous-materials/fluids questions fire RULE_0679/0681/0682;
+    // the bundled flow answers them by writeKey.
+    Q_VEHICLE_REPAIR: ["vehicle_repair"],
+    Q_HAZARDOUS_FLUIDS: ["hazardous_fluids"],
+    Q_HAZARDOUS_MATERIALS: ["hazardous_materials"],
   };
   const values = [a[key], p[key], ...(aliases[key] ?? []).flatMap(k => [a[k], p[k]])].filter(v => v !== undefined && v !== null);
   if (values.some(no)) return false;
