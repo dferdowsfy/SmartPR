@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite } from "./assessment";
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
 import { handleChatgptMcp, TOOLS, widgetResourceMeta } from "./mcp";
-import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM } from "./widget";
+import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM, municipioCentroid } from "./widget";
 import { PR_MUNICIPIO_SHAPES } from "./prMapShapes";
 import { municipioFocus } from "../../app/locations/boundaries";
 import { restoreIntakeSite } from "../../app/locations/intakeLocation";
@@ -89,7 +89,15 @@ test("MCP: initialize, tools/list, resources, tools/call", () => {
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v5.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v6.html");
+  assert.deepEqual([...WIDGET_URI_ALIASES], [
+    "ui://smartpr/requirements-v1.html",
+    "ui://smartpr/requirements-v2.html",
+    "ui://smartpr/requirements-v3.html",
+    "ui://smartpr/requirements-v4.html",
+    "ui://smartpr/requirements-v5.html",
+    "ui://smartpr/requirements-v6.html",
+  ]);
   const listed = (rpc("resources/list").body as Body).result.resources.map((r: any) => r.uri);
   assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
   const res = (rpc("resources/read", { uri: WIDGET_URI }).body as Body).result.contents[0];
@@ -261,6 +269,32 @@ test("widget map: CSP-safe vector map — empty CSP allowlists, no tiles/images,
   assert.deepEqual(site.required, ["latitude", "longitude"]);
 });
 
+test("widget v6: auto-drop suggested pin on municipality + draggable pins", () => {
+  // Centroid anchors: label point per municipio, accent/case-insensitive lookup.
+  const bayamon = municipioCentroid("Bayamón");
+  assert.ok(bayamon, "Bayamón resolves");
+  assert.equal(bayamon!.name, "Bayamón");
+  assert.ok(Math.abs(bayamon!.lat - 18.3445) < 1e-9 && Math.abs(bayamon!.lng - -66.1687) < 1e-9, "label point");
+  assert.deepEqual(municipioCentroid("bayamon"), bayamon, "folded lookup");
+  assert.deepEqual(municipioCentroid("SAN JUAN")?.name, "San Juan");
+  assert.equal(municipioCentroid("Notaplace"), null);
+  // Every municipio has an anchor inside the PR bbox.
+  for (const [name] of PR_MUNICIPIO_SHAPES) {
+    const c = municipioCentroid(name);
+    assert.ok(c && c.lat > 17.8 && c.lat < 18.6 && c.lng > -68.1 && c.lng < -65.1, `${name} anchor in PR`);
+  }
+  // Widget HTML carries the injected anchors and the new interaction code.
+  const html = widgetHtml();
+  assert.ok(!html.includes("__MUNI_CENTROIDS__"), "centroids injected");
+  assert.ok(html.includes('"bayamon":{"lat":18.3445,"lng":-66.1687'), "Bayamón anchor inlined");
+  assert.match(html, /auto-drop a suggested pin/, "auto-suggest logic present");
+  assert.match(html, /function dragPin\(node\)/, "draggable pin handler present");
+  assert.match(html, /Drag to move the pin/, "pin drag affordance present");
+  assert.match(html, /stashConfirmed\(\)/, "confirmed-pin stash on new pending pin");
+  assert.ok(!/fetch\(|XMLHttpRequest|EventSource|WebSocket/.test(html), "still no network calls");
+  assert.ok(html.length < 125_000, `widget stays small (${html.length} bytes)`);
+});
+
 test("widget map data: 78 municipios, decodable polyline rings inside Puerto Rico", () => {
   assert.equal(PR_MUNICIPIO_SHAPES.length, 78);
   const names = new Set(PR_MUNICIPIO_SHAPES.map((m) => m[0]));
@@ -282,8 +316,8 @@ test("widget map data: 78 municipios, decodable polyline rings inside Puerto Ric
   }
 });
 
-test("widget map: visible after assess — size-changed, muni question embeds map, URI v5, map_focus in schema", () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v5.html");
+test("widget map: visible after assess — size-changed, muni question embeds map, URI v6, map_focus in schema", () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v6.html");
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
   assert.equal(MAP_MAX_ZOOM, 14);
   const html = widgetHtml();
@@ -308,16 +342,17 @@ test("widget map: visible after assess — size-changed, muni question embeds ma
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
 });
 
-test("widget URI aliases: resources/read serves current HTML + empty CSP for v1–v5; tools advertise v5 only", () => {
+test("widget URI aliases: resources/read serves current HTML + empty CSP for v1–v6; tools advertise v6 only", () => {
   assert.deepEqual([...WIDGET_URI_ALIASES], [
     "ui://smartpr/requirements-v1.html",
     "ui://smartpr/requirements-v2.html",
     "ui://smartpr/requirements-v3.html",
     "ui://smartpr/requirements-v4.html",
     "ui://smartpr/requirements-v5.html",
+    "ui://smartpr/requirements-v6.html",
   ]);
   assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
-  // tools/list stays on the canonical v5 pointer — do not advertise older URIs there.
+  // tools/list stays on the canonical v6 pointer — do not advertise older URIs there.
   for (const t of TOOLS.slice(0, 2)) {
     const meta = t._meta as Record<string, unknown>;
     assert.equal((meta.ui as { resourceUri: string }).resourceUri, WIDGET_URI);
@@ -337,7 +372,7 @@ test("widget URI aliases: resources/read serves current HTML + empty CSP for v1�
     assert.deepEqual(c._meta["openai/widgetCSP"].resource_domains, []);
   }
   assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" }).body as Body).error?.code, -32602);
-  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v6.html" }).body as Body).error?.code, -32602);
+  assert.equal((rpc("resources/read", { uri: "ui://smartpr/requirements-v7.html" }).body as Body).error?.code, -32602);
 });
 
 
@@ -365,7 +400,7 @@ test("widget v5: sticky confirmed pin + portal-style location panel + expanded r
   // Sticky: same-municipality re-assess without site must not clear the pin.
   assert.match(html, /Sticky pin/);
   assert.match(html, /callTool\("refine_scenario",\{scenario:scenarioPayload\(\)/);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v5.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v6.html");
   assert.ok((WIDGET_URI_ALIASES as readonly string[]).includes("ui://smartpr/requirements-v4.html"));
   assert.ok(!/arcgisonline|tile\.openstreetmap/i.test(html), "still CSP-safe / no tiles");
 });

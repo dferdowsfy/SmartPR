@@ -9,15 +9,31 @@
 
 import { PR_MUNICIPIO_SHAPES, PR_MAP_SOURCE } from "./prMapShapes";
 
-// Canonical URI is v5 (confirmed-location layout + sticky pin). ChatGPT may
-// still request older template_pointer URIs (v1–v4) from a cached connector;
-// serve the same HTML for every alias so a bump does not 404 until reconnect.
-export const WIDGET_URI = "ui://smartpr/requirements-v5.html";
+function foldName(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+/** Suggested-pin anchor per municipio: the shape's label point (inside the municipio). */
+const MUNI_CENTROIDS: Record<string, { lat: number; lng: number; name: string }> = {};
+for (const [name, lng, lat] of PR_MUNICIPIO_SHAPES) {
+  MUNI_CENTROIDS[foldName(name)] = { lat, lng, name };
+}
+
+/** Label-point anchor for a municipio name (accent/case-insensitive), or null. */
+export function municipioCentroid(name: string): { lat: number; lng: number; name: string } | null {
+  return MUNI_CENTROIDS[foldName(name)] || null;
+}
+
+// Canonical URI is v6 (auto-drop suggested pin on municipality + draggable pins).
+// ChatGPT may still request older template_pointer URIs (v1–v5) from a cached
+// connector; serve the same HTML for every alias so a bump does not 404 until reconnect.
+export const WIDGET_URI = "ui://smartpr/requirements-v6.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
   "ui://smartpr/requirements-v3.html",
   "ui://smartpr/requirements-v4.html",
+  "ui://smartpr/requirements-v5.html",
   WIDGET_URI,
 ] as const;
 /** Map zoom range. z7 fits the whole island in a phone-width iframe; outlines
@@ -103,7 +119,18 @@ function accept(r){if(!r)return;if(r.isError){state.error=txt(r)||"SmartPR could
  state.result=sc;state.error=null;state.busy=false;state.answers={};
  var f=sc.map_focus||{latitude:18.22,longitude:-66.45,zoom:8};
  if(confirmed){f={latitude:confirmed.lat,longitude:confirmed.lng,zoom:Math.max(f.zoom||FOCUS_Z,FOCUS_Z)}}
- state.map={lat:f.latitude,lng:f.longitude,z:Math.min(f.zoom,FOCUS_Z),pin:null,confirmed:confirmed};clampMap(state.map);render()}
+ // Pin lifecycle: keep a user-placed pending pin across re-renders for the same
+ // municipality; auto-drop a suggested pin at the municipio label point when the
+ // scenario names a municipality but has no site yet (e.g. "bar in Bayamón").
+ // A confirmed pin always wins; an explicitly dropped site clears everything.
+ var pm=state.map||{},prevPin=pm.pin||null,prevPinFor=pm.pinFor||null,prevAuto=pm.autoMuni||null;
+ var muniNow=sc.scenario&&sc.scenario.municipality,curF=fold(muniNow||"");
+ var pin=null,pinFor=null,autoMuni=prevAuto;
+ if(!confirmed&&!dropped&&curF){
+  if(prevPin&&prevPinFor===curF){pin=prevPin;pinFor=prevPinFor}
+  else if(prevAuto!==curF){var cc=CENTROIDS[curF];if(cc){pin={lat:cc.lat,lng:cc.lng};pinFor=curF;autoMuni=curF}}
+ }
+ state.map={lat:f.latitude,lng:f.longitude,z:Math.min(f.zoom,FOCUS_Z),pin:pin,pinFor:pinFor,autoMuni:autoMuni,prevConfirmed:null,confirmed:confirmed};clampMap(state.map);render()}
 function scenarioPayload(){var r=state.result;if(!r||!r.scenario)return null;var s=r.scenario,out={};for(var k in s)out[k]=s[k];var c=state.map&&state.map.confirmed;if(c&&(!out.site||out.site.latitude==null)){out.site={latitude:c.lat,longitude:c.lng}}return out}
 function txt(r){try{return(r.content||[]).map(function(c){return c.text||""}).join(" ").slice(0,300)}catch(_){return""}}
 function callTool(name,args){
@@ -119,7 +146,7 @@ function act(kind){if(state.busy)return;state.lastAction=kind;var r=state.result
  if(kind==="refine"){var ans={};for(var k in state.answers)if(state.answers[k]!=="")ans[k]=state.answers[k];if(!Object.keys(ans).length)return;
   state.busy=true;state.error=null;render();callTool("refine_scenario",{scenario:scenarioPayload()||r.scenario,answers:ans}).then(function(res){if(res&&!res.isError){accept(res);var n=state.result;request("ui/update-model-context",{content:[{type:"text",text:"User refined the SmartPR scenario in the widget. "+(n&&n.message||"")}]},5000).catch(function(){})}else{state.busy=false;state.error=txt(res)||"Could not update the preview.";render()}}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Check your connection and retry.";render()})}
  else{state.busy=true;state.error=null;render();callTool("create_portal_handoff",{scenario:scenarioPayload()||r.scenario,intent:kind}).then(function(res){state.busy=false;var u=res&&res.structuredContent&&res.structuredContent.url;if(u){openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
-var SHAPES=__MAP_SHAPES__,TS=256,ZMIN=__ZMIN__,ZMAX=__ZMAX__,FOCUS_Z=11,BX={s:17.55,n:18.9,w:-68.4,e:-64.85},MUNIS=null,SVGNS="http://www.w3.org/2000/svg";
+var SHAPES=__MAP_SHAPES__,CENTROIDS=__MUNI_CENTROIDS__,TS=256,ZMIN=__ZMIN__,ZMAX=__ZMAX__,FOCUS_Z=11,BX={s:17.55,n:18.9,w:-68.4,e:-64.85},MUNIS=null,SVGNS="http://www.w3.org/2000/svg";
 function wsz(z){return TS*Math.pow(2,z)}
 function px(lng,z){return (lng+180)/360*wsz(z)}
 function py(lat,z){var r=lat*Math.PI/180;return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*wsz(z)}
@@ -156,15 +183,48 @@ function mapCard(r,opts){opts=opts||{};var m=state.map;if(!m){state.map={lat:18.
  zi.onclick=function(e){e.preventDefault();e.stopPropagation();zoom(1)};zo.onclick=function(e){e.preventDefault();e.stopPropagation();zoom(-1)};
  zc.addEventListener("pointerdown",function(e){e.stopPropagation()});
  var drag=null;
+ // Client px -> lat/lng using the current view (clamped to the PR bbox so a tap
+ // near an edge never produces an "outside Puerto Rico" drop).
+ function evToLatLng(cx,cy){var rc=box.getBoundingClientRect(),W=box.clientWidth||rc.width,H=box.clientHeight||rc.height,z=m.z;
+  var lat=uny(py(m.lat,z)-H/2+(cy-rc.top),z),lng=unx(px(m.lng,z)-W/2+(cx-rc.left),z);
+  lat=Math.max(BX.s,Math.min(BX.n,lat));lng=Math.max(BX.w,Math.min(BX.e,lng));
+  return{lat:Math.round(lat*1e6)/1e6,lng:Math.round(lng*1e6)/1e6}}
+ // A fresh pending pin supersedes the confirmed one until "Use this location";
+ // stash it so Cancel restores the previous confirmed pin.
+ function stashConfirmed(){if(m.confirmed&&!m.prevConfirmed){m.prevConfirmed=m.confirmed;m.confirmed=null}}
  box.addEventListener("pointerdown",function(e){if(e.pointerType==="mouse"&&e.button!==0)return;drag={x:e.clientX,y:e.clientY,cx:px(m.lng,m.z),cy:py(m.lat,m.z),moved:false};try{box.setPointerCapture(e.pointerId)}catch(_){}});
  box.addEventListener("pointermove",function(e){if(!drag)return;var dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(!drag.moved&&Math.abs(dx)+Math.abs(dy)<8)return;drag.moved=true;m.lng=unx(drag.cx-dx,m.z);m.lat=uny(drag.cy-dy,m.z);clampMap(m);drawSoon()});
- box.addEventListener("pointerup",function(e){if(!drag)return;var d=drag;drag=null;if(d.moved||state.busy)return;var rc=box.getBoundingClientRect(),W=box.clientWidth||rc.width,H=box.clientHeight||rc.height;
-  var x=px(m.lng,m.z)-W/2+(e.clientX-rc.left),y=py(m.lat,m.z)-H/2+(e.clientY-rc.top);m.pin={lat:Math.round(uny(y,m.z)*1e6)/1e6,lng:Math.round(unx(x,m.z)*1e6)/1e6};render()});
+ box.addEventListener("pointerup",function(e){if(!drag)return;var d=drag;drag=null;if(d.moved||state.busy)return;
+  stashConfirmed();m.pin=evToLatLng(e.clientX,e.clientY);m.pinFor=fold((r&&r.scenario&&r.scenario.municipality)||"");render()});
  box.addEventListener("pointercancel",function(){drag=null});
  box.addEventListener("wheel",function(e){e.preventDefault();zoom(e.deltaY<0?1:-1)},{passive:false});
+ // Draggable pins: press on a pin to move it (distinct from map pan — the pin's
+ // pointerdown stops propagation so the box never starts a pan). Drop commits a
+ // pending pin; "Use this location" sends it to the server like a tap.
+ function dragPin(node){
+  node.style.pointerEvents="auto";node.style.cursor="grab";node.style.touchAction="none";node.title="Drag to move the pin";
+  node.addEventListener("pointerdown",function(e){
+   e.stopPropagation();if(e.cancelable)e.preventDefault();if(state.busy)return;
+   var pid=e.pointerId,sx=e.clientX,sy=e.clientY,moved=false;
+   try{node.setPointerCapture(pid)}catch(_){}
+   function onMove(ev){if(ev.pointerId!==pid)return;
+    if(!moved&&Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)<6)return;
+    if(!moved){moved=true;node.style.cursor="grabbing";if(callout)callout.style.display="none"}
+    var ll=evToLatLng(ev.clientX,ev.clientY),z=m.z,rc=box.getBoundingClientRect(),W=box.clientWidth||rc.width,H=box.clientHeight||rc.height;
+    node._ll=ll;node.style.left=(px(ll.lng,z)-(px(m.lng,z)-W/2))+"px";node.style.top=(py(ll.lat,z)-(py(m.lat,z)-H/2))+"px"}
+   function done(){node.removeEventListener("pointermove",onMove);node.removeEventListener("pointerup",onUp);node.removeEventListener("pointercancel",onCan);node.style.cursor="grab"}
+   function onUp(ev){if(ev.pointerId!==pid)return;done();
+    if(moved&&node._ll){var ll=node._ll;node._ll=null;stashConfirmed();m.pin={lat:ll.lat,lng:ll.lng};m.pinFor=fold((r&&r.scenario&&r.scenario.municipality)||"");render()}
+    else if(callout&&siteLatLng)callout.style.display=""}
+   function onCan(ev){if(ev&&ev.pointerId!==pid)return;done();node._ll=null;if(callout&&siteLatLng)callout.style.display=""}
+   node.addEventListener("pointermove",onMove);node.addEventListener("pointerup",onUp);node.addEventListener("pointercancel",onCan);
+  });
+ }
+ if(siteLatLng)dragPin(pin);
+ dragPin(pend);
  add(c,box);
  var info=el("div","siteinfo");
- if(m.pin){add(info,el("span",null,"New pin at "+m.pin.lat.toFixed(5)+", "+m.pin.lng.toFixed(5)));var ub=el("button","btn p",state.busy?"Checking\u2026":"Use this location");ub.type="button";ub.disabled=state.busy;ub.onclick=function(){pinSite(m.pin)};var cb=el("button","btn o","Cancel");cb.type="button";cb.onclick=function(){m.pin=null;render()};add(info,ub,cb)}
+ if(m.pin){add(info,el("span",null,"New pin at "+m.pin.lat.toFixed(5)+", "+m.pin.lng.toFixed(5)));var ub=el("button","btn p",state.busy?"Checking\u2026":"Use this location");ub.type="button";ub.disabled=state.busy;ub.onclick=function(){pinSite(m.pin)};var cb=el("button","btn o","Cancel");cb.type="button";cb.onclick=function(){m.pin=null;m.pinFor=null;if(m.prevConfirmed){m.confirmed=m.prevConfirmed;m.prevConfirmed=null}m.autoMuni=fold((r&&r.scenario&&r.scenario.municipality)||"");render()};add(info,ub,cb)}
  else if(confirmed||site){add(info,el("b",null,"\ud83d\udccd "+(label||"Pinned site")),el("span","hint",(siteLatLng.lat).toFixed(5)+", "+(siteLatLng.lng).toFixed(5)));var xb=el("button","btn o","Remove pin");xb.type="button";xb.disabled=state.busy;xb.onclick=function(){pinSite(null)};add(info,xb)}
  add(c,info);
  if(confirmed&&confirmed.near_boundary)add(c,el("div","note warn","This pin is about "+confirmed.boundary_distance_m+" m from a municipal boundary \u2014 confirm the municipality."));
@@ -265,7 +325,8 @@ window.addEventListener("resize",function(){redrawMaps()},{passive:true});
 const JS_FINAL = JS.replace("__MAP_SHAPES__", () => JSON.stringify(PR_MUNICIPIO_SHAPES).replace(/</g, "\\u003c"))
   .replace("__ZMIN__", () => String(MAP_MIN_ZOOM))
   .replace("__ZMAX__", () => String(MAP_MAX_ZOOM))
-  .replace("__MAP_SOURCE__", () => PR_MAP_SOURCE);
+  .replace("__MAP_SOURCE__", () => PR_MAP_SOURCE)
+  .replace("__MUNI_CENTROIDS__", () => JSON.stringify(MUNI_CENTROIDS).replace(/</g, "\\u003c"));
 
 export function widgetHtml(): string {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SmartPR</title><style>${CSS}</style></head><body><div id="root"></div><script>${JS_FINAL}</script></body></html>`;
