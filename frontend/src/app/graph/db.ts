@@ -68,6 +68,15 @@ export async function query<T = unknown>(text: string, params: unknown[] = []): 
 // password itself, the host, or the project reference.
 // ---------------------------------------------------------------------------
 
+/** The pool's actual TLS posture for diagnostics; never throws. */
+function tlsPostureSafe(): string {
+  try {
+    return resolveDbTls(process.env, connectionUrl()).posture;
+  } catch {
+    return "invalid";
+  }
+}
+
 export interface ConnectionShape {
   variable: "DATABASE_URL" | "DIRECT_URL";
   parses: boolean;
@@ -103,7 +112,7 @@ export function describeConnection(): ConnectionShape | null {
     return {
       variable, parses: false, hostKind: "other", port: "", usernameShape: "other",
       passwordPresent: false, passwordIsPlaceholder: false, passwordNeedsEncoding: unencodedAt,
-      database: "", sslDisabled: !!process.env.PGSSL_DISABLE,
+      database: "", sslDisabled: tlsPostureSafe() === "disabled",
       problems: [`${variable} is not a parseable connection URL.`],
     };
   }
@@ -149,7 +158,7 @@ export function describeConnection(): ConnectionShape | null {
     variable, parses: true, hostKind, port: url.port, usernameShape,
     passwordPresent: password.length > 0, passwordIsPlaceholder, passwordNeedsEncoding,
     database: url.pathname.replace(/^\//, ""),
-    sslDisabled: !!process.env.PGSSL_DISABLE,
+    sslDisabled: tlsPostureSafe() === "disabled",
     problems,
   };
 }

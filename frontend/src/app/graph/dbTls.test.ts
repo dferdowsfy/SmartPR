@@ -34,9 +34,26 @@ test("standard PGSSL_DISABLE turns TLS off", () => {
   assert.equal(d.ssl, undefined);
 });
 
-test("standard PGSSL_DISABLE=false does not disable TLS", () => {
-  const d = resolveDbTls({ PGSSL_DISABLE: "false" }, URL_PLAIN, noFile);
-  assert.equal(d.posture, "unverified");
+test("standard keeps the historical rule: any non-empty PGSSL_DISABLE disables TLS", () => {
+  for (const v of ["1", "true", "false", "0"]) {
+    assert.equal(resolveDbTls({ PGSSL_DISABLE: v }, URL_PLAIN, noFile).posture, "disabled", v);
+  }
+  assert.equal(resolveDbTls({ PGSSL_DISABLE: "" }, URL_PLAIN, noFile).posture, "unverified");
+});
+
+test("enterprise refuses any truthy PGSSL_DISABLE; 'false' cannot disable TLS", () => {
+  assert.equal(resolveDbTls({ ...ENTERPRISE, PGSSL_DISABLE: "false" }, URL_PLAIN, noFile).ssl?.rejectUnauthorized, true);
+});
+
+test("PGSSL_CA with escaped CRLF newlines becomes a clean PEM", () => {
+  const d = resolveDbTls({ PGSSL_CA: "-----BEGIN-----\\r\\nabc\\r\\n-----END-----" }, URL_PLAIN, noFile);
+  assert.equal(d.ssl?.ca, "-----BEGIN-----\nabc\n-----END-----");
+});
+
+test("malformed percent-encoding in the URL does not crash the policy", () => {
+  const d = resolveDbTls(ENTERPRISE, `${URL_PLAIN}?x%ZZ=1&sslmode=verify-full`, noFile);
+  assert.equal(d.connectionString, `${URL_PLAIN}?x%ZZ=1`);
+  assert.doesNotThrow(() => resolveDbTls(ENTERPRISE, `${URL_PLAIN}?sslmode=%ZZ&a=1`, noFile));
 });
 
 test("standard PGSSL_CA verifies against the given CA and strips URL ssl params", () => {

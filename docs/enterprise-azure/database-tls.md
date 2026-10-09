@@ -25,10 +25,17 @@ strips them whenever it verifies.
 | Nothing set | Encrypted but **not verified** (previous behaviour). A warning is logged once. |
 | `PGSSL_CA` / `PGSSL_CA_FILE` | Verified against that CA bundle. |
 | `PGSSL_VERIFY=true` | Verified against the system trust store. |
-| `PGSSL_DISABLE=1` | No TLS (local development only). |
+| `PGSSL_DISABLE` (any non-empty value, as before) | No TLS (local development only). |
 
 ## Closing the Standard gap in production
 
 1. Download the database provider's CA certificate (Supabase: Project Settings → Database → SSL configuration).
 2. Make it available to the app and set `PGSSL_CA_FILE` (or paste the PEM into `PGSSL_CA`, with `\n` for newlines).
 3. Deploy and confirm the `[db] ... NOT verified` warning no longer appears in the logs.
+
+## Note on invalid configuration
+
+An invalid deployment configuration (for example a stray `CUSTOMER_ID` in a
+Standard deployment) is treated as Enterprise. The pool then verifies the
+database certificate and refuses `PGSSL_DISABLE`, so the app may stop
+connecting until the configuration is fixed. This is deliberate (fail closed).

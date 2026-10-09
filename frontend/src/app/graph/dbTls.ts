@@ -7,12 +7,15 @@
 //
 // Enterprise (or an invalid deployment config — fails closed):
 //   - TLS is mandatory; PGSSL_DISABLE is refused.
+//   - Note: a Standard deployment whose deployment config is INVALID is also
+//     treated this way, so it will refuse an unverifiable database
+//     certificate. Fix the config rather than weakening this.
 //   - The server certificate is ALWAYS verified (rejectUnauthorized: true),
 //     against PGSSL_CA / PGSSL_CA_FILE when given, else the system trust store.
 //   - A connection string asking for a weaker sslmode is refused.
 //
 // Standard (unchanged by default so production keeps connecting):
-//   - PGSSL_DISABLE: no TLS (local development only).
+//   - PGSSL_DISABLE (any non-empty value, as before): no TLS (local dev only).
 //   - PGSSL_CA / PGSSL_CA_FILE: verify against that CA (e.g. Supabase's CA).
 //   - PGSSL_VERIFY=true: verify against the system trust store.
 //   - Otherwise: encrypted but unverified, as before, with a one-time warning.
@@ -49,6 +52,14 @@ export class DbTlsConfigError extends Error {
 
 const WEAK_SSLMODES = new Set(["disable", "allow", "prefer", "no-verify"]);
 
+function safeDecode(v: string): string {
+  try {
+    return decodeURIComponent(v);
+  } catch {
+    return v;
+  }
+}
+
 function flag(env: Env, name: string): boolean {
   const v = env[name]?.trim().toLowerCase();
   return !!v && v !== "0" && v !== "false" && v !== "no";
@@ -67,7 +78,7 @@ function weakSslMode(connectionString: string | undefined): string | null {
   if (!connectionString) return null;
   const match = /[?&]sslmode=([^&]+)/i.exec(connectionString);
   if (!match) return null;
-  const mode = decodeURIComponent(match[1]).toLowerCase();
+  const mode = safeDecode(match[1]).toLowerCase();
   return WEAK_SSLMODES.has(mode) ? mode : null;
 }
 
@@ -82,13 +93,13 @@ export function stripSslParams(connectionString: string | undefined): string | u
   const kept = connectionString
     .slice(q + 1)
     .split("&")
-    .filter((pair) => pair && !SSL_URL_PARAMS.has(decodeURIComponent(pair.split("=")[0]).toLowerCase()));
+    .filter((pair) => pair && !SSL_URL_PARAMS.has(safeDecode(pair.split("=")[0]).toLowerCase()));
   return kept.length ? `${base}?${kept.join("&")}` : base;
 }
 
 function loadCa(env: Env, readFile: (path: string) => string): string | undefined {
   const inline = env.PGSSL_CA?.trim();
-  if (inline) return inline.replace(/\\n/g, "\n");
+  if (inline) return inline.replace(/\\r/g, "").replace(/\\n/g, "\n");
   const file = env.PGSSL_CA_FILE?.trim();
   if (!file) return undefined;
   try {
@@ -120,7 +131,8 @@ export function resolveDbTls(
       : { ssl: { rejectUnauthorized: true }, connectionString: cs, posture: "verified-system", enterprise };
   }
 
-  if (flag(env, "PGSSL_DISABLE")) return { ssl: undefined, connectionString, posture: "disabled", enterprise };
+  // Standard keeps its historical rule: ANY non-empty PGSSL_DISABLE turns TLS off.
+  if (env.PGSSL_DISABLE) return { ssl: undefined, connectionString, posture: "disabled", enterprise };
   const ca = loadCa(env, readFile);
   if (ca) {
     return { ssl: { rejectUnauthorized: true, ca }, connectionString: stripSslParams(connectionString), posture: "verified-ca", enterprise };
