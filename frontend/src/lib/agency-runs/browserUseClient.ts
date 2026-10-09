@@ -15,6 +15,7 @@
  */
 
 import { BrowserUse, type V4Types } from "browser-use-sdk/v4";
+import { isFeatureEnabled } from "../config/features";
 
 const CLOUD_BASE_URL = "https://api.browser-use.com/api/v4";
 
@@ -91,6 +92,8 @@ export interface BuEvent {
 }
 
 function apiKey(): string | null {
+  // Enterprise: Browser Use Cloud receives filing data, so it is off unless approved.
+  if (!isFeatureEnabled("browserUseCloud")) return null;
   const key = process.env.BROWSER_USE_API_KEY?.trim();
   return key ? key : null;
 }

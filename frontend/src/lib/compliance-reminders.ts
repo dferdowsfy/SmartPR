@@ -27,6 +27,7 @@ import {
 } from "./email-templates";
 import { allEmailTemplateDefs } from "./email-template-seeds";
 import { getSiteUrl } from "./siteUrl";
+import { isFeatureEnabled, logFeatureSkipped } from "./config/features";
 
 type Db = Pool | PoolClient;
 
@@ -169,6 +170,10 @@ export async function sendComplianceEmail(
   from: string = REMINDER_FROM
 ): Promise<boolean> {
   if (!to || !to.includes("@")) return false;
+  if (!mailerOverride && !isFeatureEnabled("externalEmail")) {
+    logFeatureSkipped("externalEmail", "compliance-reminders");
+    return false;
+  }
   // Prefer Resend's HTTPS API when configured: it does not depend on
   // outbound SMTP, which the hosting network can throttle or blackhole.
   // A hanging SMTP connect (nodemailer's 120s default) outlasts the voice

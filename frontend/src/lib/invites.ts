@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { randomBytes } from "crypto";
 import { getSiteUrl } from "./siteUrl";
+import { isFeatureEnabled, logFeatureSkipped } from "./config/features";
 
 const SMTP_USER = process.env.GMAIL_SMTP_USER || "darius@getsmartpr.com";
 const MAIL_FROM = process.env.GMAIL_FROM || "SmartPR <darius@getsmartpr.com>";
@@ -57,6 +58,10 @@ export function inviteUrlForToken(token: string): string {
 
 /** Best-effort: returns false when SMTP is not configured; never throws. */
 export async function sendInviteEmail(to: string, html: string): Promise<boolean> {
+  if (!isFeatureEnabled("externalEmail")) {
+    logFeatureSkipped("externalEmail", "invite-email");
+    return false;
+  }
   if (!process.env.GMAIL_SMTP_APP_PASSWORD) {
     console.error("[invite-email] skipped: GMAIL_SMTP_APP_PASSWORD is not set");
     return false;

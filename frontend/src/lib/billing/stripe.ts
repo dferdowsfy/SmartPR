@@ -3,10 +3,12 @@
  */
 
 import Stripe from "stripe";
+import { assertFeatureEnabled } from "../config/features";
 
 let stripeSingleton: Stripe | null = null;
 
 export function getStripe(): Stripe {
+  assertFeatureEnabled("billing");
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) {
     throw new Error(

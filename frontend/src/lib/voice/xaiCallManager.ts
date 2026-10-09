@@ -41,6 +41,7 @@ import {
   DtmfPinCollector,
   parseDtmfEvent,
 } from "./xaiRealtime";
+import { isFeatureEnabled, logFeatureSkipped } from "../config/features";
 
 const XAI_CALLS_URL = "https://api.x.ai/v1/realtime/calls";
 const GOODBYE_TIMEOUT_MS = 15_000;
@@ -255,6 +256,10 @@ async function handlePinComplete(call: ActiveCall, pin: string, callerE164: stri
  * handler must return 200 immediately, so this runs detached.
  */
 export function handleIncomingCall(callId: string, callerE164: string | null): void {
+  if (!isFeatureEnabled("voiceTelephony")) {
+    logFeatureSkipped("voiceTelephony", "handleIncomingCall");
+    return;
+  }
   if (activeCalls.has(callId)) return;
   void runCall(callId, callerE164).catch((err) => {
     console.error(`[xai-voice] call=${callId.slice(0, 8)}… failed`, err);

@@ -7,11 +7,13 @@
 
 import { handleIncomingCall } from "../../../../lib/voice/xaiCallManager";
 import { parseIncomingCall, verifyWebhookSignature } from "../../../../lib/voice/xaiRealtime";
+import { isFeatureEnabled, featureDisabledResponse } from "../../../../lib/config/features";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!isFeatureEnabled("voiceTelephony")) return featureDisabledResponse("voiceTelephony");
   const rawBody = await request.text();
 
   const verified = verifyWebhookSignature({

@@ -159,8 +159,8 @@ Logging sink: `console.log` only.
 3. RLS depends on `auth.uid()` / `authenticated`.
 4. Storage hard-wired to Supabase (6 call sites + service-role client).
 5. Direct vendor model calls; no policy/allowlist, no Azure endpoint, no request tagging. **Core text paths addressed in PR #4:** routed through `lib/ai/router.ts` with fail-closed policy and metadata logging (see `ai-provider-architecture.md`). **Pending:** Azure Foundry provider and approved-deployment allowlist (PR #5); STT, realtime voice and browser agents still call vendors directly.
-6. xAI voice telephony: vendor-held agent config, requires public MCP callback.
-7. Browser Use Cloud sends client data to a third party.
+6. xAI voice telephony: vendor-held agent config, requires public MCP callback. **Gated:** off in Enterprise unless approved (`feature-gates.md`).
+7. Browser Use Cloud sends client data to a third party. **Gated:** off in Enterprise unless approved (`feature-gates.md`).
 8. Runtime DDL via `ensureSchema()`; no migration runner.
 9. Admin open default. **Enterprise: closed in PR #3** (fails closed; see `admin-authorization.md`). Standard: unchanged, tracked as debt.
 10. DB TLS verification disabled; no Entra/managed-identity DB auth.

@@ -8,6 +8,7 @@ import {
   accessibleBusinessUuid,
   saveFilingFeeCard,
 } from "@/lib/billing/filingFeeCardStore";
+import { isFeatureEnabled, featureDisabledResponse } from "@/lib/config/features";
 
 export const runtime = "nodejs";
 
@@ -246,6 +247,7 @@ async function handleSubscriptionChange(
 }
 
 export async function POST(req: NextRequest) {
+  if (!isFeatureEnabled("billing")) return featureDisabledResponse("billing");
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!secret) {
     return NextResponse.json(
