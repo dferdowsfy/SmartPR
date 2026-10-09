@@ -126,3 +126,42 @@ test("Google Analytics is not rendered in enterprise", async () => {
   useEnv({ ...ENTERPRISE, NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-TEST" });
   assert.equal(AnalyticsMount(), null);
 });
+
+test("Stripe checkout returns 404 in enterprise", async () => {
+  useEnv({ ...ENTERPRISE });
+  const { POST } = await import("../../app/api/billing/checkout/route");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = await POST(new Request("https://x.test/", { method: "POST", body: "{}" }) as any);
+  assert.equal(res.status, 404);
+});
+
+test("agency filing runs refuse instead of falling back to simulated runs in enterprise", async () => {
+  const { createRun } = await import("../agency-runs/store");
+  useEnv({ ...ENTERPRISE, BROWSER_USE_API_KEY: "bu_test" });
+  await assert.rejects(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    createRun({ business_id: "b1", filing_type: "anything" as any }),
+    FeatureDisabledError
+  );
+});
+
+test("reminder, compliance and founder emails are skipped in enterprise", async () => {
+  const { sendComplianceEmail } = await import("../compliance-reminders");
+  const { sendReminderEmail } = await import("../enterprise-reminders");
+  const { notifyFounder } = await import("../leads");
+  useEnv({ ...ENTERPRISE, GMAIL_SMTP_APP_PASSWORD: "app-pass", RESEND_API_KEY: "re_test" });
+  const realFetch = globalThis.fetch;
+  let fetched = false;
+  globalThis.fetch = (async () => {
+    fetched = true;
+    return new Response("{}");
+  }) as typeof fetch;
+  try {
+    assert.equal(await sendComplianceEmail("a@b.test", "s", "t", "<p>t</p>"), false);
+    assert.equal(await sendReminderEmail("a@b.test", "s", [{ label: "x", value: "y" }]), false);
+    await notifyFounder("s", { a: "b" });
+    assert.equal(fetched, false);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});

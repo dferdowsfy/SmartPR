@@ -13,6 +13,7 @@ import {
 } from "@/lib/billing/filingFeeCardStore";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getPool } from "../../../graph/db";
+import { FeatureDisabledError, featureDisabledResponse, isFeatureEnabled } from "@/lib/config/features";
 
 export const runtime = "nodejs";
 
@@ -46,6 +47,7 @@ async function resolveWorkspaceId(userId: string): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isFeatureEnabled("billing")) return featureDisabledResponse("billing");
   let body: CheckoutBody;
   try {
     body = (await req.json()) as CheckoutBody;
@@ -121,6 +123,7 @@ export async function POST(req: NextRequest) {
   try {
     stripe = getStripe();
   } catch (err) {
+    if (err instanceof FeatureDisabledError) return featureDisabledResponse("billing");
     const message =
       err instanceof Error ? err.message : "Stripe is not configured.";
     return NextResponse.json({ error: message }, { status: 500 });
