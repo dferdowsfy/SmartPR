@@ -8,8 +8,10 @@
 // ============================================================================
 
 import { Pool } from "pg";
+import { resolveDbTls } from "./dbTls";
 
 let pool: Pool | null = null;
+let warnedUnverifiedTls = false;
 
 // Prefer the pooled connection (DATABASE_URL); fall back to DIRECT_URL.
 export function connectionUrl(): string | undefined {
@@ -23,10 +25,20 @@ export function isEnabled(): boolean {
 export function getPool(): Pool | null {
   if (!isEnabled()) return null;
   if (!pool) {
+    // TLS policy lives in dbTls.ts: Enterprise always verifies the server
+    // certificate; Standard verifies when PGSSL_CA/PGSSL_CA_FILE/PGSSL_VERIFY
+    // is set. A misconfigured Enterprise deployment throws here (fail closed).
+    const tls = resolveDbTls(process.env, connectionUrl());
+    if (tls.posture === "unverified" && !warnedUnverifiedTls) {
+      warnedUnverifiedTls = true;
+      console.warn(
+        "[db] Postgres TLS is encrypted but the server certificate is NOT verified. " +
+          "Set PGSSL_CA_FILE (or PGSSL_VERIFY=true) to verify it."
+      );
+    }
     pool = new Pool({
-      connectionString: connectionUrl(),
-      // Hosted Postgres (Supabase/Neon) typically requires SSL.
-      ssl: process.env.PGSSL_DISABLE ? undefined : { rejectUnauthorized: false },
+      connectionString: tls.connectionString,
+      ssl: tls.ssl,
       max: 4,
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 8_000,

@@ -163,7 +163,7 @@ Logging sink: `console.log` only.
 7. Browser Use Cloud sends client data to a third party.
 8. Runtime DDL via `ensureSchema()`; no migration runner.
 9. Admin open default. **Enterprise: closed in PR #3** (fails closed; see `admin-authorization.md`). Standard: unchanged, tracked as debt.
-10. DB TLS verification disabled; no Entra/managed-identity DB auth.
+10. DB TLS verification disabled; no Entra/managed-identity DB auth. **TLS addressed:** `graph/dbTls.ts` always verifies the server certificate in Enterprise (refuses `PGSSL_DISABLE` and weak `sslmode`); Standard verifies when `PGSSL_CA_FILE`/`PGSSL_VERIFY` is set, otherwise unchanged with a warning (see `database-tls.md`). **Pending:** Entra/managed-identity DB auth (PR #10).
 11. No IaC; no CI/CD.
 
 ### SHOULD CHANGE
