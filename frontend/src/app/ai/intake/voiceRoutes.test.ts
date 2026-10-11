@@ -3,8 +3,9 @@ import assert from "node:assert/strict";
 import { applyPassportProposals } from "./passportExtraction.ts";
 import { emptyCanonicalData } from "../../forms/engine/types.ts";
 
-process.env.XAI_API_KEY = "voice-contract-test-only";
-process.env.XAI_BASE_URL = "https://api.x.ai/v1";
+process.env.XAI_API_KEY = "test-xai-key";
+process.env.AZURE_SPEECH_KEY = "test-speech-key";
+process.env.AZURE_SPEECH_REGION = "eastus2";
 let interpret: typeof import("../../api/intake/interpret/route.ts").POST;
 let transcribe: typeof import("../../api/intake/voice/route.ts").POST;
 before(async () => {
@@ -59,16 +60,17 @@ test("Passport uses same Grok interpreter and rejects legacy paths around confli
   assert.equal(applied.conflicts.length, 1);
 });
 
-test("voice recording goes to Grok /stt, options before file, long transcript preserved", async (t) => {
+test("voice recording goes to Azure Speech fast transcription with es-PR locale and phrase list", async (t) => {
   const transcript = `${"We have details to add. ".repeat(80)}My legal entity name is Caribe Foods LLC.`;
   t.mock.method(globalThis, "fetch", async (url: unknown, options: RequestInit) => {
-    assert.equal(url, "https://api.x.ai/v1/stt");
-    assert.match(String((options.headers as Record<string, string>).Authorization), /^Bearer /);
+    assert.equal(url, "https://eastus2.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2025-10-15");
+    assert.equal((options.headers as Record<string, string>)["Ocp-Apim-Subscription-Key"], "test-speech-key");
     const form = options.body as FormData;
-    assert.equal(form.get("format"), "true");
-    assert.equal(form.get("language"), "es");
-    assert.equal([...form.keys()].at(-1), "file");
-    return Response.json({ text: transcript, language: "es", duration: 30 });
+    const definition = JSON.parse(String(form.get("definition")));
+    assert.deepEqual(definition.locales, ["es-PR"]);
+    assert.ok(definition.phraseList.phrases.includes("Bayamón"));
+    assert.equal([...form.keys()].at(-1), "definition");
+    return Response.json({ combinedPhrases: [{ text: transcript }], durationMilliseconds: 30000 });
   });
   const form = new FormData(); form.append("language", "es"); form.append("audio", new Blob([new Uint8Array(4000)], { type: "audio/webm" }), "audio.webm");
   const result = await transcribe(new Request("http://localhost/api/intake/voice", { method: "POST", body: form }));

@@ -1,15 +1,16 @@
 // Intake voice: REST STT only. No businessId required — works before business
 // creation (guest or signed-in). Transcript is fed into /api/intake/interpret
-// on the client. Browser never sees XAI_API_KEY.
+// on the client. Speech runs on Azure AI Speech (es-PR locale); the browser
+// never sees the Speech key.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import {
-  isXaiConfigured,
-  requestXaiStt,
-  XaiApiError,
-} from "../../../ai/xai";
+  AzureSpeechApiError,
+  isAzureSpeechConfigured,
+  requestAzureStt,
+} from "../../../../lib/ai/providers/azure-speech";
 
 const MAX_AUDIO_BYTES = 12 * 1024 * 1024;
 const MAX_TRANSCRIPT_CHARS = 12000; // Full multi-field Passport dictation.
@@ -39,9 +40,9 @@ const PR_KEYTERMS = [
 ];
 
 export async function POST(request: Request) {
-  if (!isXaiConfigured()) {
+  if (!isAzureSpeechConfigured()) {
     return Response.json(
-      { error: "XAI_API_KEY is not configured on the server." },
+      { error: "Azure Speech is not configured on the server." },
       { status: 503 }
     );
   }
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
   const timer = setTimeout(() => controller.abort(), 60000);
 
   try {
-    const stt = await requestXaiStt({
+    const stt = await requestAzureStt({
       file: audio,
       filename,
       language: lang,
@@ -104,14 +105,14 @@ export async function POST(request: Request) {
       stt: { duration: stt.duration, language: stt.language },
     });
   } catch (e) {
-    if (e instanceof XaiApiError) {
+    if (e instanceof AzureSpeechApiError) {
       const detail = (e.detail || "").trim();
-      console.error("[intake/voice] STT xAI error", e.status, detail);
+      console.error("[intake/voice] STT Azure Speech error", e.status, detail);
       return Response.json(
         {
           error: detail
-            ? `xAI STT error ${e.status}: ${detail.slice(0, 400)}`
-            : `xAI STT error ${e.status}`,
+            ? `Speech STT error ${e.status}: ${detail.slice(0, 400)}`
+            : `Speech STT error ${e.status}`,
           detail: detail || undefined,
         },
         { status: 502 }
