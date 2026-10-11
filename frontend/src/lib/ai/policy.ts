@@ -3,8 +3,9 @@
 //
 // Deterministic and fail-closed:
 //   standard   + MODEL_GATEWAY=direct        -> xai (today's behavior)
-//   any mode   + MODEL_GATEWAY=azure-foundry -> azure-foundry (not implemented
-//                                              yet: the router refuses; never xAI)
+//   any mode   + MODEL_GATEWAY=azure-foundry -> azure-foundry (fail-closed
+//                                              when unconfigured: the provider
+//                                              throws; never xAI)
 //   enterprise + MODEL_GATEWAY=direct        -> denied. Enterprise model access
 //                                              requires an approved deployment
 //                                              allowlist, which does not exist yet.

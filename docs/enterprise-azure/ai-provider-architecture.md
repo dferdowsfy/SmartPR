@@ -21,7 +21,7 @@ and nothing prevented an enterprise deployment from calling xAI directly.
 feature ──► generateText(useCase, request)        src/lib/ai/router.ts
               ├─ resolveAiRoute(useCase)            src/lib/ai/policy.ts   (deployment config, PR #1)
               ├─ provider lookup                    xai → src/lib/ai/providers/xai.ts
-              │                                     azure-foundry → not implemented (PR #5)
+              │                                     azure-foundry → src/lib/ai/providers/azure-foundry.ts (PR #5)
               └─ logAiEvent(...)                    metadata only
 ```
 
@@ -66,8 +66,8 @@ outgoing request byte for byte.
 
 | Configuration | Result |
 |---|---|
-| `MODEL_GATEWAY=azure-foundry` (any mode) | `AiRoutingError("provider_not_implemented")`. **Never falls back to xAI.** |
-| `DEPLOYMENT_MODE=enterprise` + `MODEL_GATEWAY=direct` | `AiRoutingError("policy_denied")`. Direct vendor access needs an approved deployment allowlist, which PR #5 will add together with Foundry. |
+| `MODEL_GATEWAY=azure-foundry` (any mode) | Routes to the Foundry provider. **Never falls back to xAI.** Fails closed (throws, no network call) when `AZURE_FOUNDRY_ENDPOINT`/`AZURE_FOUNDRY_API_KEY` are unset. |
+| `DEPLOYMENT_MODE=enterprise` + `MODEL_GATEWAY=direct` | `AiRoutingError("policy_denied")`. Direct vendor access needs an approved deployment allowlist (still open; see below). |
 | Invalid or incomplete deployment config | `AiRoutingError("invalid_deployment_config")` |
 | Unknown use case | `AiRoutingError("unknown_use_case")` |
 
@@ -121,9 +121,15 @@ A test asserts that none of these reach the logger.
 | Browser agents (`lib/agency-runs/browserUseClient.ts`, `workers/browser-agent`) | Browser Use Cloud / xAI | Disabled by default in enterprise (principle 7) |
 | Legacy `backend/main.py` | xAI | Legacy FastAPI; not part of the Next.js app |
 
-## Next: PR #5
+## PR #5 (done)
 
-PR #5 adds `lib/ai/providers/azure-foundry.ts` and registers it in the router.
-It also adds an approved-deployment allowlist to the policy, so each enterprise
-customer's approved Foundry deployments are the only thing that can serve a
-use case. The Golden tests will then run against each approved deployment.
+PR #5 added `lib/ai/providers/azure-foundry.ts` and registered it in the
+router: `MODEL_GATEWAY=azure-foundry` now resolves to the Foundry provider
+(OpenAI-compatible chat completions, `AZURE_FOUNDRY_ENDPOINT` /
+`AZURE_FOUNDRY_API_KEY` / `AZURE_FOUNDRY_DEPLOYMENT`, default `grok-4.3`),
+failing closed when unconfigured.
+
+Still open: an approved-deployment allowlist in the policy, so each
+enterprise customer's approved Foundry deployments are the only thing that
+can serve a use case. The Golden tests will then run against each approved
+deployment.

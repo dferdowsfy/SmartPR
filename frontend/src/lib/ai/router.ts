@@ -3,13 +3,14 @@
 //
 //   feature -> generateText(useCase, request) -> policy -> provider
 //
-// Providers are looked up by id; an id without an implementation (e.g.
-// "azure-foundry" before PR #5) is refused, never replaced by another vendor.
+// Providers are looked up by id; an id without a registered implementation
+// is refused, never replaced by another vendor.
 // Every call emits one metadata-only log line (no prompt/response text).
 // ============================================================================
 
 import { logAiEvent } from "../security/ai-logging";
 import { resolveAiRoute, type AiRoute } from "./policy";
+import { azureFoundryProvider } from "./providers/azure-foundry";
 import { xaiProvider } from "./providers/xai";
 import {
   AiRoutingError,
@@ -19,15 +20,17 @@ import {
   type GenerateTextRequest,
 } from "./types";
 
-const PROVIDERS: Partial<Record<AiProviderId, AiTextProvider>> = {
+const DEFAULT_PROVIDERS: Record<AiProviderId, AiTextProvider> = {
   xai: xaiProvider,
+  "azure-foundry": azureFoundryProvider,
 };
 
-/** Test seam: replace or remove a provider implementation. */
+const PROVIDERS: Partial<Record<AiProviderId, AiTextProvider>> = { ...DEFAULT_PROVIDERS };
+
+/** Test seam: replace a provider, or pass null to restore its default. */
 export function setAiProviderForTests(id: AiProviderId, provider: AiTextProvider | null): void {
   if (provider) PROVIDERS[id] = provider;
-  else if (id === "xai") PROVIDERS.xai = xaiProvider;
-  else delete PROVIDERS[id];
+  else PROVIDERS[id] = DEFAULT_PROVIDERS[id];
 }
 
 function providerFor(route: AiRoute): AiTextProvider {
