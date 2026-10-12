@@ -105,11 +105,12 @@ function useMenu() {
 
 /**
  * The standard action column, identical on every requirement row:
- * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item); Complete
+ * [Clara slot] · Complete · ⋯ (View details is the first ⋯ item); Complete
  * reads "Upload" when uploading proof is all SmartPR can do for the row. Positions
  * never change; each row's own capabilities decide only what a click does
- * (the route is exposed as data-route and in the tooltip). Fill with Clara
- * shows only when Clara can act on the row; otherwise its slot stays empty.
+ * (the route is exposed as data-route and in the tooltip). The Clara slot
+ * is always empty on requirement rows (Clara rule, 2026-10-12): Clara files
+ * finished filings from the filing hub — she never fills a requirement.
  */
 export function StandardRowActions({ actions, language, answerOpen = false }: { actions: RequirementActions; language: Language; answerOpen?: boolean }) {
   const lang = language;

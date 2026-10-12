@@ -7998,17 +7998,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               <PassportCard canonical={canonicalApplication} language={language} onEdit={() => setPassportEditorOpen(true)} />
               <section className="rq-clara-card" data-testid="sidebar-clara">
                 <h2><Sparkles className="i" style={{ width: 15, height: 15 }} /> Clara</h2>
-                <p>{L('Need help with a requirement? Clara fills what she can from your business info and tells you what she needs.', language)}</p>
+                <p>{L('When a filing is ready, Clara submits it on the government portal using your Business Passport details.', language)}</p>
                 <div className="rq-clara-actions">
                   {me ? (
                     <button type="button" className="rq-std-btn rq-std-clara" aria-busy={sidebarClara.pending === 'clara' || undefined} onClick={() => { if (!sidebarClara.pending) sidebarClara.run('clara', () => openClara()); }}>
                       {sidebarClara.pending === 'clara'
                         ? <><Loader2 size={14} className="rq-spin" aria-hidden="true" /> {L('Opening Clara…', language)}</>
-                        : <><Sparkles size={14} aria-hidden="true" /> {L('Fill with Clara', language)}</>}
+                        : <><Sparkles size={14} aria-hidden="true" /> {L('File with Clara', language)}</>}
                     </button>
                   ) : (
                     <a className="rq-std-btn rq-std-clara" href={`/auth/login?next=${typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '%2F'}`}>
-                      <Sparkles size={14} aria-hidden="true" /> {L('Fill with Clara', language)}
+                      <Sparkles size={14} aria-hidden="true" /> {L('File with Clara', language)}
                     </a>
                   )}
                   <button type="button" className="rq-std-btn rq-std-ask" onClick={() => openSmartPRChat()}>

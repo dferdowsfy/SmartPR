@@ -740,6 +740,7 @@ export const ES: Record<string, string> = {
   "Download form": "Descargar formulario",
   "File online": "Radicar en línea",
   "File with Clara": "Radicar con Clara",
+  "When a filing is ready, Clara submits it on the government portal using your Business Passport details.": "Cuando una radicación esté lista, Clara la somete en el portal del gobierno usando los datos de tu Business Passport.",
   "Work through this filing with Clara — you stay in control of every step.": "Completa esta radicación con Clara — tú mantienes el control de cada paso.",
   "Get the form": "Obtener el formulario",
   "How to file": "Cómo radicar",

@@ -48,7 +48,7 @@ export default function RoutinesPage() {
   };
 
   const remove = async (r: LearnedRoutineSummary) => {
-    if (!window.confirm(T(`Remove “${r.name}”? Fill with Clara will stop using it. You can teach it again anytime.`, `¿Quitar “${r.name}”? Llenar con Clara dejará de usarla. Puedes enseñarla otra vez cuando quieras.`))) return;
+    if (!window.confirm(T(`Remove “${r.name}”? File with Clara will stop using it. You can teach it again anytime.`, `¿Quitar “${r.name}”? Radicar con Clara dejará de usarla. Puedes enseñarla otra vez cuando quieras.`))) return;
     setError(null);
     const res = await fetch(`/api/clara-routines/${encodeURIComponent(r.ref)}`, { method: "DELETE" });
     if (!res.ok) return setError(T("Couldn't remove it.", "No se pudo quitar."));
@@ -60,8 +60,8 @@ export default function RoutinesPage() {
       <h1 className="font-[family-name:var(--font-display)] text-[30px] text-slate-900">{T("Clara's routines", "Rutinas de Clara")}</h1>
       <p className="mt-1 text-[15px] text-slate-600">
         {T(
-          "Filings Clara learned from a walkthrough. Each one stores the steps and which Business Passport detail goes where — never what you typed. “Fill with Clara” uses them on any business.",
-          "Trámites que Clara aprendió de un recorrido. Cada uno guarda los pasos y qué dato del Pasaporte va dónde — nunca lo que escribiste. “Llenar con Clara” los usa con cualquier negocio."
+          "Filings Clara learned from a walkthrough. Each one stores the steps and which Business Passport detail goes where — never what you typed. “File with Clara” uses them on any business.",
+          "Trámites que Clara aprendió de un recorrido. Cada uno guarda los pasos y qué dato del Pasaporte va dónde — nunca lo que escribiste. “Radicar con Clara” los usa con cualquier negocio."
         )}
       </p>
       {error && <p className="mt-4 rounded-xl bg-rose-50 px-3 py-2 text-[14px] text-rose-700" role="alert">{error}</p>}

@@ -143,7 +143,7 @@ export function GuidedRequirementForm({
                   data-testid={onFillWithClara ? "guided-clara" : "guided-teach-launch"}
                 >
                   {onFillWithClara
-                    ? <><Sparkles size={15} aria-hidden="true" /> {T("Fill with Clara", "Llenar con Clara")}</>
+                    ? <><Sparkles size={15} aria-hidden="true" /> {T("File with Clara", "Radicar con Clara")}</>
                     : <><GraduationCap size={15} aria-hidden="true" /> {T("Teach Clara to file it", "Enséñale a Clara a radicarlo")}</>}
                 </button>
               </>

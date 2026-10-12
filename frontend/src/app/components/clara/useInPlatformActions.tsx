@@ -2,10 +2,11 @@
 
 // Per-row wiring for the in-platform actions: "Complete form" opens SmartPR's
 // guided form; "Teach Clara" opens the Clara workspace in teach mode for the
-// requirement (record the routine once); and — once Clara learned the row's
-// routine — "Fill with Clara" opens the workspace in fill mode, which
-// replays exactly the recorded steps (strict replay) with the business's
-// Passport. Dialogs are portals so opening them never expands the row.
+// requirement (record the routine once). A learned routine no longer puts a
+// Clara action on the row (Clara rule, 2026-10-12): the replay is launched
+// from the filing hub ("File with Clara"); the row only carries the
+// routine's learned status. Dialogs are portals so opening them never
+// expands the row.
 
 import { useState, type ReactNode } from "react";
 import type { InPlatformHandlers, RowActionsModel, RowCta } from "../checklist/rowActionModel";

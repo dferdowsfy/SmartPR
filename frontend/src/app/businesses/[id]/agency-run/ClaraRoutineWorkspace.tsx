@@ -120,7 +120,7 @@ export function ClaraRoutineWorkspace({ businessId: rawBusinessId, ctx, lang }: 
     passportTotal: passport?.loaded ? passport.fields.length : null,
     evidence,
   };
-  const title = ctx.mode === "teach" ? L("Teach Clara", "Enséñale a Clara", lang) : L("Fill with Clara", "Llenar con Clara", lang);
+  const title = ctx.mode === "teach" ? L("Teach Clara", "Enséñale a Clara", lang) : L("File with Clara", "Radicar con Clara", lang);
   const panelOpen = panel !== null;
 
   return (

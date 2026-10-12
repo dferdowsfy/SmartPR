@@ -51,7 +51,7 @@ import {
 } from "../replay/replaySessions";
 import { claraWorkspaceHref, parseClaraWorkspace } from "../../../app/components/clara/claraWorkspaceLink";
 import { STANDARD_LABELS } from "../../../app/components/checklist/requirementActions";
-import { teachClaraCta, learnedFillCta } from "../../../app/components/checklist/rowActionModel";
+import { teachClaraCta } from "../../../app/components/checklist/rowActionModel";
 
 const PORTAL = "https://tramites.municipio-ejemplo.com/";
 const PASSWORD = "S3creta-Clave!";
@@ -450,13 +450,12 @@ describe("sensitive-data redaction", () => {
 });
 
 describe("EN/ES labels and the workspace link", () => {
-  it("rows say Teach Clara / Enséñale a Clara and Fill with Clara / Llenar con Clara", () => {
+  it("rows say Teach Clara / Enséñale a Clara; the filing action reads File with Clara / Radicar con Clara (Clara rule 2026-10-12)", () => {
     const noop = () => undefined;
     assert.equal(teachClaraCta(noop, "en").label, "Teach Clara");
     assert.equal(teachClaraCta(noop, "es").label, "Enséñale a Clara");
-    assert.equal(learnedFillCta(noop, "en").label, "Fill with Clara");
-    assert.equal(learnedFillCta(noop, "es").label, "Llenar con Clara");
-    assert.equal(STANDARD_LABELS.clara.es, "Llenar con Clara");
+    assert.equal(STANDARD_LABELS.clara.en, "File with Clara");
+    assert.equal(STANDARD_LABELS.clara.es, "Radicar con Clara");
   });
 
   it("Teach Clara carries the requirement's context into the workspace (never business values)", () => {

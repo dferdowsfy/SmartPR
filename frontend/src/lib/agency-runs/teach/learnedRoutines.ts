@@ -4,9 +4,10 @@
  *
  * A learned routine is a skill row whose `checks.routine` carries the
  * requirement it teaches, the portal host and a passing validation. The
- * checklist uses this list to make "Fill with Clara" the row's primary
- * action (strict replay of exactly those steps) for ANY portal, and to
- * show "Clara learned this" / "Needs re-teaching" on the row.
+ * checklist uses this list to show "Clara learned this" /
+ * "Needs re-teaching" on the row; the strict replay itself is launched
+ * from the filing hub ("File with Clara"), never from the row
+ * (Clara rule, 2026-10-12).
  */
 import { listVisibleSkills, SkillLibraryError, type SkillRepo, type SkillViewer, type StoredSkill } from "../skills/skillLibrary";
 import type { LearnedRoutineSummary } from "./learnedRoutineMatch";

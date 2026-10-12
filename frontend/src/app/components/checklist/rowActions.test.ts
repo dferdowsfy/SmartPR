@@ -11,7 +11,7 @@ import { RequirementCard } from "../filing/RequirementCard.tsx";
 
 const noop = () => {};
 
-test("primary = the card's form action (same handler); filing, site and upload go to the overflow", () => {
+test("primary = the card's form action (same handler); site and upload go to the overflow — the Clara filing never surfaces (Clara rule 2026-10-12)", () => {
   const onForm = () => "form";
   const onUpload = () => "upload";
   const m = requirementRowActions({
@@ -22,9 +22,9 @@ test("primary = the card's form action (same handler); filing, site and upload g
   assert.equal(m.primary?.label, "Complete form");
   assert.equal(m.primary?.title, "Complete registration form");
   assert.equal(m.primary?.onClick, onForm, "exact same handler");
-  assert.deepEqual(m.more.map((c) => c.kind), ["assist", "upload", "site"]);
+  assert.deepEqual(m.more.map((c) => c.kind), ["upload", "site"]);
   assert.equal(m.more.find((c) => c.kind === "upload")?.onClick, onUpload);
-  assert.equal(m.more.find((c) => c.kind === "assist")?.href, "/auth/login?next=%2F");
+  assert.ok(![m.primary, ...m.more].some((c) => c?.kind === "assist"), "no Clara action on a requirement row");
 });
 
 test("short labels: kept when short, per-kind default otherwise (EN/ES)", () => {
@@ -154,7 +154,7 @@ test("energy row: Answer leads a question row; expert and bare may-apply rows ge
   assert.equal(expertWithForm.more.length, 0, "no portal added to an expert row");
 });
 
-test("requirement rows: an off-site action never leads — guided form instead; Clara reads 'Fill with Clara'", () => {
+test("requirement rows: an off-site action never leads — guided form instead; a Clara-only row also falls back to the guided form", () => {
   const onGuided = () => "guided";
   const onTeach = () => "teach";
   const instr = requirementRowActions({ action: { kind: "none", label: "" }, filing: { kind: "instructions", label: "View filing instructions", href: "https://www.irs.gov/pub/irs-pdf/fss4.pdf", agencySite: { label: "Open agency site", url: "https://www.irs.gov" } }, onGuidedForm: onGuided, onTeach }, "en");
@@ -164,14 +164,17 @@ test("requirement rows: an off-site action never leads — guided form instead; 
   const dl = requirementRowActions({ action: { kind: "none", label: "" }, download: { label: "Download form", url: "https://example.pr.gov/form.pdf", downloaded: false, downloadedHint: "", onDownload: noop }, onGuidedForm: onGuided }, "es");
   assert.equal(dl.primary?.kind, "guided");
   assert.equal(dl.more[0].kind, "download");
+  // Clara rule (2026-10-12): a row whose only action is a Clara filing gets
+  // the guided form instead — Clara files from the hub, rows complete here.
   const clara = requirementRowActions({ action: { kind: "none", label: "" }, filing: { kind: "file", label: "File with Clara", onClick: noop }, onGuidedForm: onGuided, onTeach }, "en");
-  assert.equal(clara.primary?.kind, "assist");
-  assert.equal(clara.primary?.label, "Fill with Clara");
-  assert.equal(requirementRowActions({ action: { kind: "none", label: "" }, filing: { kind: "prepare", label: "Preparar con Clara", onClick: noop } }, "es").primary?.label, "Llenar con Clara");
-  // Sign-in for Clara stays in SmartPR (relative link).
+  assert.equal(clara.primary?.kind, "guided");
+  assert.equal(clara.primary?.onClick, onGuided);
+  assert.ok(![clara.primary, ...clara.more].some((c) => c?.kind === "assist"));
+  assert.equal(requirementRowActions({ action: { kind: "none", label: "" }, filing: { kind: "prepare", label: "Preparar con Clara", onClick: noop } }, "es").primary, null);
+  // A Clara sign-in CTA is dropped from the row too (relative link or not).
   const signIn = requirementRowActions({ action: { kind: "none", label: "" }, filing: { kind: "prepare", label: "Prepare with Clara", href: "/auth/login?next=%2F" } }, "en");
-  assert.equal(signIn.primary?.kind, "assist");
-  assert.equal(isExternalCta(signIn.primary), false);
+  assert.equal(signIn.primary, null);
+  assert.equal(isExternalCta({ id: "x", kind: "assist", label: "", title: "", href: "/auth/login?next=%2F" }), false);
   assert.equal(isExternalCta({ id: "x", kind: "site", label: "", title: "", href: "https://suri.hacienda.pr.gov" }), true);
   assert.equal(isExternalCta({ id: "x", kind: "site", label: "", title: "", href: "//evil.example" }), true);
   // Done rows: no Teach / guided noise.
@@ -207,7 +210,7 @@ test("energy developer: an existing company — business formation items are sec
 });
 
 // ---------------------------------------------------------------- record-first Teach Clara
-test("learned routine: 'Fill with Clara' (strict replay) becomes the primary on any portal; chip + Re-teach in ⋯", () => {
+test("learned routine: the row keeps its own primary — the replay lives in the filing hub; chip + Re-teach in ⋯ (Clara rule 2026-10-12)", () => {
   const onForm = () => "form";
   const onFill = () => "fill";
   const onTeach = () => "teach";
@@ -219,20 +222,19 @@ test("learned routine: 'Fill with Clara' (strict replay) becomes the primary on 
     onLearnedFill: onFill,
     learnedStatus: "learned",
   }, "en");
-  assert.equal(m.primary?.label, "Fill with Clara");
-  assert.equal(m.primary?.onClick, onFill);
+  assert.equal(m.primary?.label, "Complete form");
+  assert.equal(m.primary?.onClick, onForm);
   assert.equal(m.learned, "learned");
-  assert.ok(!m.more.some((c) => c.kind === "assist"), "the built-in Clara action is replaced, not duplicated");
-  assert.equal(m.more[0].onClick, onForm, "the row's own form action moves to ⋯");
+  assert.ok(![m.primary, ...m.more].some((c) => c?.kind === "assist"), "no Clara action on the row — the hub owns the replay");
+  assert.ok(![m.primary, ...m.more].some((c) => c?.onClick === onFill), "the learned replay handler is not wired to the row");
   assert.equal(m.more.at(-1)?.label, "Re-teach Clara");
   assert.ok(m.more.some((c) => c.kind === "site" && c.external), "agency links stay in ⋯");
 
   const es = energyRowActions({ status: "required", cards: EMPTY_ROW_ACTIONS, portal: { url: "https://tramites.example.com", label: "Portal" }, onGuidedForm: noop, onTeach, onLearnedFill: onFill, learnedStatus: "learned" }, "es");
-  assert.equal(es.primary?.label, "Llenar con Clara");
-  assert.equal(es.primary?.onClick, onFill);
+  assert.equal(es.primary?.kind, "guided");
+  assert.ok(![es.primary, ...es.more].some((c) => c?.onClick === onFill));
   assert.equal(es.more.at(-1)?.label, "Enseñar de nuevo");
   assert.ok(es.more.some((c) => c.kind === "portal"));
-  assert.ok(es.more.some((c) => c.kind === "guided"));
 });
 
 test("learned routine that needs re-teaching: normal primary, 'Re-teach Clara' in ⋯, warning chip", () => {
@@ -242,12 +244,13 @@ test("learned routine that needs re-teaching: normal primary, 'Re-teach Clara' i
   assert.equal(m.more.at(-1)?.label, "Re-teach Clara");
 });
 
-test("learned routine on an answer-only row: Answer stays first, Fill with Clara leads the ⋯", () => {
+test("learned routine on an answer-only row: Answer stays first; no Clara action on the row", () => {
   const onFill = () => "fill";
   const m = requirementRowActions({ action: { kind: "none", label: "" }, answerPrompt: { prompt: "Do you have employees?", yesLabel: "Yes", noLabel: "No", onYes: noop, onNo: noop }, onTeach: noop, onLearnedFill: onFill, learnedStatus: "learned" }, "en");
   assert.equal(m.primary, null);
   assert.ok(m.answer);
-  assert.equal(m.more[0].onClick, onFill);
+  assert.ok(!m.more.some((c) => c.onClick === onFill), "the replay is launched from the filing hub, not the row");
+  assert.equal(m.more.at(-1)?.label, "Re-teach Clara");
 });
 
 test("learned chip renders with the row title (RowName), not in the actions column (EN/ES)", async () => {
@@ -261,7 +264,7 @@ test("learned chip renders with the row title (RowName), not in the actions colu
   assert.doesNotMatch(actions, /row-learned/, "the chip no longer widens the fixed actions column");
   const modelEs = requirementRowActions({ action: { kind: "form", label: "Completar", onClick: noop }, onTeach: noop, onLearnedFill: noop, learnedStatus: "learned" }, "es");
   assert.match(renderToStaticMarkup(createElement(RowName, { name: "Interconexión", model: modelEs, language: "es" })), /Clara lo aprendió/);
-  assert.match(renderToStaticMarkup(createElement(RowActions, { model: modelEs, language: "es" })), /Llenar con Clara/);
+  assert.doesNotMatch(renderToStaticMarkup(createElement(RowActions, { model: modelEs, language: "es" })), /con Clara/, "no Clara action renders on the row (Clara rule 2026-10-12)");
   // No routine → plain title.
   const plain = renderToStaticMarkup(createElement(RowName, { name: "X", model: requirementRowActions({ action: { kind: "form", label: "Complete form", onClick: noop } }, "en"), language: "en" }));
   assert.equal(plain, '<span class="ck-name">X</span>');

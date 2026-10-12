@@ -3,8 +3,9 @@
  * requirements screenshot ("Fill with Clara — <requirement>" → Clara can't
  * file this yet → "Teach Clara") into the chat-first Clara workspace, then:
  * live walkthrough → secure one-time password / SSN cards → Passport field
- * binding → review → named save → the row now leads with "Fill with Clara"
- * → Fill with Clara for a DIFFERENT business (its own Passport) → missing
+ * binding → review → named save → the row shows the learned chip (no Clara
+ * button on the row — Clara rule 2026-10-12: she files from the hub)
+ * → File with Clara for a DIFFERENT business (its own Passport) → missing
  * Passport value asked in chat → review checkpoint (never submitted).
  * Also: EN/ES labels, the worker-unavailable error, and portal drift.
  *
@@ -238,7 +239,7 @@ await page.getByRole("button", { name: /Compute Requirements from Rules Engine/ 
 await page.locator(".ck-summary").waitFor({ timeout: 60000 });
 await page.waitForTimeout(800);
 const explainRow = page.locator('.spr-requirements-main .ck-card-line:has([data-testid="row-clara"][data-route="explain"])').first();
-check("a requirement Clara can't file yet: no 'Fill with Clara' button on the row", (await explainRow.count()) > 0);
+check("a requirement Clara can't file yet: no Clara button on the row", (await explainRow.count()) > 0);
 const rowName = (await explainRow.locator(".ck-name").innerText()).trim();
 await explainRow.locator('[data-testid="row-more"]').click();
 const menuText = await explainRow.locator(".ck-more-menu").innerText();
@@ -390,16 +391,16 @@ const storage = await page.evaluate(() => JSON.stringify({ ...localStorage }) + 
 check("secrets not in browser storage", !storage.includes(PASSWORD) && !storage.includes(SSN));
 check("teach: no page errors", errors.length === 0, errors.join(" | "));
 
-// ------------------------------------------------------------ 4. the row now leads with Fill with Clara
+// --------------------------------------- 4. the row shows the learned chip; no Clara button (Clara rule 2026-10-12)
 await page.goto(`${base}/?resume=e2e-teach`, { waitUntil: "domcontentloaded", timeout: 120000 });
 await page.getByRole("button", { name: /Compute Requirements from Rules Engine/ }).click({ timeout: 120000 });
 await page.locator(".ck-summary").waitFor({ timeout: 60000 });
 await page.waitForTimeout(800);
 const learnedRow = page.locator(".spr-requirements-main .ck-card-line").filter({ has: page.locator(".ck-name", { hasText: rowName }) }).first();
-check("learned row: 'Fill with Clara' now replays the routine", (await learnedRow.locator('[data-testid="row-clara"]').getAttribute("data-route")) === "learned");
+check("learned row: chip shows Clara learned it; Clara slot stays empty (replay launches from the filing hub)", (await learnedRow.locator('[data-testid="row-learned"]').count()) > 0 && (await learnedRow.locator('[data-testid="row-clara"]').getAttribute("data-route")) === "explain");
 await page.screenshot({ path: path.join(OUT, "7_learned_row.png") });
 
-// ------------------------------------------------------------ 5. Fill with Clara for a different business
+// ------------------------------------------------------------ 5. File with Clara for a different business
 if (REAL) await fixture("__mode?set=replay");
 await page.goto(`${base}/businesses/biz-b/agency-run?${new URLSearchParams({ mode: "fill", requirement: workspaceRequirement, name: rowName })}`, { waitUntil: "domcontentloaded", timeout: 120000 });
 await page.locator('[data-testid="clara-workspace"][data-mode="fill"]').waitFor({ timeout: 60000 });
@@ -473,7 +474,7 @@ await page.close();
   await p2.getByRole("button", { name: "ES", exact: true }).click();
   await p2.waitForTimeout(500);
   const header = await p2.locator('[data-testid="clara-workspace"] header').first().innerText();
-  check("ES: workspace labels in Spanish", /Llenar con Clara/i.test(header) && /Ver navegador|Ocultar navegador/i.test(header) && /Pasaporte del negocio/i.test(header), header.replace(/\s+/g, " ").slice(0, 160));
+  check("ES: workspace labels in Spanish", /Radicar con Clara/i.test(header) && /Ver navegador|Ocultar navegador/i.test(header) && /Pasaporte del negocio/i.test(header), header.replace(/\s+/g, " ").slice(0, 160));
   check("ES: drift message in Spanish", /sin tocar nada|se ve distinto/.test(await p2.locator('[data-testid="ws-chat"]').innerText()));
   await p2.screenshot({ path: path.join(OUT, "12_es_fill.png") });
   await p2.goto(`${base}/?resume=e2e-teach`, { waitUntil: "domcontentloaded", timeout: 120000 });

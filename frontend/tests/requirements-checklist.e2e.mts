@@ -688,7 +688,7 @@ check("right sidebar renders beside the requirements", await sidebar.isVisible()
   check("main column ~70-75% of the layout", !!mainBox && !!sideBox && mainBox.width / (mainBox.width + sideBox.width) > 0.66 && mainBox.width / (mainBox.width + sideBox.width) < 0.78, mainBox && sideBox ? (mainBox.width / (mainBox.width + sideBox.width)).toFixed(2) : "");
 }
 const claraCard = page.locator('[data-testid="sidebar-clara"]');
-check("sidebar: Clara card with Fill with Clara + Ask Clara", (await claraCard.innerText()).includes("Fill with Clara") && (await claraCard.innerText()).includes("Ask Clara"));
+check("sidebar: Clara card with File with Clara + Ask Clara", (await claraCard.innerText()).includes("File with Clara") && (await claraCard.innerText()).includes("Ask Clara"));
 const incCard = sidebar.locator(".inc-card").first();
 await incCard.locator(".inc-loading").waitFor({ state: "detached", timeout: 30000 }).catch(() => undefined);
 const incText = await incCard.innerText().catch(() => "");
@@ -728,9 +728,10 @@ const visibleBars = (): Promise<Bar[]> => main.locator('[data-testid="row-action
 })) as Promise<Bar[]>;
 const bars = await visibleBars();
 console.log("rows:", bars.map((b) => `${b.name} [clara=${b.claraRoute} complete=${b.completeRoute}]`).join(" | "));
-check("every row has Fill with Clara · Complete · ⋯ (View details inside ⋯)", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.more && !b.details), bars.filter((b) => !(b.clara && b.complete && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
-// Fill with Clara shows only where Clara can act; elsewhere its slot is empty (rows stay aligned).
-check("labels never change by agency", bars.every((b) => (b.claraRoute === "explain" ? !b.clara?.text : b.clara?.text === "Fill with Clara") && /^(Complete|Completed|Upload)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
+check("every row has [Clara slot] · Complete · ⋯ (View details inside ⋯)", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.more && !b.details), bars.filter((b) => !(b.clara && b.complete && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
+// Clara rule (2026-10-12): Clara files from the filing hub — her slot on a
+// requirement row is ALWAYS empty (route "explain", no label); rows stay aligned.
+check("labels never change by agency", bars.every((b) => b.claraRoute === "explain" && !b.clara?.text && /^(Complete|Completed|Upload)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
 for (const k of ["clara", "complete", "more"] as const) {
   const xs = bars.map((b) => b[k]).filter((v): v is NonNullable<Slot> => !!v);
   check(`${k}: same x and width on every row`, xs.length > 1 && xs.every((v) => Math.abs(v.x - xs[0].x) <= 1 && Math.abs(v.w - xs[0].w) <= 1), xs.map((v) => `${v.x}/${v.w}`).join(","));
@@ -807,9 +808,10 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
   const route = await complete.getAttribute("data-route");
   routesSeen.add(`clara:${claraRoute}`);
   routesSeen.add(`complete:${route}`);
-  // Fill with Clara: only when Clara can act; otherwise Complete is the one action and "Ask Clara" sits in ⋯.
+  // Clara rule (2026-10-12): the Clara slot on a requirement row is always
+  // empty — Complete is the one action and "Ask Clara" sits in ⋯.
   if (claraRoute === "explain") {
-    check(`"${name}": no Fill with Clara button when Clara can't file it`, !(await clara.isVisible()));
+    check(`"${name}": no Clara button on requirement rows`, !(await clara.isVisible()));
     await bar.locator('[data-testid="row-more"]').click();
     check(`"${name}": ⋯ offers Ask Clara`, await bar.locator('[data-testid="row-more-item"]', { hasText: "Ask Clara" }).isVisible().catch(() => false));
     await page.keyboard.press("Escape");

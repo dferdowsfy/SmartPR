@@ -1,8 +1,14 @@
 // The standard requirement actions: every row shows the same controls in the
-// same place — "Fill with Clara" · "Complete" · "View details" · ⋯ — whatever
+// same place — [Clara slot] · "Complete" · "View details" · ⋯ — whatever
 // the agency. The row's own capabilities (the RowActionsModel built from its
-// forms, uploads, Clara filing, portals and taught routines) decide only what
-// each control DOES, never its label or position.
+// forms, uploads, portals and taught routines) decide only what each control
+// DOES, never its label or position.
+//
+// Clara rule (Darius, 2026-10-12): Clara FILES — she submits finished
+// filings from the filing hub; she never fills a requirement. The Clara
+// slot on a requirement row is therefore always empty, Complete never
+// routes to Clara, and "Ask Clara" is the only Clara entry on a row
+// (in ⋯).
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 import { isExternalCta } from "./rowActionModel";
 
@@ -10,11 +16,13 @@ type Language = "en" | "es";
 
 /** What "Complete" does for this row. */
 export type CompleteRoute = "smartpr_form" | "government" | "clara" | "upload" | "instructions" | "blocked";
-/** What "Fill with Clara" does for this row. */
+/** What the row's Clara slot does. Since 2026-10-12 always "explain". */
 export type ClaraRoute = "learned" | "file" | "explain";
-// "explain" = Clara can't file this row yet. The row then shows no Clara
-// button (Complete is the one action: the Passport-prefilled form, which
-// hands off to Clara once finished); "Ask Clara" sits in ⋯ instead.
+// "explain" = no Clara button on the row (Complete is the one action: the
+// Passport-prefilled form, which hands off to Clara's filing hub once the
+// filing is ready); "Ask Clara" sits in ⋯ instead. "learned"/"file" are
+// retained for type compatibility with older callers and are no longer
+// produced here.
 
 export interface StandardAction<R extends string> {
   route: R;
@@ -61,7 +69,7 @@ const COMPLETE_ROUTE: Partial<Record<RowCtaKind, CompleteRoute>> = {
 };
 
 export const STANDARD_LABELS = {
-  clara: { en: "Fill with Clara", es: "Llenar con Clara" },
+  clara: { en: "File with Clara", es: "Radicar con Clara" },
   complete: { en: "Complete", es: "Completar" },
   // Rows SmartPR can't complete in-platform, only take proof of: say so.
   upload: { en: "Upload", es: "Subir" },
@@ -72,23 +80,18 @@ export const STANDARD_LABELS = {
 export function standardRequirementActions(model: RowActionsModel, ctx: StandardActionContext, language: Language): RequirementActions {
   const es = language === "es";
   const all = [model.primary, ...model.more].filter((c): c is RowCta => !!c);
-  const claraCta = all.find((c) => c.id === "learned") ?? all.find((c) => c.kind === "assist") ?? null;
 
-  const clara: StandardAction<ClaraRoute> = claraCta
-    ? {
-        route: claraCta.id === "learned" ? "learned" : "file",
-        title: claraCta.title,
-        onClick: claraCta.onClick,
-        href: claraCta.href,
-        external: isExternalCta(claraCta),
-      }
-    : {
-        route: "explain",
-        title: es ? "Llenar con Clara — mira lo que Clara puede hacer aquí" : "Fill with Clara — see what Clara can do here",
-        onClick: ctx.onExplainClara,
-      };
+  // Clara rule (2026-10-12): the row's Clara slot is always empty — Clara
+  // files finished filings from the filing hub, never from a requirement
+  // row. Clara CTAs in the model (assist / learned) are dropped here too,
+  // so they can't leak into Complete or the ⋯ menu.
+  const clara: StandardAction<ClaraRoute> = {
+    route: "explain",
+    title: es ? "Radicar con Clara — disponible cuando la radicación esté lista" : "File with Clara — available once the filing is ready",
+    onClick: ctx.onExplainClara,
+  };
 
-  const rest = all.filter((c) => c !== claraCta);
+  const rest = all.filter((c) => c.id !== "learned" && c.kind !== "assist");
   const completable = rest.filter((c) => c.kind !== "teach" && COMPLETE_ROUTE[c.kind]);
   // In-platform first: SmartPR forms, uploads. Off-site links only lead when
   // nothing in SmartPR (or Clara) can, and never past a known blocker.
@@ -106,8 +109,6 @@ export function standardRequirementActions(model: RowActionsModel, ctx: Standard
   } else if (internal) {
     completeCta = internal;
     complete = { route: COMPLETE_ROUTE[internal.kind]!, title: internal.title, onClick: internal.onClick, href: internal.href, locked: internal.locked };
-  } else if (claraCta) {
-    complete = { ...clara, route: "clara" };
   } else if (ctx.blockedReason) {
     complete = { route: "blocked", title: ctx.blockedReason, onClick: ctx.onViewDetails };
   } else if (external && COMPLETE_ROUTE[external.kind] === "government") {

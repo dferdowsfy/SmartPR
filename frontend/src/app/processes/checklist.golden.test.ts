@@ -285,7 +285,7 @@ test("energy rows: inline CTA from the covered card, Answer on answer-only rows,
   for (const i of items(r.ck)) {
     const row = rowOf(i.id);
     // The same controls on every row; only what Complete does varies.
-    assert.match(row, /data-testid="row-clara"/, `${i.id} Fill with Clara`);
+    assert.match(row, /data-testid="row-clara"/, `${i.id} Clara slot (always empty on rows — Clara rule 2026-10-12)`);
     assert.match(row, /data-testid="row-more"/, `${i.id} ⋯ (View details inside)`);
     if (i.status === "question") assert.match(row, /data-testid="row-complete" data-route="blocked"/, `${i.id} answer first`);
     // May apply: a SmartPR form only when there is something to file (the official portal).
