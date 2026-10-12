@@ -14,6 +14,7 @@
 
 import nodemailer from "nodemailer";
 import type { Queryable } from "./enterprise-permissions";
+import { isFeatureEnabled, logFeatureSkipped } from "./config/features";
 
 // ---------------------------------------------------------------------------
 // Date helpers (date-only, YYYY-MM-DD; pure)
@@ -807,6 +808,10 @@ export async function sendReminderEmail(
   lines: Array<{ label: string; value: string }>
 ): Promise<boolean> {
   if (!to || !to.includes("@")) return false;
+  if (!mailerOverride && !isFeatureEnabled("externalEmail")) {
+    logFeatureSkipped("externalEmail", "enterprise-reminders");
+    return false;
+  }
   if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
     console.error("[enterprise-reminders] email skipped: GMAIL_SMTP_APP_PASSWORD is not set");
     return false;

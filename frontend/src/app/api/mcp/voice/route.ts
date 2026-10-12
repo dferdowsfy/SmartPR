@@ -15,11 +15,13 @@
 
 import { getPool, isEnabled } from "../../../graph/db";
 import { handleMcpRequest } from "../../../../lib/voice/mcp";
+import { isFeatureEnabled, featureDisabledResponse } from "../../../../lib/config/features";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!isFeatureEnabled("voiceTelephony")) return featureDisabledResponse("voiceTelephony");
   try {
     if (!isEnabled()) {
       return Response.json(

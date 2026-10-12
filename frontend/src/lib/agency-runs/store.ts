@@ -60,6 +60,7 @@ import type {
   AgencyRunPublic,
   AgencyRunStatus,
 } from "./types";
+import { isFeatureEnabled, FeatureDisabledError } from "../config/features";
 
 const globalStore = globalThis as typeof globalThis & {
   __smartprAgencyRuns?: Map<string, AgencyRun>;
@@ -740,6 +741,11 @@ export async function createRun(input: {
   /** Teach Clara v1: steps a user described for this portal (read as guidance). */
   taughtPlaybook?: TaughtPlaybook | null;
 }): Promise<AgencyRunPublic> {
+  // Enterprise with Browser Use Cloud not approved: refuse, rather than
+  // silently falling back to a simulated (mock) filing run.
+  if (agentProvider() === "browser_use_cloud" && !isFeatureEnabled("browserUseCloud")) {
+    throw new FeatureDisabledError("browserUseCloud");
+  }
   // Hard gate: a filing variant that is disabled or whose launch switch is
   // off can never start a browser session, whoever calls this.
   if (!isFilingLaunchable(getFilingConfig(input.filing_type))) {

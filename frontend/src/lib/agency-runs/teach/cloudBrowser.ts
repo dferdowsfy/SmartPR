@@ -21,6 +21,7 @@ import type { Browser, BrowserContext, Page } from "playwright-core";
 import { RECORDER_SCRIPT } from "./recorderScript";
 import { DRIVER_SCRIPT } from "../replay/driverScript";
 import type { LocateResult, PageSnapshot, PortalDriver } from "../replay/engine";
+import { isFeatureEnabled } from "../../config/features";
 
 type Mode = "teach" | "drive";
 
@@ -57,6 +58,8 @@ function base(): string {
 }
 
 function apiKey(): string | null {
+  // Enterprise: Browser Use Cloud receives page content, so it is off unless approved.
+  if (!isFeatureEnabled("browserUseCloud")) return null;
   return process.env.BROWSER_USE_API_KEY?.trim() || null;
 }
 

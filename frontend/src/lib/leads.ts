@@ -20,6 +20,7 @@
 import { randomUUID } from "crypto";
 import nodemailer from "nodemailer";
 import type { Pool } from "pg";
+import { isFeatureEnabled, logFeatureSkipped } from "./config/features";
 
 const FOUNDER_EMAIL = "dferdows@gmail.com";
 const SMTP_USER = process.env.GMAIL_SMTP_USER || "darius@getsmartpr.com";
@@ -83,6 +84,10 @@ export function buildAlertHtml(subject: string, fields: Record<string, string>):
 export async function notifyFounder(subject: string, fields: Record<string, string>): Promise<void> {
   const line = `[founder-notify] ${subject} :: ${Object.entries(fields).map(([k, v]) => `${k}=${v}`).join(" | ")}`;
   console.info(line);
+  if (!mailerOverride && !isFeatureEnabled("externalEmail")) {
+    logFeatureSkipped("externalEmail", "founder-notify");
+    return;
+  }
   if (!process.env.GMAIL_SMTP_APP_PASSWORD && !mailerOverride) {
     // Loud on purpose: a missing credential means the founder hears nothing.
     console.error("[founder-notify] skipped: GMAIL_SMTP_APP_PASSWORD is not set");

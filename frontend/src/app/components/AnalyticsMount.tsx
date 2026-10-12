@@ -1,4 +1,5 @@
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { isFeatureEnabled } from "../../lib/config/features";
 
 /**
  * Google Analytics 4 page-view tracking.
@@ -19,5 +20,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 export function AnalyticsMount() {
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   if (!gaId) return null;
+  // Enterprise: no third-party browser analytics unless approved.
+  if (!isFeatureEnabled("browserAnalytics")) return null;
   return <GoogleAnalytics gaId={gaId} />;
 }

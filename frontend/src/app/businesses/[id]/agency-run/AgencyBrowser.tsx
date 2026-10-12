@@ -99,8 +99,9 @@ export function AgencyBrowser(props: AgencyBrowserProps) {
     }
   };
   const zoomIdx = (ZOOM_STEPS as readonly number[]).indexOf(zoom);
-  // Warm the connection to the live-view host before the URL arrives.
-  preconnect("https://live.browser-use.com");
+  // Warm the connection to the live-view host only for a real Browser Use
+  // run (never for mock runs or deployments where Browser Use is disabled).
+  if (run.worker === "browser_use") preconnect("https://live.browser-use.com");
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
