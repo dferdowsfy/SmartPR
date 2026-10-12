@@ -70,8 +70,8 @@
       },
       {
         "key": "DOC_FIRE_CERT",
-        "confidence": "needs-expert-review",
-        "rationale": "Auto repair: Bomberos fire-prevention certificate. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]"
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0759 (BT_AUTO_REPAIR_SHOP): Certificación de Prevención de Incendios (Bomberos / CPI) for automotive repair occupancy with flammable liquids. Authority: Ley 20-2017; Bomberos permisos page (commercial use / Permiso Único path); consistent with BT_TIRE_RECYCLING RULE_0617 and manufacturing fire-cert rules. (KB: RULE_0759)"
       },
       {
         "key": "DOC_WORKERS_COMP",

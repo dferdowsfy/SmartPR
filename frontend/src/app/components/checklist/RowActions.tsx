@@ -6,15 +6,17 @@
 // toggle (stopPropagation) and run the card's own handlers.
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, Loader2, MessageCircle, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 import { STANDARD_LABELS, type RequirementActions } from "./requirementActions";
+import { usePendingAction } from "./usePendingAction";
 
 type Language = "en" | "es";
 
 const stop = (e: MouseEvent) => e.stopPropagation();
 
-function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
+function Icon({ kind, locked, ask }: { kind: RowCtaKind; locked?: boolean; ask?: boolean }) {
+  if (ask) return <MessageCircle size={14} aria-hidden="true" />;
   if (locked) return <Lock size={14} aria-hidden="true" />;
   switch (kind) {
     case "form":
@@ -49,14 +51,14 @@ function CtaControl({ c, className, role, onDone, testId = "row-cta" }: { c: Row
   if (c.href) {
     return (
       <a {...common} href={c.href} onClick={click} target={c.external ? "_blank" : undefined} rel={c.external ? "noopener noreferrer" : undefined}>
-        <Icon kind={c.kind} locked={c.locked} /> <span>{c.label}</span>
+        <Icon kind={c.kind} locked={c.locked} ask={c.id === "ask"} /> <span>{c.label}</span>
         {c.external && c.kind !== "site" && c.kind !== "portal" && <ExternalLink size={12} aria-hidden="true" />}
       </a>
     );
   }
   return (
     <button type="button" {...common} onClick={click}>
-      <Icon kind={c.kind} locked={c.locked} /> <span>{c.label}</span>
+      <Icon kind={c.kind} locked={c.locked} ask={c.id === "ask"} /> <span>{c.label}</span>
     </button>
   );
 }
@@ -103,39 +105,59 @@ function useMenu() {
 
 /**
  * The standard action column, identical on every requirement row:
- * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item). Labels
- * and positions never change; each row's own capabilities decide only what a
- * click does (the route is exposed as data-route and in the tooltip).
+ * [Clara slot] · Complete · ⋯ (View details is the first ⋯ item); Complete
+ * reads "Upload" when uploading proof is all SmartPR can do for the row. Positions
+ * never change; each row's own capabilities decide only what a click does
+ * (the route is exposed as data-route and in the tooltip). The Clara slot
+ * is always empty on requirement rows (Clara rule, 2026-10-12): Clara files
+ * finished filings from the filing hub — she never fills a requirement.
  */
 export function StandardRowActions({ actions, language, answerOpen = false }: { actions: RequirementActions; language: Language; answerOpen?: boolean }) {
   const lang = language;
   const { menu, setMenu, ref } = useMenu();
   const { clara, complete, done, overflow } = actions;
-  const run = (a: { onClick?: () => void }) => (e: MouseEvent) => {
+  const { pending, run: runPending } = usePendingAction<"clara" | "complete">();
+  const run = (key: "clara" | "complete", a: { onClick?: () => void; href?: string; route?: string; external?: boolean }) => (e: MouseEvent) => {
     e.stopPropagation();
-    a.onClick?.();
+    if (pending) {
+      e.preventDefault();
+      return;
+    }
+    // Quick, or needs the click's user gesture (file picker, new tab): run now, no spinner.
+    if (a.route === "upload" || a.route === "blocked" || a.route === "government" || a.external) {
+      a.onClick?.();
+      return;
+    }
+    if (a.href && !a.onClick) runPending(key, () => undefined, { deferred: false });
+    else runPending(key, a.onClick, { deferred: !a.href });
   };
+  const opening = <><Loader2 size={14} className="rq-spin" aria-hidden="true" /> <span>{lang === "es" ? "Abriendo…" : "Opening…"}</span></>;
   const link = (a: { href?: string; external?: boolean }) =>
     a.href ? { href: a.href, target: a.external ? "_blank" : undefined, rel: a.external ? "noopener noreferrer" : undefined } : null;
   const claraLink = link(clara);
   const completeLink = link(complete);
-  const claraInner = <><Sparkles size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.clara[lang]}</span></>;
-  const completeInner = <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{STANDARD_LABELS.complete[lang]}</span></>;
+  const claraInner = pending === "clara" ? opening : <><Sparkles size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.clara[lang]}</span></>;
+  const isUpload = complete.route === "upload";
+  const completeInner = pending === "complete" ? opening : <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : isUpload ? <Upload size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{(isUpload ? STANDARD_LABELS.upload : STANDARD_LABELS.complete)[lang]}</span></>;
   return (
     <div className="rq-std-actions" ref={ref} onClick={stop} data-testid="row-actions">
-      {claraLink ? (
-        <a {...claraLink} className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</a>
+      {clara.route === "explain" ? (
+        // Clara can't file this row: no button (Complete leads to the form
+        // that hands off to her); the empty slot keeps rows aligned.
+        <span className="rq-std-btn rq-std-clara rq-std-slot" aria-hidden="true" data-testid="row-clara" data-route="explain" />
+      ) : claraLink ? (
+        <a {...claraLink} className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} aria-busy={pending === "clara" || undefined} onClick={run("clara", clara)}>{claraInner}</a>
       ) : (
-        <button type="button" className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</button>
+        <button type="button" className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} aria-busy={pending === "clara" || undefined} onClick={run("clara", clara)}>{claraInner}</button>
       )}
       {done ? (
         <button type="button" className="rq-std-btn rq-std-complete rq-std-done" data-testid="row-complete" data-route="done" disabled={!done.onClick} onClick={(e) => { e.stopPropagation(); done.onClick?.(); }}>
           <CheckCircle2 size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.done[lang]}</span>
         </button>
       ) : completeLink ? (
-        <a {...completeLink} className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} onClick={run(complete)}>{completeInner}</a>
+        <a {...completeLink} className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-busy={pending === "complete" || undefined} onClick={run("complete", complete)}>{completeInner}</a>
       ) : (
-        <button type="button" className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-expanded={complete.route === "blocked" ? answerOpen : undefined} onClick={run(complete)}>{completeInner}</button>
+        <button type="button" className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-expanded={complete.route === "blocked" ? answerOpen : undefined} aria-busy={pending === "complete" || undefined} onClick={run("complete", complete)}>{completeInner}</button>
       )}
       <span className="ck-more rq-std-more">
         <button

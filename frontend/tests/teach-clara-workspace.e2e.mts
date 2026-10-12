@@ -3,8 +3,9 @@
  * requirements screenshot ("Fill with Clara — <requirement>" → Clara can't
  * file this yet → "Teach Clara") into the chat-first Clara workspace, then:
  * live walkthrough → secure one-time password / SSN cards → Passport field
- * binding → review → named save → the row now leads with "Fill with Clara"
- * → Fill with Clara for a DIFFERENT business (its own Passport) → missing
+ * binding → review → named save → the row shows the learned chip (no Clara
+ * button on the row — Clara rule 2026-10-12: she files from the hub)
+ * → File with Clara for a DIFFERENT business (its own Passport) → missing
  * Passport value asked in chat → review checkpoint (never submitted).
  * Also: EN/ES labels, the worker-unavailable error, and portal drift.
  *
@@ -238,16 +239,13 @@ await page.getByRole("button", { name: /Compute Requirements from Rules Engine/ 
 await page.locator(".ck-summary").waitFor({ timeout: 60000 });
 await page.waitForTimeout(800);
 const explainRow = page.locator('.spr-requirements-main .ck-card-line:has([data-testid="row-clara"][data-route="explain"])').first();
-check("a requirement whose 'Fill with Clara' explains what Clara can do (the screenshot's case)", (await explainRow.count()) > 0);
+check("a requirement Clara can't file yet: no Clara button on the row", (await explainRow.count()) > 0);
 const rowName = (await explainRow.locator(".ck-name").innerText()).trim();
-await explainRow.locator('[data-testid="row-clara"]').click();
-const explain = page.locator('[data-testid="clara-explain"]');
-await explain.waitFor({ timeout: 5000 });
-const explainText = await explain.innerText();
-check("explain dialog: 'Teach Clara' replaces 'Show her this portal once'", /Teach Clara/.test(explainText) && !/Show her this portal once/.test(explainText), explainText.replace(/\s+/g, " ").slice(0, 160));
-check("explain dialog keeps 'Prepare the information in SmartPR' and 'Ask Clara'", /Prepare the information in SmartPR/.test(explainText) && /Ask Clara/.test(explainText));
+await explainRow.locator('[data-testid="row-more"]').click();
+const menuText = await explainRow.locator(".ck-more-menu").innerText();
+check("⋯ menu offers 'Teach Clara' and 'Ask Clara'", /Teach Clara/.test(menuText) && /Ask Clara/.test(menuText), menuText.replace(/\s+/g, " ").slice(0, 160));
 await page.screenshot({ path: path.join(OUT, "1_entry_explain_en.png") });
-await explain.locator('[data-testid="clara-explain-teach"]').click();
+await explainRow.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
 await page.waitForURL(/\/agency-run\?/, { timeout: 30000 });
 const wsUrl = new URL(page.url());
 workspaceRequirement = wsUrl.searchParams.get("requirement") ?? "";
@@ -393,16 +391,16 @@ const storage = await page.evaluate(() => JSON.stringify({ ...localStorage }) + 
 check("secrets not in browser storage", !storage.includes(PASSWORD) && !storage.includes(SSN));
 check("teach: no page errors", errors.length === 0, errors.join(" | "));
 
-// ------------------------------------------------------------ 4. the row now leads with Fill with Clara
+// --------------------------------------- 4. the row shows the learned chip; no Clara button (Clara rule 2026-10-12)
 await page.goto(`${base}/?resume=e2e-teach`, { waitUntil: "domcontentloaded", timeout: 120000 });
 await page.getByRole("button", { name: /Compute Requirements from Rules Engine/ }).click({ timeout: 120000 });
 await page.locator(".ck-summary").waitFor({ timeout: 60000 });
 await page.waitForTimeout(800);
 const learnedRow = page.locator(".spr-requirements-main .ck-card-line").filter({ has: page.locator(".ck-name", { hasText: rowName }) }).first();
-check("learned row: 'Fill with Clara' now replays the routine", (await learnedRow.locator('[data-testid="row-clara"]').getAttribute("data-route")) === "learned");
+check("learned row: chip shows Clara learned it; Clara slot stays empty (replay launches from the filing hub)", (await learnedRow.locator('[data-testid="row-learned"]').count()) > 0 && (await learnedRow.locator('[data-testid="row-clara"]').getAttribute("data-route")) === "explain");
 await page.screenshot({ path: path.join(OUT, "7_learned_row.png") });
 
-// ------------------------------------------------------------ 5. Fill with Clara for a different business
+// ------------------------------------------------------------ 5. File with Clara for a different business
 if (REAL) await fixture("__mode?set=replay");
 await page.goto(`${base}/businesses/biz-b/agency-run?${new URLSearchParams({ mode: "fill", requirement: workspaceRequirement, name: rowName })}`, { waitUntil: "domcontentloaded", timeout: 120000 });
 await page.locator('[data-testid="clara-workspace"][data-mode="fill"]').waitFor({ timeout: 60000 });
@@ -476,7 +474,7 @@ await page.close();
   await p2.getByRole("button", { name: "ES", exact: true }).click();
   await p2.waitForTimeout(500);
   const header = await p2.locator('[data-testid="clara-workspace"] header').first().innerText();
-  check("ES: workspace labels in Spanish", /Llenar con Clara/i.test(header) && /Ver navegador|Ocultar navegador/i.test(header) && /Pasaporte del negocio/i.test(header), header.replace(/\s+/g, " ").slice(0, 160));
+  check("ES: workspace labels in Spanish", /Radicar con Clara/i.test(header) && /Ver navegador|Ocultar navegador/i.test(header) && /Pasaporte del negocio/i.test(header), header.replace(/\s+/g, " ").slice(0, 160));
   check("ES: drift message in Spanish", /sin tocar nada|se ve distinto/.test(await p2.locator('[data-testid="ws-chat"]').innerText()));
   await p2.screenshot({ path: path.join(OUT, "12_es_fill.png") });
   await p2.goto(`${base}/?resume=e2e-teach`, { waitUntil: "domcontentloaded", timeout: 120000 });
@@ -484,11 +482,11 @@ await page.close();
   await p2.locator(".ck-summary").waitFor({ timeout: 60000 });
   await p2.waitForTimeout(800);
   const esRow = p2.locator('.spr-requirements-main .ck-card-line:has([data-testid="row-clara"][data-route="explain"])').first();
-  await esRow.locator('[data-testid="row-clara"]').click();
-  const esExplain = await p2.locator('[data-testid="clara-explain"]').innerText();
-  check("ES: explain dialog says 'Enséñale a Clara' and 'Llenar con Clara'", /Enséñale a Clara/.test(esExplain) && /Llenar con Clara/.test(esExplain) && !/Enséñale este portal una vez/.test(esExplain), esExplain.replace(/\s+/g, " ").slice(0, 160));
+  await esRow.locator('[data-testid="row-more"]').click();
+  const esMenu = await esRow.locator(".ck-more-menu").innerText();
+  check("ES: ⋯ menu says 'Enséñale a Clara' and 'Preguntarle a Clara'", /Enséñale a Clara/.test(esMenu) && /Preguntarle a Clara/.test(esMenu), esMenu.replace(/\s+/g, " ").slice(0, 160));
   await p2.screenshot({ path: path.join(OUT, "13_es_entry.png") });
-  await p2.locator('[data-testid="clara-explain-teach"]').click();
+  await esRow.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
   await p2.locator('[data-testid="clara-workspace"][data-mode="teach"]').waitFor({ timeout: 60000 });
   const esTitle = await p2.locator('[data-testid="clara-workspace"] header').filter({ hasText: /Enséñale a Clara/i }).waitFor({ timeout: 10000 }).then(() => true).catch(() => false);
   check("ES: workspace opens as 'Enséñale a Clara' (language carried from the requirements page)", esTitle, await p2.locator('[data-testid="clara-workspace"] header').first().innerText());

@@ -302,6 +302,21 @@ export function buildRequirementGuidance(req: GuidanceRequirement, ctx: Guidance
   return { ...g, summary: why, whyThisApplies: why, triggeredBy: [loc, ...g.triggeredBy] };
 }
 
+// The duplicate-explanation scan compares every pair of KB documents
+// (~8 s per requirements render in dev when it ran once per card). It depends
+// only on the documents list, which is replaced — never edited in place —
+// when the KB changes (applyKbSnapshot, tests), so it is computed once per list.
+const duplicateIdsByDocuments = new WeakMap<object, Set<string>>();
+function kbDuplicateGuidanceIds(documents: { requirement_guidance?: unknown }[]): Set<string> {
+  let ids = duplicateIdsByDocuments.get(documents);
+  if (!ids) {
+    const concepts = documents.map(d => d.requirement_guidance).filter((c): c is GuidanceConcept => validateGuidanceConcept(c).length === 0);
+    ids = duplicateGuidanceIds(concepts);
+    duplicateIdsByDocuments.set(documents, ids);
+  }
+  return ids;
+}
+
 function buildGuidanceFor(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGuidance {
   const kb = ctx.kb ?? ACTIVE_JURISDICTION.kb;
   // User-confirmed municipality advisories (potential_* items) are not KB
@@ -316,9 +331,8 @@ function buildGuidanceFor(req: GuidanceRequirement, ctx: GuidanceContext): Requi
   const problems = validateGuidanceConcept(raw, req.document_id);
   if (problems.length) return review(req, ctx, problems);
   const concept = raw as GuidanceConcept;
-  const concepts = kb.documents.map(d => d.requirement_guidance).filter((c): c is GuidanceConcept => validateGuidanceConcept(c).length === 0);
   // A copied explanation is untrustworthy content, so it still fails all the way closed.
-  if (duplicateGuidanceIds(concepts).has(concept.requirementId)) return review(req, ctx, ["DUPLICATE_EXPLANATION"]);
+  if (kbDuplicateGuidanceIds(kb.documents).has(concept.requirementId)) return review(req, ctx, ["DUPLICATE_EXPLANATION"]);
   if (["conditional", "not_applicable", "recommended"].includes(req.applicability ?? "")) return provisional(concept, ctx, ["APPLICABILITY_NOT_CONFIRMED"]);
   const matches = ctx.engineInput ? runRulesEngine(kb, ctx.engineInput).debug.rulesMatched.filter(r => r.document_id === req.document_id) : [];
   const entityTrace = req.triggerFacts?.includes(`entityType:${ctx.entityType}`) && concept.conditions.some(g => g.some(t => t.key === "entityType" && t.equals === ctx.entityType));

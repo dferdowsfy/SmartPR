@@ -1,17 +1,25 @@
 // Inline row actions for the checklist view: the ONE primary action the
 // expanded requirement card already offers ("Complete form", "Upload",
-// "Fill with Clara", "Continue application"), shown on the collapsed
-// one-line row so the user can act without expanding it. Any other action
-// goes into a small overflow (⋯) menu.
+// "Continue application"), shown on the collapsed one-line row so the user
+// can act without expanding it. Any other action goes into a small
+// overflow (⋯) menu.
 //
 // In-platform rule (Darius, 2026-09-30): the primary inline action ALWAYS
-// keeps the user in SmartPR — an in-platform form/package ("Complete form"),
-// Clara ("Fill with Clara"), or an in-platform upload. Links that leave
-// SmartPR (agency portals, agency sites, official PDFs, instructions) only
-// ever sit in the ⋯ menu or the row details. When a row has nothing
-// in-platform of its own, the guided form generated from the requirement's
-// "What you'll need" list ("Complete form") leads. "Teach Clara" is always
-// reachable from the ⋯ menu.
+// keeps the user in SmartPR — an in-platform form/package ("Complete form")
+// or an in-platform upload. Links that leave SmartPR (agency portals,
+// agency sites, official PDFs, instructions) only ever sit in the ⋯ menu
+// or the row details. When a row has nothing in-platform of its own, the
+// guided form generated from the requirement's "What you'll need" list
+// ("Complete form") leads. "Teach Clara" is always reachable from the
+// ⋯ menu.
+//
+// Clara rule (Darius, 2026-10-12): Clara FILES — she submits finished
+// filings from the filing hub; she never fills a requirement. So no Clara
+// action (assist CTA, learned-routine replay) ever appears on a
+// requirement row, as primary or in ⋯. Rows complete requirements
+// (Complete form / Upload); the filing hub owns Clara. A learned routine
+// still shows as the row's `learned` status chip — information, not an
+// action.
 import type {
   RequirementAction,
   RequirementAnswerPrompt,
@@ -58,7 +66,7 @@ const DEFAULT_SHORT: Record<RowCtaKind, { en: string; es: string }> = {
   guided: { en: "Complete form", es: "Completar" },
   teach: { en: "Teach Clara", es: "Enséñale a Clara" },
   upload: { en: "Upload", es: "Subir" },
-  assist: { en: "Fill with Clara", es: "Llenar con Clara" },
+  assist: { en: "File with Clara", es: "Radicar con Clara" },
   download: { en: "Download", es: "Descargar" },
   instructions: { en: "Instructions", es: "Instrucciones" },
   site: { en: "Agency site", es: "Sitio de la agencia" },
@@ -164,17 +172,13 @@ export interface InPlatformHandlers {
   /** Opens Teach Clara for this requirement / portal. */
   onTeach?: (() => void) | null;
   /**
-   * A validated recorded routine exists for this row: "Fill with Clara"
-   * replays exactly those steps and leads the row (any portal).
+   * A validated recorded routine exists for this row. Retained for the
+   * `learned` status chip only — since 2026-10-12 the replay is launched
+   * from the filing hub, never from the requirement row.
    */
   onLearnedFill?: (() => void) | null;
   /** The learned routine's state; needs_reteach = the portal changed during a replay. */
   learnedStatus?: "learned" | "needs_reteach" | null;
-}
-
-export function learnedFillCta(onClick: () => void, language: Language): RowCta {
-  const es = language === "es";
-  return { id: "learned", kind: "assist", label: DEFAULT_SHORT.assist[language], title: es ? "Llenar con Clara — sigue los pasos que le enseñaste" : "Fill with Clara — follows the steps you taught her", onClick };
 }
 
 export function reteachClaraCta(onClick: () => void, language: Language): RowCta {
@@ -208,14 +212,19 @@ export function teachClaraCta(onClick: () => void, language: Language): RowCta {
  */
 export function ensureInPlatformPrimary(model: RowActionsModel, handlers: InPlatformHandlers, language: Language): RowActionsModel {
   if (model.done) return model;
-  if (handlers.onLearnedFill && handlers.learnedStatus !== "needs_reteach") return applyLearnedRoutine(model, handlers, language);
-  const all = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach");
+  // Clara rule (2026-10-12): assist CTAs — including a learned routine's
+  // replay — never surface on a requirement row. Clara files finished
+  // filings from the filing hub; rows only complete requirements.
+  const rawAll = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach");
+  const all = rawAll.filter((c) => c.kind !== "assist");
+  const droppedAssist = rawAll.length > all.length;
   const internal = all.filter((c) => !isExternalCta(c));
   const external = all.filter((c) => isExternalCta(c));
   let primary: RowCta | null = model.answer ? null : internal[0] ?? null;
   const more = model.answer ? [...internal] : internal.slice(1);
-  // Something to act on, but only off-site: SmartPR's guided form leads.
-  if (!model.answer && !primary && external.length && handlers.onGuidedForm) primary = guidedFormCta(handlers.onGuidedForm, language);
+  // Something to act on, but nothing that may lead (only off-site links, or
+  // only a Clara filing the hub owns): SmartPR's guided form leads.
+  if (!model.answer && !primary && (external.length || droppedAssist) && handlers.onGuidedForm) primary = guidedFormCta(handlers.onGuidedForm, language);
   // A guided form never sits behind another in-platform action's ⋯ twice.
   if (primary && primary.kind !== "guided") {
     const g = more.findIndex((c) => c.kind === "guided");
@@ -223,26 +232,9 @@ export function ensureInPlatformPrimary(model: RowActionsModel, handlers: InPlat
   }
   more.push(...external);
   if (handlers.onTeach && (primary || more.length || model.answer)) {
-    more.push(handlers.learnedStatus === "needs_reteach" ? reteachClaraCta(handlers.onTeach, language) : teachClaraCta(handlers.onTeach, language));
+    more.push(handlers.learnedStatus ? reteachClaraCta(handlers.onTeach, language) : teachClaraCta(handlers.onTeach, language));
   }
   return { primary, more, done: null, answer: model.answer, ...(handlers.learnedStatus ? { learned: handlers.learnedStatus } : {}) };
-}
-
-/**
- * A validated recorded routine leads the row: "Fill with Clara" (strict
- * replay) is the primary action on ANY portal; the row's other actions move
- * to ⋯ (the built-in Clara action is replaced, external links stay in ⋯),
- * and Teach becomes "Re-teach Clara". Answer rows keep "Answer" first.
- */
-export function applyLearnedRoutine(model: RowActionsModel, handlers: InPlatformHandlers, language: Language): RowActionsModel {
-  if (model.done || !handlers.onLearnedFill) return model;
-  const others = [model.primary, ...model.more].filter((c): c is RowCta => !!c && c.kind !== "teach" && c.kind !== "assist");
-  const internal = others.filter((c) => !isExternalCta(c));
-  const external = others.filter((c) => isExternalCta(c));
-  const fill = learnedFillCta(handlers.onLearnedFill, language);
-  const more = model.answer ? [fill, ...internal, ...external] : [...internal, ...external];
-  if (handlers.onTeach) more.push(reteachClaraCta(handlers.onTeach, language));
-  return { primary: model.answer ? null : fill, more, done: null, answer: model.answer, learned: "learned" };
 }
 
 /** Actions for an energy process row: the legacy cards it covers, merged. */

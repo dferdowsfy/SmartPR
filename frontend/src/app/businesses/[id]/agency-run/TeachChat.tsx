@@ -613,15 +613,15 @@ export function TeachChat({
           <p className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-5 w-5 text-[#9fd3b4]" /> {T(`Learned: “${saved.name}” (version ${saved.version}).`, `Aprendido: “${saved.name}” (versión ${saved.version}).`)}</p>
           <p className="mt-1">
             {T(
-              `Next time, “Fill with Clara” follows these ${saved.steps} steps on ${saved.portal_host} with that business's own Passport, pauses at your ${saved.pauses} part(s), and never submits. If the portal changes, I stop and ask you to teach me again.`,
-              `La próxima vez, “Llenar con Clara” sigue estos ${saved.steps} pasos en ${saved.portal_host} con el Pasaporte de ese negocio, se detiene en tus ${saved.pauses} parte(s) y nunca envía. Si el portal cambia, me detengo y te pido que me enseñes otra vez.`
+              `Next time, “File with Clara” follows these ${saved.steps} steps on ${saved.portal_host} with that business's own Passport, pauses at your ${saved.pauses} part(s), and never submits. If the portal changes, I stop and ask you to teach me again.`,
+              `La próxima vez, “Radicar con Clara” sigue estos ${saved.steps} pasos en ${saved.portal_host} con el Pasaporte de ese negocio, se detiene en tus ${saved.pauses} parte(s) y nunca envía. Si el portal cambia, me detengo y te pido que me enseñes otra vez.`
             )}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <a className={ghostBtn} href="/routines" data-testid="ws-my-routines">{T("See all my routines", "Ver todas mis rutinas")}</a>
             {businessId && (
               <a className={primaryBtn} href={claraWorkspaceHref("fill", businessId, { key: ctx.requirementKey, name: ctx.name, agency: ctx.agency, portalUrl: ctx.portalUrl ?? saved.start_url }, { routineRef: saved.ref })} data-testid="ws-fill-now">
-                {T("Fill with Clara now", "Llenar con Clara ahora")}
+                {T("File with Clara now", "Radicar con Clara ahora")}
               </a>
             )}
           </div>

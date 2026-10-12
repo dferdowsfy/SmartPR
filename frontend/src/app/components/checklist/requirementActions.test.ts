@@ -10,7 +10,7 @@ const cta = (id: string, kind: RowCta["kind"], extra: Partial<RowCta> = {}): Row
 const model = (primary: RowCta | null, more: RowCta[] = [], extra: Partial<RowActionsModel> = {}): RowActionsModel => ({ primary, more, done: null, answer: null, ...extra });
 const ctx = { onViewDetails: () => "details", onExplainClara: () => "explain" };
 
-test("SmartPR form leads Complete; Clara filing drives Fill with Clara; rest in ⋯", () => {
+test("SmartPR form leads Complete; a Clara filing CTA never surfaces on the row (Clara rule 2026-10-12)", () => {
   const form = cta("action", "form", { onClick: noop });
   const clara = cta("filing", "assist", { onClick: noop });
   const site = cta("site", "site", { href: "https://x.pr.gov", external: true });
@@ -18,31 +18,41 @@ test("SmartPR form leads Complete; Clara filing drives Fill with Clara; rest in 
   const a = standardRequirementActions(model(form, [clara, site, teach]), ctx, "en");
   assert.equal(a.complete.route, "smartpr_form");
   assert.equal(a.complete.onClick, form.onClick);
-  assert.equal(a.clara.route, "file");
-  assert.equal(a.clara.onClick, clara.onClick);
-  assert.deepEqual(a.overflow.map((c) => c.kind), ["site", "teach"]);
+  // Clara files from the filing hub: the row's Clara slot stays empty and
+  // the filing CTA appears nowhere — not in the slot, not in ⋯.
+  assert.equal(a.clara.route, "explain");
+  assert.ok(!a.overflow.includes(clara));
+  assert.deepEqual(a.overflow.map((c) => c.kind), ["site", "teach", "assist"]);
+  assert.equal(a.overflow.at(-1)?.id, "ask");
 });
 
-test("no Clara filing: Fill with Clara still shows and explains", () => {
+test("no Clara filing: Complete leads to the form; Ask Clara moves to ⋯", () => {
   const a = standardRequirementActions(model(cta("guided", "guided", { onClick: noop })), ctx, "en");
   assert.equal(a.clara.route, "explain");
-  assert.equal(a.clara.onClick, ctx.onExplainClara);
+  assert.equal(a.complete.route, "smartpr_form");
+  const ask = a.overflow.find((c) => c.id === "ask");
+  assert.equal(ask?.label, "Ask Clara");
+  assert.equal(ask?.onClick, ctx.onExplainClara);
 });
 
-test("a taught routine wins Fill with Clara", () => {
-  const a = standardRequirementActions(model(cta("learned", "assist", { onClick: noop }), [cta("filing", "assist")]), ctx, "en");
-  assert.equal(a.clara.route, "learned");
+test("a taught routine no longer puts Clara on the row — the filing hub launches the replay", () => {
+  const learned = cta("learned", "assist", { onClick: noop });
+  const a = standardRequirementActions(model(learned, [cta("filing", "assist")]), ctx, "en");
+  assert.equal(a.clara.route, "explain");
+  assert.ok(!a.overflow.includes(learned));
 });
 
-test("Complete routes: upload, government, Clara-only, blocked, instructions", () => {
+test("Complete routes: upload, government, blocked, instructions — never Clara", () => {
   assert.equal(standardRequirementActions(model(cta("secondary", "confirm")), ctx, "en").complete.route, "upload");
   const gov = standardRequirementActions(model(cta("portal", "portal", { href: "https://p.pr.gov", external: true })), ctx, "en").complete;
   assert.equal(gov.route, "government");
   assert.equal(gov.external, true);
+  // A row whose only action is a Clara filing: Complete falls back to the
+  // details panel — it never routes to Clara (Clara rule 2026-10-12).
   const only = cta("filing", "assist", { onClick: noop });
   const c = standardRequirementActions(model(only), ctx, "en");
-  assert.equal(c.complete.route, "clara");
-  assert.equal(c.complete.onClick, only.onClick);
+  assert.equal(c.complete.route, "instructions");
+  assert.equal(c.complete.onClick, ctx.onViewDetails);
   const onAnswer = () => {};
   const q = standardRequirementActions(model(null, [], { answer: { prompt: "Do you lease?" } }), { ...ctx, onAnswer }, "en").complete;
   assert.equal(q.route, "blocked");

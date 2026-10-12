@@ -1,10 +1,10 @@
 {
   "summary": {
     "scenarios": 52,
-    "pass": 48,
-    "fail": 4,
+    "pass": 49,
+    "fail": 3,
     "expectations": 762,
-    "verified": 699,
+    "verified": 700,
     "lint": []
   },
   "results": [
@@ -1881,7 +1881,7 @@
         "projectType": "new_business_existing_building",
         "locationContext": "urban_industrial_x"
       },
-      "status": "fail",
+      "status": "pass",
       "orderingSkipped": [],
       "items": [
         {
@@ -1906,59 +1906,66 @@
           "agency": "Oficina de Permisos — Municipio Autónomo de Bayamón"
         },
         {
-          "key": "DOC_WORKERS_COMP",
+          "key": "DOC_FIRE_CERT",
           "group": "required_now",
           "applicability": "required",
           "position": 3,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
           "agency": "Corporación del Fondo del Seguro del Estado"
         },
         {
           "key": "DOC_DTRH_EMPLOYER_REG",
           "group": "required_now",
           "applicability": "required",
-          "position": 4,
+          "position": 5,
           "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
           "group": "required_now",
           "applicability": "required",
-          "position": 5,
+          "position": 6,
           "agency": "Department of the Treasury (Hacienda) — SURI"
         },
         {
           "key": "DOC_CERT_ORGANIZATION",
           "group": "required_now",
           "applicability": "required",
-          "position": 6,
+          "position": 7,
           "agency": "Department of State"
         },
         {
           "key": "DOC_USED_OIL_GENERATOR_ID",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 7,
+          "position": 8,
           "agency": "DRNA"
         },
         {
           "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 8,
+          "position": 9,
           "agency": "U.S. EPA / DRNA"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 9,
+          "position": 10,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 10,
+          "position": 11,
           "agency": "Property Owner"
         }
       ],
@@ -1967,18 +1974,7 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG16 kg-scenario: auto_repair / new_business_existing_building / urban_industrial_x",
-      "findingsClassified": [
-        {
-          "kind": "missing",
-          "key": "DOC_FIRE_CERT",
-          "message": "missing DOC_FIRE_CERT",
-          "confidence": "needs-expert-review",
-          "rationale": "Auto repair: Bomberos fire-prevention certificate. [Downgraded by generator: no KB rule matches these inputs; expected per PR regulation.]",
-          "cause": "likely-wrong-expectation",
-          "note": "No rule attaches the Bomberos certificate to Auto Repair Shop; expert to confirm it is required for this occupancy (it is for food/assembly).",
-          "triaged": true
-        }
-      ]
+      "findingsClassified": []
     },
     {
       "id": "KG17",
@@ -4578,101 +4574,108 @@
           "agency": "Departamento de Hacienda"
         },
         {
-          "key": "DOC_WORKERS_COMP",
+          "key": "DOC_FIRE_CERT",
           "group": "required_now",
           "applicability": "required",
           "position": 2,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
           "agency": "Corporación del Fondo del Seguro del Estado"
         },
         {
           "key": "DOC_DTRH_EMPLOYER_REG",
           "group": "required_now",
           "applicability": "required",
-          "position": 3,
+          "position": 4,
           "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
         },
         {
           "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
           "group": "required_now",
           "applicability": "required",
-          "position": 4,
+          "position": 5,
           "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
           "group": "required_now",
           "applicability": "required",
-          "position": 5,
+          "position": 6,
           "agency": "Department of the Treasury (Hacienda) — SURI"
         },
         {
           "key": "DOC_CERT_ORGANIZATION",
           "group": "required_now",
           "applicability": "required",
-          "position": 6,
+          "position": 7,
           "agency": "Department of State"
         },
         {
           "key": "DOC_CZM_COASTAL_REVIEW",
           "group": "required_now",
           "applicability": "likely_required",
-          "position": 7,
+          "position": 8,
           "agency": "Junta de Planificación (Programa de Manejo de la Zona Costanera) / DRNA"
         },
         {
           "key": "DOC_EPA_AUTOBODY_NESHAP_NOTICE",
           "group": "required_now",
           "applicability": "required",
-          "position": 8,
+          "position": 9,
           "agency": "U.S. EPA (Region 2) / DRNA"
         },
         {
           "key": "DOC_HAZMAT_HANDLER",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 9,
+          "position": 10,
           "agency": "EPA / DRNA"
         },
         {
           "key": "DOC_AIR_PERMIT",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 10,
+          "position": 11,
           "agency": "DRNA"
         },
         {
           "key": "DOC_EPA_HAZARDOUS_WASTE_ID",
           "group": "conditional",
           "applicability": "needs_more_information",
-          "position": 11,
+          "position": 12,
           "agency": "U.S. EPA / DRNA"
         },
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 12,
+          "position": 13,
           "agency": "Property Owner"
         },
         {
           "key": "DOC_PERMISO_UNICO",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 13,
+          "position": 14,
           "agency": "Oficina de Permisos — Municipio Autónomo de Ponce"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
           "group": "prerequisites",
           "applicability": "required",
-          "position": 14,
+          "position": 15,
           "agency": "Municipal Government"
         },
         {
           "key": "DOC_PROPERTY_DEED",
           "group": "supporting",
           "applicability": "supporting_evidence",
-          "position": 15,
+          "position": 16,
           "agency": "Property Registry"
         }
       ],

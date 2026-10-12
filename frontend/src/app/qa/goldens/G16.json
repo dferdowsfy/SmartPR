@@ -37,6 +37,11 @@
       "applicability": "required"
     },
     {
+      "document_id": "DOC_FIRE_CERT",
+      "name": "Fire Safety Certification (Certificado de Bomberos)",
+      "applicability": "required"
+    },
+    {
       "document_id": "DOC_PATENTE_MUNICIPAL",
       "name": "Patente Municipal",
       "applicability": "required"

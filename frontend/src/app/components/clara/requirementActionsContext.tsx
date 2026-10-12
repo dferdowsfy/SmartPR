@@ -3,7 +3,7 @@
 // What the in-platform row actions need from the page: the business (for
 // drafts, Teach Clara and Clara runs), the details that prefill SmartPR's
 // guided forms, and the person's learned routines (record-first Teach
-// Clara) so rows Clara learned lead with "Fill with Clara". Rows outside a
+// Clara) so rows can show Clara's learned status for the requirement. Rows outside a
 // provider still work (local drafts, empty prefill, no routines).
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -15,6 +15,8 @@ export interface RequirementActionsEnv {
   businessId: string | null;
   prefill: Prefill;
   signedIn: boolean;
+  /** Opens the Business Passport editor (the one place the prefill comes from). */
+  onEditPassport?: () => void;
 }
 
 export interface RequirementActionsState extends RequirementActionsEnv {

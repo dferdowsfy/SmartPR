@@ -4,13 +4,15 @@
 // guided in-platform form built from the requirement's "What you'll need"
 // (guidedFormModel.ts), the business's details prefilled. The draft is kept
 // in SmartPR; "Download package" builds the filled package as a PDF in the
-// browser; "Fill with Clara" hands it to Clara when she can file it. The
-// official portal is only a secondary link at the bottom.
+// browser. Once every required item is in, the form hands off to Clara:
+// "Fill with Clara" when she can file it, else "Teach Clara" so she learns
+// the portal with this information. The official portal is only a secondary
+// link at the bottom.
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Download, ExternalLink, GraduationCap, Paperclip, Sparkles } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, GraduationCap, IdCard, Paperclip, Sparkles } from "lucide-react";
 import { ClaraModal } from "./ClaraModal";
-import { draftStorageKey, emptyDraft, guidedFormSections, guidedProgress, type GuidedDraft, type GuidedSubject } from "./guidedFormModel";
+import { draftStorageKey, emptyDraft, guidedFormSections, guidedProgress, mergeDraft, type GuidedDraft, type GuidedSubject } from "./guidedFormModel";
 import { useRequirementActionsEnv } from "./requirementActionsContext";
 
 type Language = "en" | "es";
@@ -45,8 +47,7 @@ export function GuidedRequirementForm({
   const storageKey = draftStorageKey(env.businessId, subject.key);
   const [draft, setDraft] = useState<GuidedDraft>(() => {
     const blank = emptyDraft(sections, env.prefill);
-    const saved = typeof window !== "undefined" ? loadDraft(storageKey) : null;
-    return saved ? { ...saved, values: { ...blank.values, ...saved.values } } : blank;
+    return mergeDraft(blank, typeof window !== "undefined" ? loadDraft(storageKey) : null);
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
   useEffect(() => {
@@ -62,7 +63,7 @@ export function GuidedRequirementForm({
   }, [draft, storageKey, es]);
 
   const progress = guidedProgress(sections, draft);
-  const set = (id: string, v: string) => setDraft((d) => ({ ...d, values: { ...d.values, [id]: v }, status: "draft", updatedAt: new Date().toISOString() }));
+  const set = (id: string, v: string) => setDraft((d) => ({ ...d, values: { ...d.values, [id]: v }, edited: { ...d.edited, [id]: true }, status: "draft", updatedAt: new Date().toISOString() }));
   const attach = (id: string, files: FileList | null) => {
     if (!files?.length) return;
     const list = Array.from(files).map((f) => ({ name: f.name, size: f.size }));
@@ -70,6 +71,15 @@ export function GuidedRequirementForm({
   };
   const toggleHave = (id: string) => setDraft((d) => ({ ...d, have: { ...d.have, [id]: !d.have[id] } }));
   const ready = progress.total > 0 && progress.done === progress.total;
+  const left = progress.total - progress.done;
+  const passportValue = (f: { prefill?: keyof typeof env.prefill; id: string }) => (f.prefill ? env.prefill[f.prefill] : undefined);
+  const isFromPassport = (f: { prefill?: keyof typeof env.prefill; id: string }) => {
+    const v = passportValue(f);
+    return !!v && !draft.edited?.[f.id] && draft.values[f.id] === v;
+  };
+  const fromPassport = sections.flatMap((s) => s.fields).filter(isFromPassport).length;
+  const finishFirst = T(`Finish the ${left} remaining item${left === 1 ? "" : "s"} first`, `Primero completa ${left === 1 ? "el elemento que falta" : `los ${left} elementos que faltan`}`);
+  const handOff = onFillWithClara ?? onTeach ?? null;
 
   const downloadPackage = async () => {
     const { jsPDF } = await import("jspdf");
@@ -119,10 +129,24 @@ export function GuidedRequirementForm({
             <button type="button" className="cl-btn cl-btn-ghost" onClick={downloadPackage} data-testid="guided-download">
               <Download size={15} aria-hidden="true" /> {T("Download package", "Descargar paquete")}
             </button>
-            {onFillWithClara ? (
-              <button type="button" className="cl-btn" onClick={() => { onClose(); onFillWithClara(); }} data-testid="guided-clara">
-                <Sparkles size={15} aria-hidden="true" /> {T("Fill with Clara", "Llenar con Clara")}
-              </button>
+            {handOff ? (
+              <>
+                <button type="button" className="cl-btn cl-btn-ghost" onClick={() => onClose()} data-testid="guided-done">
+                  {T("Save and close", "Guardar y cerrar")}
+                </button>
+                <button
+                  type="button"
+                  className="cl-btn"
+                  disabled={!ready}
+                  title={ready ? undefined : finishFirst}
+                  onClick={() => { setDraft((d) => ({ ...d, status: "ready" })); onClose(); handOff(); }}
+                  data-testid={onFillWithClara ? "guided-clara" : "guided-teach-launch"}
+                >
+                  {onFillWithClara
+                    ? <><Sparkles size={15} aria-hidden="true" /> {T("File with Clara", "Radicar con Clara")}</>
+                    : <><GraduationCap size={15} aria-hidden="true" /> {T("Teach Clara to file it", "Enséñale a Clara a radicarlo")}</>}
+                </button>
+              </>
             ) : (
               <button type="button" className="cl-btn" onClick={() => { setDraft((d) => ({ ...d, status: "ready" })); onClose(); }} data-testid="guided-done">
                 <CheckCircle2 size={15} aria-hidden="true" /> {T("Save", "Guardar")}
@@ -132,6 +156,22 @@ export function GuidedRequirementForm({
         </>
       }
     >
+      <div className="cl-passport-note" data-testid="guided-passport">
+        <IdCard size={18} aria-hidden="true" />
+        <p>
+          {fromPassport > 0
+            ? (fromPassport === 1
+              ? T("1 field filled in from your Business Passport — check it, then finish the rest.", "1 campo llenado con tu Pasaporte de Negocio — revísalo y completa lo demás.")
+              : T(`${fromPassport} fields filled in from your Business Passport — check them, then finish the rest.`, `${fromPassport} campos llenados con tu Pasaporte de Negocio — revísalos y completa lo demás.`))
+            : T("Fill in your Business Passport once and SmartPR fills these fields on every form.", "Llena tu Pasaporte de Negocio una vez y SmartPR llena estos campos en cada formulario.")}
+          {handOff && ` ${ready ? T("All set — Clara takes it from here.", "Todo listo — Clara sigue desde aquí.") : T("When it's complete, Clara takes it from here.", "Cuando esté completo, Clara sigue desde aquí.")}`}
+        </p>
+        {env.onEditPassport && (
+          <button type="button" className="cl-link" onClick={() => { onClose(); env.onEditPassport!(); }} data-testid="guided-edit-passport">
+            {fromPassport > 0 ? T("Edit passport", "Editar pasaporte") : T("Fill in passport", "Llenar pasaporte")}
+          </button>
+        )}
+      </div>
       {sections.map((s) => (
         <fieldset key={s.id} className="cl-section" data-section={s.id}>
           <legend>{s.title}</legend>
@@ -139,6 +179,7 @@ export function GuidedRequirementForm({
             <div key={f.id} className={`cl-field cl-field-${f.kind}`}>
               <label htmlFor={`gf-${subject.key}-${f.id}`}>
                 {f.label}{f.required && <span className="cl-req" aria-hidden="true"> *</span>}
+                {isFromPassport(f) && <span className="cl-from-passport" title={T("Copied from your Business Passport", "Copiado de tu Pasaporte de Negocio")}><IdCard size={12} aria-hidden="true" /> {T("Passport", "Pasaporte")}</span>}
               </label>
               {f.kind === "text" && (
                 <input id={`gf-${subject.key}-${f.id}`} value={draft.values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />
@@ -166,7 +207,7 @@ export function GuidedRequirementForm({
         </fieldset>
       ))}
       <div className="cl-secondary">
-        {onTeach && (
+        {onTeach && onFillWithClara && (
           <button type="button" className="cl-link" onClick={() => { onClose(); onTeach(); }} data-testid="guided-teach">
             <GraduationCap size={15} aria-hidden="true" /> {T("Teach Clara how this one is filed", "Enséñale a Clara cómo se radica")}
           </button>

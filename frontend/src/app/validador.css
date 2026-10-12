@@ -3202,6 +3202,7 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .rq-std-complete { width: 112px; background: #fff; color: var(--brand); }
 .rq-std-done { background: color-mix(in oklab, var(--brand) 8%, #fff); border-color: color-mix(in oklab, var(--brand) 40%, transparent); }
 .rq-std-done:disabled { cursor: default; filter: none; }
+.rq-std-slot { visibility: hidden; pointer-events: none; }
 .rq-std-details { width: 118px; background: transparent; color: var(--ink); border-color: var(--border-strong, #d9d4ca); font-weight: 600; }
 .rq-std-more-details { display: none; }
 .rq-std-more .ck-more-menu { min-width: 240px; }
@@ -3222,6 +3223,7 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 @media (max-width: 720px) {
   .rq-std-actions { width: 100%; padding-left: 14px; }
   .rq-std-clara, .rq-std-complete { flex: 1; width: auto; }
+  .rq-std-slot { display: none; }
 }
 
 /* Right sidebar: Clara assistant + Incentives. */
@@ -3233,6 +3235,20 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .rq-clara-card .rq-clara-actions { display: grid; gap: 8px; }
 .rq-clara-card .rq-std-btn { width: 100%; }
 .rq-clara-card .rq-std-ask { background: #fff; color: var(--brand); }
+.rq-passport-card { background: var(--surface, #fff); border: 1px solid var(--border, #d9d4ca); border-radius: var(--radius, 16px); padding: 16px; }
+.rq-passport-card h2 { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; font-family: var(--font-display, Georgia, serif); font-size: 16px; font-weight: 600; color: var(--ink); }
+.rq-passport-card p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: var(--muted, #69665f); }
+.rq-passport-meter { height: 6px; border-radius: 999px; background: color-mix(in oklab, var(--brand) 12%, #fff); overflow: hidden; margin: 0 0 6px; }
+.rq-passport-meter span { display: block; height: 100%; background: var(--brand); border-radius: inherit; transition: width .3s ease; }
+.rq-passport-card .rq-passport-count { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-weight: 600; color: var(--ink); }
+.rq-passport-card .rq-passport-missing { font-size: 12.5px; }
+.rq-passport-card .rq-std-btn { width: 100%; }
+.rq-passport-card .rq-std-ask { background: #fff; color: var(--brand); }
+/* A clicked action shows it's working until the form / Clara appears. */
+.rq-std-btn[aria-busy="true"] { cursor: progress; opacity: .85; }
+.rq-spin { animation: rq-spin .8s linear infinite; }
+@keyframes rq-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rq-spin { animation-duration: 2.4s; } }
 @media (max-width: 960px) {
   .spr-requirements-sidebar .rq-side-stack { position: static; }
 }

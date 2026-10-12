@@ -17,7 +17,7 @@ export const AI_USE_CASES = [
 
 export type AiUseCase = (typeof AI_USE_CASES)[number];
 
-/** Providers the router knows how to name. Only "xai" is implemented. */
+/** Providers the router knows how to name. Both are implemented. */
 export type AiProviderId = "xai" | "azure-foundry";
 
 export interface AiInputMessage {

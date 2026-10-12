@@ -8,6 +8,9 @@ const ENV_KEYS = [
   "XAI_MODEL",
   "XAI_BASE_URL",
   "XAI_REASONING_EFFORT",
+  "AZURE_FOUNDRY_ENDPOINT",
+  "AZURE_FOUNDRY_API_KEY",
+  "AZURE_FOUNDRY_DEPLOYMENT",
   "DEPLOYMENT_MODE",
   "CUSTOMER_ID",
   "CLOUD_PROVIDER",
@@ -165,22 +168,23 @@ describe("fail-closed routing", () => {
     assert.equal(calls.length, 0);
   });
 
-  it("6. enterprise + azure-foundry does NOT fall back to xAI", async () => {
+  it("6. enterprise + azure-foundry routes to Foundry (never xAI), failing closed when unconfigured", async () => {
     setDeployment({ ...ENTERPRISE_BASE, MODEL_GATEWAY: "azure-foundry" });
+    assert.equal(aiModelFor("chat"), "grok-4.3");
+    assert.equal(isAiConfigured("chat"), false);
     for (const useCase of AI_USE_CASES) {
       await assert.rejects(
         generateText(useCase, request()),
-        (e: unknown) => e instanceof AiRoutingError && e.code === "provider_not_implemented"
+        (e: unknown) => e instanceof Error && /AZURE_FOUNDRY/.test(e.message)
       );
       assert.equal(isAiConfigured(useCase), false);
-      assert.equal(aiModelFor(useCase), "unavailable");
     }
     assert.equal(calls.length, 0);
   });
 
   it("6b. MODEL_GATEWAY=azure-foundry is refused in Standard too (never xAI)", async () => {
     setDeployment({ MODEL_GATEWAY: "azure-foundry" });
-    await assert.rejects(generateText("chat", request()), AiRoutingError);
+    await assert.rejects(generateText("chat", request()), /AZURE_FOUNDRY/);
     assert.equal(calls.length, 0);
   });
 

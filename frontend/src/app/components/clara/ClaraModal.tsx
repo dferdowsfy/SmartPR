@@ -1,7 +1,7 @@
 "use client";
 
 // A plain in-platform dialog (portal to <body>): Escape / backdrop closes,
-// focus moves into it, clicks never reach the row behind it.
+// focus moves into it once on open, clicks never reach the row behind it.
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -9,8 +9,15 @@ import { X } from "lucide-react";
 
 export function ClaraModal({ title, subtitle, onClose, children, footer, testId, wide = false, size }: { title: string; subtitle?: string | null; onClose: () => void; children: ReactNode; footer?: ReactNode; testId?: string; wide?: boolean; size?: "xl" }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Callers pass a fresh onClose on every render (e.g. each keystroke in a
+  // field). Read it through a ref so the setup below runs once per open —
+  // re-running it moved focus back to the dialog and swallowed typing.
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") onCloseRef.current(); };
     document.addEventListener("keydown", key);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -19,7 +26,7 @@ export function ClaraModal({ title, subtitle, onClose, children, footer, testId,
       document.removeEventListener("keydown", key);
       document.body.style.overflow = prev;
     };
-  }, [onClose]);
+  }, []);
   if (typeof document === "undefined") return null;
   return createPortal(
     <div className="cl-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }} onClick={(e) => e.stopPropagation()}>
