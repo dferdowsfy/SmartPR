@@ -35,6 +35,13 @@ export const ROUTES: RouteRule[] = [
   // The EIN application is federal and applies to every entity type, so this
   // row intentionally carries no entityType gate.
   { requirementId: "DOC_EIN", formId: "FORM_IRS_SS4" },
+  // The NC001 trade-name (DBA) registration applies to any applicant type —
+  // natural persons and juridical entities both register trade names with the
+  // Department of State — so this row intentionally carries no entityType
+  // gate. (Route added 2026-10-12: the NC001 definition, registry entry and
+  // official template existed, but with no route the requirement row could
+  // never offer the form.)
+  { requirementId: "DOC_DBA_REGISTRATION", formId: "FORM_PR_DOS_DBA" },
   // The LUMA customer-orientation attestation applies to any business adding
   // grid-connected solar, regardless of entity type — same no-gate pattern.
   { requirementId: "DOC_LUMA_INTERCONNECTION", formId: "FORM_PR_LUMA_INTERCONNECTION" },

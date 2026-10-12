@@ -15,6 +15,7 @@ import test from "node:test";
 
 import { NC001 } from "../definitions/pr/department-of-state/NC001.ts";
 import { getDefinition, getRegistryEntry } from "../engine/registry.ts";
+import { resolveFormId, selectFormForRequirement } from "../engine/routing.ts";
 import { prefillFromCanonical } from "../engine/canonicalMapping.ts";
 import { validateForm } from "../engine/formValidation.ts";
 import { emptyCanonicalData, type CanonicalApplicationData, type FormData } from "../engine/types.ts";
@@ -67,6 +68,25 @@ test("NC001 is served as a real schema, not a disabled placeholder", () => {
   assert.equal(entry.displayForm, true, "the DBA form must render");
   assert.equal(entry.requirementId, "DOC_DBA_REGISTRATION");
   assert.equal(getDefinition("FORM_PR_DOS_DBA")?.officialFormNumber, "NC001");
+});
+
+// --- routing: the requirement row must actually be able to offer the form --
+// Regression guard (2026-10-12): the definition, registry entry and official
+// template all existed, but routing.ts had no DOC_DBA_REGISTRATION route, so
+// selectFormForRequirement always returned null and the row never offered
+// Complete. The registry-only test above cannot catch that — this one can.
+
+test("DOC_DBA_REGISTRATION routes to the NC001 form for any entity type", () => {
+  for (const entityType of ["sole_proprietorship", "limited_liability_company", "stock_corporation"] as const) {
+    const profile = nc001Profile();
+    profile.business.entityType = entityType;
+    assert.equal(resolveFormId("DOC_DBA_REGISTRATION", profile), "FORM_PR_DOS_DBA", `no route for ${entityType}`);
+    const entry = selectFormForRequirement("DOC_DBA_REGISTRATION", profile, new Set(["DOC_DBA_REGISTRATION"]));
+    assert.ok(entry, `selectFormForRequirement must return the NC001 entry for ${entityType}`);
+    assert.equal(entry.id, "FORM_PR_DOS_DBA");
+  }
+  // …and stays hidden when the rules engine did not return the requirement.
+  assert.equal(selectFormForRequirement("DOC_DBA_REGISTRATION", nc001Profile(), new Set()), null);
 });
 
 // --- the id contract with the PDF population layer, via directOverlayValues -
