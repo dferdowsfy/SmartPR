@@ -5,7 +5,6 @@
 // it is, what's still missing, and opens the editor (CoreApplicationDetails in
 // Passport mode) in a modal so the user never leaves the list.
 
-import { useState } from "react";
 import { CheckCircle2, IdCard } from "lucide-react";
 import { ClaraModal } from "../clara/ClaraModal";
 import { CoreApplicationDetails } from "../../forms/engine/CoreApplicationDetails";
