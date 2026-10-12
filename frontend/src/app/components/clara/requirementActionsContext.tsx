@@ -15,6 +15,8 @@ export interface RequirementActionsEnv {
   businessId: string | null;
   prefill: Prefill;
   signedIn: boolean;
+  /** Opens the Business Passport editor (the one place the prefill comes from). */
+  onEditPassport?: () => void;
 }
 
 export interface RequirementActionsState extends RequirementActionsEnv {

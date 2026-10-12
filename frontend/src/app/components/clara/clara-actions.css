@@ -17,7 +17,11 @@
 .cl-btn:hover { filter: brightness(1.06); }
 .cl-btn-ghost { background: #fff; color: var(--brand, #245c5c); }
 .cl-btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
-.cl-passport-note { margin: 0 0 14px; padding: 10px 12px; border-radius: 9px; background: color-mix(in oklab, var(--brand, #245c5c) 8%, #fff); color: var(--ink, #1f2a2a); font-size: 14px; }
+.cl-passport-note { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 14px; padding: 10px 12px; border-radius: 9px; background: color-mix(in oklab, var(--brand, #245c5c) 8%, #fff); color: var(--ink, #1f2a2a); font-size: 14px; }
+.cl-passport-note > svg { flex: none; margin-top: 1px; color: var(--brand, #245c5c); }
+.cl-passport-note p { margin: 0; flex: 1; }
+.cl-passport-note .cl-link { flex: none; white-space: nowrap; }
+.cl-from-passport { display: inline-flex; align-items: center; gap: 3px; margin-left: 8px; padding: 1px 7px; border-radius: 999px; background: color-mix(in oklab, var(--brand, #245c5c) 10%, #fff); color: var(--brand, #245c5c); font-size: 11.5px; font-weight: 600; vertical-align: 1px; }
 .cl-section { border: 0; margin: 0 0 14px; padding: 0; }
 .cl-section legend { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted, #6b665c); margin-bottom: 8px; }
 .cl-field { display: grid; gap: 4px; margin-bottom: 10px; }

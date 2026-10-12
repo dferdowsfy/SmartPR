@@ -18,8 +18,10 @@ import { claraWorkspaceHref } from "./claraWorkspaceLink";
 
 type Language = "en" | "es";
 
-function go(href: string) {
+/** Leaves the page; true tells the clicked button to keep its spinner. */
+function go(href: string): true {
   window.location.assign(href);
+  return true;
 }
 
 export function useInPlatformActions(subject: GuidedSubject, language: Language): {

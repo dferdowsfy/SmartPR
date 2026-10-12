@@ -140,6 +140,9 @@ import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } fro
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
 import { requirementRowActions } from './components/checklist/rowActionModel';
 import { RequirementActionsProvider } from './components/clara/requirementActionsContext';
+import { PassportCard, PassportEditor } from './components/passport/PassportCard';
+import { prefillFromPassport } from './components/passport/passportSummary';
+import { usePendingAction } from './components/checklist/usePendingAction';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
 import { ReadinessControl } from './components/filing/ReadinessControl';
@@ -162,7 +165,7 @@ import {
   CheckCircle, AlertTriangle, Info, FileText,
   ArrowRight, ChevronDown, RefreshCw, Download, Building2, Archive, ExternalLink,
   ReceiptText, Store, Landmark, Waves, ShieldCheck, ScrollText, Eye,
-  Star, Sparkles, MessageCircle,
+  Star, Sparkles, MessageCircle, Loader2,
 } from 'lucide-react';
 
 // SmartPR
@@ -1641,6 +1644,8 @@ export default function SmartPRIntake() {
   // Multi-form package picker (today: the EPA NPDES Form 1 + Form 2C package).
   // Holds the requirement code; the per-form rows resolve live at render time.
   const [activeGovPackage, setActiveGovPackage] = useState<{ requirementCode: string } | null>(null);
+  const [passportEditorOpen, setPassportEditorOpen] = useState(false);
+  const sidebarClara = usePendingAction<'clara'>();
   const [canonicalOverride, setCanonicalOverride] = useState<CanonicalApplicationData | null>(null);
   // Once the user reaches Passport entry, keep that phase available for the
   // rest of this intake. A spoken municipality or employee count can make a
@@ -5674,8 +5679,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // tied to its obligations) and a signed-in owner — never a local draft id.
   const persistedBusinessId = businessId && !businessId.startsWith('local-') ? businessId : null;
   const claraBusinessId = me ? (persistedBusinessId ?? 'pending') : null;
-  const openClara = async (documentId?: string) => {
-    if (!me) return;
+  // Resolves false when it stays on this page (the clicked button stops its spinner).
+  const openClara = async (documentId?: string): Promise<boolean> => {
+    if (!me) return false;
     // An existing business links its Passport; any other signed-in intake
     // gets its business record now (ensurePersistedBusiness).
     // Only a new business gets a record created here — an existing one is
@@ -5684,7 +5690,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       ?? (projectIntent === 'new_business' ? await ensurePersistedBusiness() : null);
     if (!id) {
       window.alert(L('Link your business (existing business → pick it above) so Clara can file for it.', language));
-      return;
+      return false;
     }
     await saveProgress().catch(() => false);
     // Clara's filing list reads persisted obligations: sync this intake's
@@ -5706,6 +5712,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       new Promise((resolve) => setTimeout(resolve, 8000)),
     ]);
     window.location.href = `/businesses/${encodeURIComponent(id)}/agency-run${documentId ? `?filing=${encodeURIComponent(documentId)}` : ''}`;
+    return true;
   };
   const filingFor = (req: Requirement): RequirementFiling | null => {
     const { support } = claraSupportFor(req.document_id);
@@ -5722,7 +5729,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       const next = typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '%2F';
       return { kind: support, label, href: `/auth/login?next=${next}`, hint: L('Sign in to let Clara use your saved information.', language), agencySite: support === 'prepare' ? agencySite : null };
     }
-    return { kind: support, label, onClick: () => { void openClara(req.document_id!); }, agencySite: support === 'prepare' ? agencySite : null };
+    return { kind: support, label, onClick: () => openClara(req.document_id!), agencySite: support === 'prepare' ? agencySite : null };
   };
   // Why this applies to THIS project, beyond the rule's trigger: a new
   // premises (or municipality) for an existing business, and — for the
@@ -7733,7 +7740,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
           <div className="spr-requirements-layout">
           <div className="spr-requirements-main">
-          <RequirementActionsProvider value={{ businessId: persistedBusinessId, signedIn: !!me, prefill: { legalName: profile.name || undefined, tradeName: profile.trade_name, ein: profile.ein, address: profile.physical_address, municipality: profile.municipality || undefined, contactName: profile.owner_name, email: profile.email, phone: profile.phone } }}>
+          <RequirementActionsProvider value={{ businessId: persistedBusinessId, signedIn: !!me, prefill: prefillFromPassport(canonicalApplication, { legalName: profile.name || undefined, tradeName: profile.trade_name, ein: profile.ein, address: profile.physical_address, municipality: profile.municipality || undefined, contactName: profile.owner_name, email: profile.email, phone: profile.phone }), onEditPassport: () => setPassportEditorOpen(true) }}>
           {requirements.length > 0 && (
             <ChecklistSummary line={summaryLine} readiness={summaryReadiness} questions={[]} language={language} location={summaryLocation} />
           )}
@@ -7987,13 +7994,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           {/* Right sidebar: Clara and the existing Incentives panel. */}
           <aside className="spr-requirements-sidebar" aria-label={L('Help and incentives', language)}>
             <div className="rq-side-stack">
+              <PassportCard canonical={canonicalApplication} language={language} onEdit={() => setPassportEditorOpen(true)} />
               <section className="rq-clara-card" data-testid="sidebar-clara">
                 <h2><Sparkles className="i" style={{ width: 15, height: 15 }} /> Clara</h2>
                 <p>{L('Need help with a requirement? Clara fills what she can from your business info and tells you what she needs.', language)}</p>
                 <div className="rq-clara-actions">
                   {me ? (
-                    <button type="button" className="rq-std-btn rq-std-clara" onClick={() => { void openClara(); }}>
-                      <Sparkles size={14} aria-hidden="true" /> {L('Fill with Clara', language)}
+                    <button type="button" className="rq-std-btn rq-std-clara" aria-busy={sidebarClara.pending === 'clara' || undefined} onClick={() => { if (!sidebarClara.pending) sidebarClara.run('clara', () => openClara()); }}>
+                      {sidebarClara.pending === 'clara'
+                        ? <><Loader2 size={14} className="rq-spin" aria-hidden="true" /> {L('Opening Clara…', language)}</>
+                        : <><Sparkles size={14} aria-hidden="true" /> {L('Fill with Clara', language)}</>}
                     </button>
                   ) : (
                     <a className="rq-std-btn rq-std-clara" href={`/auth/login?next=${typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname + window.location.search) : '%2F'}`}>
@@ -8317,6 +8327,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           </ModalPortal>
         );
       })()}
+
+      {passportEditorOpen && (
+        <PassportEditor canonical={canonicalApplication} language={language} onChange={updatePassport} onClose={() => setPassportEditorOpen(false)} />
+      )}
 
       {activeGovForm && getDefinition(activeGovForm.formId) && (
         <GovernmentFormModal

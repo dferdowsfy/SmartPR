@@ -6,9 +6,10 @@
 // toggle (stopPropagation) and run the card's own handlers.
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MessageCircle, MoreHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, Loader2, MessageCircle, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 import { STANDARD_LABELS, type RequirementActions } from "./requirementActions";
+import { usePendingAction } from "./usePendingAction";
 
 type Language = "en" | "es";
 
@@ -113,16 +114,28 @@ export function StandardRowActions({ actions, language, answerOpen = false }: { 
   const lang = language;
   const { menu, setMenu, ref } = useMenu();
   const { clara, complete, done, overflow } = actions;
-  const run = (a: { onClick?: () => void }) => (e: MouseEvent) => {
+  const { pending, run: runPending } = usePendingAction<"clara" | "complete">();
+  const run = (key: "clara" | "complete", a: { onClick?: () => void; href?: string; route?: string; external?: boolean }) => (e: MouseEvent) => {
     e.stopPropagation();
-    a.onClick?.();
+    if (pending) {
+      e.preventDefault();
+      return;
+    }
+    // Quick, or needs the click's user gesture (file picker, new tab): run now, no spinner.
+    if (a.route === "upload" || a.route === "blocked" || a.route === "government" || a.external) {
+      a.onClick?.();
+      return;
+    }
+    if (a.href && !a.onClick) runPending(key, () => undefined, { deferred: false });
+    else runPending(key, a.onClick, { deferred: !a.href });
   };
+  const opening = <><Loader2 size={14} className="rq-spin" aria-hidden="true" /> <span>{lang === "es" ? "Abriendo…" : "Opening…"}</span></>;
   const link = (a: { href?: string; external?: boolean }) =>
     a.href ? { href: a.href, target: a.external ? "_blank" : undefined, rel: a.external ? "noopener noreferrer" : undefined } : null;
   const claraLink = link(clara);
   const completeLink = link(complete);
-  const claraInner = <><Sparkles size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.clara[lang]}</span></>;
-  const completeInner = <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{STANDARD_LABELS.complete[lang]}</span></>;
+  const claraInner = pending === "clara" ? opening : <><Sparkles size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.clara[lang]}</span></>;
+  const completeInner = pending === "complete" ? opening : <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{STANDARD_LABELS.complete[lang]}</span></>;
   return (
     <div className="rq-std-actions" ref={ref} onClick={stop} data-testid="row-actions">
       {clara.route === "explain" ? (
@@ -130,18 +143,18 @@ export function StandardRowActions({ actions, language, answerOpen = false }: { 
         // that hands off to her); the empty slot keeps rows aligned.
         <span className="rq-std-btn rq-std-clara rq-std-slot" aria-hidden="true" data-testid="row-clara" data-route="explain" />
       ) : claraLink ? (
-        <a {...claraLink} className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</a>
+        <a {...claraLink} className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} aria-busy={pending === "clara" || undefined} onClick={run("clara", clara)}>{claraInner}</a>
       ) : (
-        <button type="button" className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</button>
+        <button type="button" className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} aria-busy={pending === "clara" || undefined} onClick={run("clara", clara)}>{claraInner}</button>
       )}
       {done ? (
         <button type="button" className="rq-std-btn rq-std-complete rq-std-done" data-testid="row-complete" data-route="done" disabled={!done.onClick} onClick={(e) => { e.stopPropagation(); done.onClick?.(); }}>
           <CheckCircle2 size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.done[lang]}</span>
         </button>
       ) : completeLink ? (
-        <a {...completeLink} className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} onClick={run(complete)}>{completeInner}</a>
+        <a {...completeLink} className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-busy={pending === "complete" || undefined} onClick={run("complete", complete)}>{completeInner}</a>
       ) : (
-        <button type="button" className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-expanded={complete.route === "blocked" ? answerOpen : undefined} onClick={run(complete)}>{completeInner}</button>
+        <button type="button" className="rq-std-btn rq-std-complete" title={complete.title} data-testid="row-complete" data-route={complete.route} aria-expanded={complete.route === "blocked" ? answerOpen : undefined} aria-busy={pending === "complete" || undefined} onClick={run("complete", complete)}>{completeInner}</button>
       )}
       <span className="ck-more rq-std-more">
         <button

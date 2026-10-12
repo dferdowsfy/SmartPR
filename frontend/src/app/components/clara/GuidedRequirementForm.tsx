@@ -10,9 +10,9 @@
 // link at the bottom.
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Download, ExternalLink, GraduationCap, Paperclip, Sparkles } from "lucide-react";
+import { CheckCircle2, Download, ExternalLink, GraduationCap, IdCard, Paperclip, Sparkles } from "lucide-react";
 import { ClaraModal } from "./ClaraModal";
-import { draftStorageKey, emptyDraft, guidedFormSections, guidedProgress, type GuidedDraft, type GuidedSubject } from "./guidedFormModel";
+import { draftStorageKey, emptyDraft, guidedFormSections, guidedProgress, mergeDraft, type GuidedDraft, type GuidedSubject } from "./guidedFormModel";
 import { useRequirementActionsEnv } from "./requirementActionsContext";
 
 type Language = "en" | "es";
@@ -47,8 +47,7 @@ export function GuidedRequirementForm({
   const storageKey = draftStorageKey(env.businessId, subject.key);
   const [draft, setDraft] = useState<GuidedDraft>(() => {
     const blank = emptyDraft(sections, env.prefill);
-    const saved = typeof window !== "undefined" ? loadDraft(storageKey) : null;
-    return saved ? { ...saved, values: { ...blank.values, ...saved.values } } : blank;
+    return mergeDraft(blank, typeof window !== "undefined" ? loadDraft(storageKey) : null);
   });
   const [savedAt, setSavedAt] = useState<string | null>(null);
   useEffect(() => {
@@ -64,7 +63,7 @@ export function GuidedRequirementForm({
   }, [draft, storageKey, es]);
 
   const progress = guidedProgress(sections, draft);
-  const set = (id: string, v: string) => setDraft((d) => ({ ...d, values: { ...d.values, [id]: v }, status: "draft", updatedAt: new Date().toISOString() }));
+  const set = (id: string, v: string) => setDraft((d) => ({ ...d, values: { ...d.values, [id]: v }, edited: { ...d.edited, [id]: true }, status: "draft", updatedAt: new Date().toISOString() }));
   const attach = (id: string, files: FileList | null) => {
     if (!files?.length) return;
     const list = Array.from(files).map((f) => ({ name: f.name, size: f.size }));
@@ -73,7 +72,12 @@ export function GuidedRequirementForm({
   const toggleHave = (id: string) => setDraft((d) => ({ ...d, have: { ...d.have, [id]: !d.have[id] } }));
   const ready = progress.total > 0 && progress.done === progress.total;
   const left = progress.total - progress.done;
-  const fromPassport = sections.flatMap((s) => s.fields).filter((f) => f.prefill && env.prefill[f.prefill]).length;
+  const passportValue = (f: { prefill?: keyof typeof env.prefill; id: string }) => (f.prefill ? env.prefill[f.prefill] : undefined);
+  const isFromPassport = (f: { prefill?: keyof typeof env.prefill; id: string }) => {
+    const v = passportValue(f);
+    return !!v && !draft.edited?.[f.id] && draft.values[f.id] === v;
+  };
+  const fromPassport = sections.flatMap((s) => s.fields).filter(isFromPassport).length;
   const finishFirst = T(`Finish the ${left} remaining item${left === 1 ? "" : "s"} first`, `Primero completa ${left === 1 ? "el elemento que falta" : `los ${left} elementos que faltan`}`);
   const handOff = onFillWithClara ?? onTeach ?? null;
 
@@ -152,12 +156,22 @@ export function GuidedRequirementForm({
         </>
       }
     >
-      <p className="cl-passport-note" data-testid="guided-passport">
-        {fromPassport > 0
-          ? T(`${fromPassport} field${fromPassport === 1 ? "" : "s"} filled in from your Business Passport — check them, then finish the rest.`, `${fromPassport} ${fromPassport === 1 ? "campo llenado" : "campos llenados"} con tu Pasaporte de Negocio — revísalos y completa lo demás.`)
-          : T("Fill in your Business Passport once and SmartPR fills these fields for you.", "Llena tu Pasaporte de Negocio una vez y SmartPR llena estos campos por ti.")}
-        {handOff && ` ${ready ? T("All set — Clara takes it from here.", "Todo listo — Clara sigue desde aquí.") : T("When it's complete, Clara takes it from here.", "Cuando esté completo, Clara sigue desde aquí.")}`}
-      </p>
+      <div className="cl-passport-note" data-testid="guided-passport">
+        <IdCard size={18} aria-hidden="true" />
+        <p>
+          {fromPassport > 0
+            ? (fromPassport === 1
+              ? T("1 field filled in from your Business Passport — check it, then finish the rest.", "1 campo llenado con tu Pasaporte de Negocio — revísalo y completa lo demás.")
+              : T(`${fromPassport} fields filled in from your Business Passport — check them, then finish the rest.`, `${fromPassport} campos llenados con tu Pasaporte de Negocio — revísalos y completa lo demás.`))
+            : T("Fill in your Business Passport once and SmartPR fills these fields on every form.", "Llena tu Pasaporte de Negocio una vez y SmartPR llena estos campos en cada formulario.")}
+          {handOff && ` ${ready ? T("All set — Clara takes it from here.", "Todo listo — Clara sigue desde aquí.") : T("When it's complete, Clara takes it from here.", "Cuando esté completo, Clara sigue desde aquí.")}`}
+        </p>
+        {env.onEditPassport && (
+          <button type="button" className="cl-link" onClick={() => { onClose(); env.onEditPassport!(); }} data-testid="guided-edit-passport">
+            {fromPassport > 0 ? T("Edit passport", "Editar pasaporte") : T("Fill in passport", "Llenar pasaporte")}
+          </button>
+        )}
+      </div>
       {sections.map((s) => (
         <fieldset key={s.id} className="cl-section" data-section={s.id}>
           <legend>{s.title}</legend>
@@ -165,6 +179,7 @@ export function GuidedRequirementForm({
             <div key={f.id} className={`cl-field cl-field-${f.kind}`}>
               <label htmlFor={`gf-${subject.key}-${f.id}`}>
                 {f.label}{f.required && <span className="cl-req" aria-hidden="true"> *</span>}
+                {isFromPassport(f) && <span className="cl-from-passport" title={T("Copied from your Business Passport", "Copiado de tu Pasaporte de Negocio")}><IdCard size={12} aria-hidden="true" /> {T("Passport", "Pasaporte")}</span>}
               </label>
               {f.kind === "text" && (
                 <input id={`gf-${subject.key}-${f.id}`} value={draft.values[f.id] ?? ""} onChange={(e) => set(f.id, e.target.value)} />

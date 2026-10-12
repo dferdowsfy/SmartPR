@@ -102,6 +102,8 @@ export interface GuidedDraft {
   have: Record<string, boolean>;
   status: "draft" | "ready";
   updatedAt: string;
+  /** Fields the user typed in; the rest follow the Business Passport. */
+  edited?: Record<string, boolean>;
 }
 
 export function emptyDraft(sections: GuidedSection[], prefill: Prefill): GuidedDraft {
@@ -120,6 +122,14 @@ export function guidedProgress(sections: GuidedSection[], d: GuidedDraft): { don
     if (f.kind === "document" ? (d.files[f.id]?.length ?? 0) > 0 || d.have[f.id] : (d.values[f.id] ?? "").trim()) done++;
   }
   return { done, total };
+}
+
+/** A saved draft on top of today's prefill: Passport values win wherever the user hasn't typed. */
+export function mergeDraft(blank: GuidedDraft, saved: GuidedDraft | null): GuidedDraft {
+  if (!saved) return blank;
+  const values = { ...blank.values, ...saved.values };
+  for (const [id, v] of Object.entries(blank.values)) if (!saved.edited?.[id]) values[id] = v;
+  return { ...saved, values };
 }
 
 export function draftStorageKey(businessId: string | null | undefined, key: string): string {
