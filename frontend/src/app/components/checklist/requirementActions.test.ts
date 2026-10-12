@@ -23,10 +23,13 @@ test("SmartPR form leads Complete; Clara filing drives Fill with Clara; rest in 
   assert.deepEqual(a.overflow.map((c) => c.kind), ["site", "teach"]);
 });
 
-test("no Clara filing: Fill with Clara still shows and explains", () => {
+test("no Clara filing: Complete leads to the form; Ask Clara moves to ⋯", () => {
   const a = standardRequirementActions(model(cta("guided", "guided", { onClick: noop })), ctx, "en");
   assert.equal(a.clara.route, "explain");
-  assert.equal(a.clara.onClick, ctx.onExplainClara);
+  assert.equal(a.complete.route, "smartpr_form");
+  const ask = a.overflow.find((c) => c.id === "ask");
+  assert.equal(ask?.label, "Ask Clara");
+  assert.equal(ask?.onClick, ctx.onExplainClara);
 });
 
 test("a taught routine wins Fill with Clara", () => {

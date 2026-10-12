@@ -806,12 +806,12 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
   const route = await complete.getAttribute("data-route");
   routesSeen.add(`clara:${claraRoute}`);
   routesSeen.add(`complete:${route}`);
-  // Fill with Clara: always there; explains what Clara can do when she can't file.
+  // Fill with Clara: only when Clara can act; otherwise Complete is the one action and "Ask Clara" sits in ⋯.
   if (claraRoute === "explain") {
-    await clara.click();
-    const ex = page.locator('[data-testid="clara-explain"]');
-    check(`"${name}": Fill with Clara opens Clara with the requirement's context`, await ex.waitFor({ timeout: 5000 }).then(async () => (await ex.innerText()).includes(name)).catch(() => false));
-    await closeDialog();
+    check(`"${name}": no Fill with Clara button when Clara can't file it`, !(await clara.isVisible()));
+    await bar.locator('[data-testid="row-more"]').click();
+    check(`"${name}": ⋯ offers Ask Clara`, await bar.locator('[data-testid="row-more-item"]', { hasText: "Ask Clara" }).isVisible().catch(() => false));
+    await page.keyboard.press("Escape");
   } else if (await clara.getAttribute("href")) {
     check(`"${name}": Fill with Clara stays in SmartPR`, (await clara.getAttribute("target")) !== "_blank", (await clara.getAttribute("href")) ?? "");
   }

@@ -3202,6 +3202,7 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 .rq-std-complete { width: 112px; background: #fff; color: var(--brand); }
 .rq-std-done { background: color-mix(in oklab, var(--brand) 8%, #fff); border-color: color-mix(in oklab, var(--brand) 40%, transparent); }
 .rq-std-done:disabled { cursor: default; filter: none; }
+.rq-std-slot { visibility: hidden; pointer-events: none; }
 .rq-std-details { width: 118px; background: transparent; color: var(--ink); border-color: var(--border-strong, #d9d4ca); font-weight: 600; }
 .rq-std-more-details { display: none; }
 .rq-std-more .ck-more-menu { min-width: 240px; }
@@ -3222,6 +3223,7 @@ details.rq-group[open] > summary.rq-group-head::after { transform: rotate(45deg)
 @media (max-width: 720px) {
   .rq-std-actions { width: 100%; padding-left: 14px; }
   .rq-std-clara, .rq-std-complete { flex: 1; width: auto; }
+  .rq-std-slot { display: none; }
 }
 
 /* Right sidebar: Clara assistant + Incentives. */

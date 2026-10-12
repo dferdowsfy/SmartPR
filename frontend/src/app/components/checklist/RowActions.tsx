@@ -6,7 +6,7 @@
 // toggle (stopPropagation) and run the card's own handlers.
 
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MoreHorizontal, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, ClipboardList, Download, ExternalLink, FileText, GraduationCap, HelpCircle, ListChecks, Lock, MessageCircle, MoreHorizontal, Sparkles, Upload } from "lucide-react";
 import type { RowActionsModel, RowCta, RowCtaKind } from "./rowActionModel";
 import { STANDARD_LABELS, type RequirementActions } from "./requirementActions";
 
@@ -14,7 +14,8 @@ type Language = "en" | "es";
 
 const stop = (e: MouseEvent) => e.stopPropagation();
 
-function Icon({ kind, locked }: { kind: RowCtaKind; locked?: boolean }) {
+function Icon({ kind, locked, ask }: { kind: RowCtaKind; locked?: boolean; ask?: boolean }) {
+  if (ask) return <MessageCircle size={14} aria-hidden="true" />;
   if (locked) return <Lock size={14} aria-hidden="true" />;
   switch (kind) {
     case "form":
@@ -49,14 +50,14 @@ function CtaControl({ c, className, role, onDone, testId = "row-cta" }: { c: Row
   if (c.href) {
     return (
       <a {...common} href={c.href} onClick={click} target={c.external ? "_blank" : undefined} rel={c.external ? "noopener noreferrer" : undefined}>
-        <Icon kind={c.kind} locked={c.locked} /> <span>{c.label}</span>
+        <Icon kind={c.kind} locked={c.locked} ask={c.id === "ask"} /> <span>{c.label}</span>
         {c.external && c.kind !== "site" && c.kind !== "portal" && <ExternalLink size={12} aria-hidden="true" />}
       </a>
     );
   }
   return (
     <button type="button" {...common} onClick={click}>
-      <Icon kind={c.kind} locked={c.locked} /> <span>{c.label}</span>
+      <Icon kind={c.kind} locked={c.locked} ask={c.id === "ask"} /> <span>{c.label}</span>
     </button>
   );
 }
@@ -103,9 +104,10 @@ function useMenu() {
 
 /**
  * The standard action column, identical on every requirement row:
- * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item). Labels
- * and positions never change; each row's own capabilities decide only what a
- * click does (the route is exposed as data-route and in the tooltip).
+ * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item). Positions
+ * never change; each row's own capabilities decide only what a click does
+ * (the route is exposed as data-route and in the tooltip). Fill with Clara
+ * shows only when Clara can act on the row; otherwise its slot stays empty.
  */
 export function StandardRowActions({ actions, language, answerOpen = false }: { actions: RequirementActions; language: Language; answerOpen?: boolean }) {
   const lang = language;
@@ -123,7 +125,11 @@ export function StandardRowActions({ actions, language, answerOpen = false }: { 
   const completeInner = <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{STANDARD_LABELS.complete[lang]}</span></>;
   return (
     <div className="rq-std-actions" ref={ref} onClick={stop} data-testid="row-actions">
-      {claraLink ? (
+      {clara.route === "explain" ? (
+        // Clara can't file this row: no button (Complete leads to the form
+        // that hands off to her); the empty slot keeps rows aligned.
+        <span className="rq-std-btn rq-std-clara rq-std-slot" aria-hidden="true" data-testid="row-clara" data-route="explain" />
+      ) : claraLink ? (
         <a {...claraLink} className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</a>
       ) : (
         <button type="button" className="rq-std-btn rq-std-clara" title={clara.title} data-testid="row-clara" data-route={clara.route} onClick={run(clara)}>{claraInner}</button>
