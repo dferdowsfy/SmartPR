@@ -1081,6 +1081,7 @@ export const ES: Record<string, string> = {
   "Not needed to see your requirements. Anything you add is saved to your Business Passport and reused. Filing details (EIN, authorized representative, contact) are asked only when a filing needs them.": "No hace falta para ver tus requisitos. Lo que añadas se guarda en tu Pasaporte comercial y se reutiliza. Los datos de radicación (EIN, representante autorizado, contacto) se piden solo cuando una radicación los necesita.",
   "Filing details (optional now)": "Datos de radicación (opcional por ahora)",
   "Clara uses these when preparing a filing. Anything you leave blank is asked only when a filing needs it.": "Clara los usa al preparar una radicación. Lo que dejes en blanco se pide solo cuando una radicación lo necesite.",
+  "Opening Clara…": "Abriendo a Clara…",
 };
 
 export function L(text: string | undefined | null, lang: Lang): string {

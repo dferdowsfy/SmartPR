@@ -35,13 +35,6 @@
       "key": "DOC_TOURISM_REGISTRATION",
       "cause": "likely-wrong-expectation",
       "note": "No KB rule covers Tour Operator; whether a water-sports rental operator must register with Turismo (vs. voluntary endorsement) is an expert call."
-    },
-    {
-      "id": "KG16",
-      "kind": "missing",
-      "key": "DOC_FIRE_CERT",
-      "cause": "likely-wrong-expectation",
-      "note": "No rule attaches the Bomberos certificate to Auto Repair Shop; expert to confirm it is required for this occupancy (it is for food/assembly)."
     }
   ]
 }

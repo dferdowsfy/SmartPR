@@ -729,7 +729,8 @@ const visibleBars = (): Promise<Bar[]> => main.locator('[data-testid="row-action
 const bars = await visibleBars();
 console.log("rows:", bars.map((b) => `${b.name} [clara=${b.claraRoute} complete=${b.completeRoute}]`).join(" | "));
 check("every row has Fill with Clara · Complete · ⋯ (View details inside ⋯)", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.more && !b.details), bars.filter((b) => !(b.clara && b.complete && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
-check("labels never change by agency", bars.every((b) => b.clara?.text === "Fill with Clara" && /^(Complete|Completed)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
+// Fill with Clara shows only where Clara can act; elsewhere its slot is empty (rows stay aligned).
+check("labels never change by agency", bars.every((b) => (b.claraRoute === "explain" ? !b.clara?.text : b.clara?.text === "Fill with Clara") && /^(Complete|Completed|Upload)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
 for (const k of ["clara", "complete", "more"] as const) {
   const xs = bars.map((b) => b[k]).filter((v): v is NonNullable<Slot> => !!v);
   check(`${k}: same x and width on every row`, xs.length > 1 && xs.every((v) => Math.abs(v.x - xs[0].x) <= 1 && Math.abs(v.w - xs[0].w) <= 1), xs.map((v) => `${v.x}/${v.w}`).join(","));
@@ -806,12 +807,12 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
   const route = await complete.getAttribute("data-route");
   routesSeen.add(`clara:${claraRoute}`);
   routesSeen.add(`complete:${route}`);
-  // Fill with Clara: always there; explains what Clara can do when she can't file.
+  // Fill with Clara: only when Clara can act; otherwise Complete is the one action and "Ask Clara" sits in ⋯.
   if (claraRoute === "explain") {
-    await clara.click();
-    const ex = page.locator('[data-testid="clara-explain"]');
-    check(`"${name}": Fill with Clara opens Clara with the requirement's context`, await ex.waitFor({ timeout: 5000 }).then(async () => (await ex.innerText()).includes(name)).catch(() => false));
-    await closeDialog();
+    check(`"${name}": no Fill with Clara button when Clara can't file it`, !(await clara.isVisible()));
+    await bar.locator('[data-testid="row-more"]').click();
+    check(`"${name}": ⋯ offers Ask Clara`, await bar.locator('[data-testid="row-more-item"]', { hasText: "Ask Clara" }).isVisible().catch(() => false));
+    await page.keyboard.press("Escape");
   } else if (await clara.getAttribute("href")) {
     check(`"${name}": Fill with Clara stays in SmartPR`, (await clara.getAttribute("target")) !== "_blank", (await clara.getAttribute("href")) ?? "");
   }
@@ -819,11 +820,19 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
   if (route === "smartpr_form") {
     await complete.click();
     check(`"${name}": Complete opens the SmartPR form`, await page.locator('[role="dialog"][aria-modal="true"]').first().waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+    const guided = page.locator('[data-testid="guided-form"]');
+    if (await guided.isVisible().catch(() => false)) {
+      check(`"${name}": the form says what came from the Business Passport`, await guided.locator('[data-testid="guided-passport"]').isVisible());
+      if (!routesSeen.has("shot:guided")) { routesSeen.add("shot:guided"); await page.screenshot({ path: path.join(OUT, `${tag}_guided_form.png`) }); }
+    }
     await closeDialog();
   } else if (route === "upload") {
     const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => true).catch(() => false);
     await complete.click();
-    check(`"${name}": Complete opens the upload flow`, await chooser);
+    check(`"${name}": Upload opens the file picker`, await chooser);
+    // The picker is left without a file (like Cancel): nothing may look like it's processing.
+    await page.waitForTimeout(800);
+    check(`"${name}": no processing shown when no file was chosen`, (await row.locator('[data-testid="upload-processing"]').count()) === 0);
   } else if (route === "blocked") {
     await complete.click();
     const shown = (await row.locator('[data-testid="row-question"], .ck-q').first().isVisible().catch(() => false)) || (await row.locator(".ck-row-body").isVisible().catch(() => false));
@@ -872,10 +881,10 @@ console.log("routes seen:", [...routesSeen].join(", "));
     check("⋯ has Teach Clara", items.includes("teach"), items.join(","));
     check("⋯ has the official portal", items.includes("portal"), items.join(","));
     await page.screenshot({ path: path.join(OUT, `${tag}_more_menu.png`), fullPage: false });
-    await bar.locator('[data-testid="row-more-item"][data-cta="teach"]').click();
-    const dlg = page.locator('[data-testid="teach-clara-dialog"]');
-    check("Teach Clara opens in SmartPR", await dlg.waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
-    await closeDialog();
+    // Teach Clara leaves for Clara's workspace (covered by teach-clara-workspace.e2e); here it only has to stay in SmartPR.
+    const teachItem = bar.locator('[data-testid="row-more-item"][data-cta="teach"]');
+    check("Teach Clara stays in SmartPR", (await teachItem.getAttribute("target")) !== "_blank" && !/^https?:/.test((await teachItem.getAttribute("href")) ?? ""));
+    await page.keyboard.press("Escape");
   }
 }
 
@@ -886,7 +895,7 @@ console.log("routes seen:", [...routesSeen].join(", "));
     await langBtn.click();
     await page.waitForTimeout(600);
     const es = await visibleBars();
-    check("ES: Llenar con Clara · Completar · ⋯", es.length > 0 && es.every((b) => b.clara?.text === "Llenar con Clara" && /^(Completar|Completado)$/.test(b.complete?.text ?? "") && !!b.more));
+    check("ES: Llenar con Clara · Completar · ⋯", es.length > 0 && es.every((b) => (b.claraRoute === "explain" || b.clara?.text === "Llenar con Clara") && /^(Completar|Completado|Subir)$/.test(b.complete?.text ?? "") && !!b.more));
     await page.screenshot({ path: path.join(OUT, `${tag}_requirements_es.png`), fullPage: true });
     const enBtn = page.getByRole("button", { name: /^(EN|English)$/ }).first();
     if (await enBtn.isVisible().catch(() => false)) { await enBtn.click(); await page.waitForTimeout(500); }
@@ -934,13 +943,26 @@ await page.waitForTimeout(300);
   check("1280: names wrap to at most 2 lines, never truncated", lines.length > 0 && lines.every((n) => n <= 2), lines.join(","));
   await page.screenshot({ path: path.join(OUT, `${tag}_requirements_1280.png`), fullPage: true });
 }
+// Business Passport: one card says it's filled once and pre-fills every form; it opens the editor in place.
+{
+  const card = page.locator('[data-testid="sidebar-passport"]');
+  check("Passport card in the sidebar", await card.isVisible());
+  const count = (await card.locator('[data-testid="passport-count"]').innerText()).trim();
+  check("Passport card shows how complete it is", /\d+ of \d+ details|Complete/.test(count), count);
+  await card.locator('[data-testid="passport-edit"]').click();
+  const editor = page.locator('[data-testid="passport-editor"]');
+  check("Passport card opens the editor without leaving the list", await editor.waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+  await page.screenshot({ path: path.join(OUT, `${tag}_passport_editor.png`) });
+  await editor.locator('[data-testid="passport-done"]').click();
+  check("Passport editor closes back to the list", !(await editor.isVisible().catch(() => false)) && (await main.locator('[data-testid="row-actions"]').count()) > 0);
+}
 // Mobile: Fill with Clara + Complete stay; the rest is in ⋯.
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForTimeout(300);
 await page.screenshot({ path: path.join(OUT, `${tag}_requirements_mobile.png`), fullPage: true });
 {
   const b = await visibleBars();
-  check("mobile: Fill with Clara + Complete visible on every row", b.length > 0 && b.every((x) => x.clara && x.complete && x.more && !x.details), `${b.length} rows`);
+  check("mobile: Fill with Clara (where Clara can act) + Complete visible on every row", b.length > 0 && b.every((x) => (x.clara || x.claraRoute === "explain") && x.complete && x.more && !x.details), `${b.length} rows`);
   const card = await main.locator('[data-testid="row-actions"]').evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => {
     const line = e.closest(".ck-card-line") as HTMLElement;
     const nm = line.querySelector(".ck-name") as HTMLElement;

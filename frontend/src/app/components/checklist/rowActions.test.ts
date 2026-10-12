@@ -87,7 +87,9 @@ test("collapsed RequirementCard renders the CTA on its line (outside the toggle)
   const line = html.slice(html.indexOf("ck-card-line"), html.indexOf("ck-card-line") + html.slice(html.indexOf("ck-card-line")).indexOf("</div></div>"));
   assert.match(line, /title="Complete registration form" data-testid="row-complete" data-route="smartpr_form"/);
   assert.match(line, />Complete</);
-  assert.match(line, /data-testid="row-clara" data-route="explain"[^>]*>.*Fill with Clara</);
+  // Clara can't file it: her slot stays empty (no second button doing the same thing).
+  assert.match(line, /rq-std-slot" aria-hidden="true" data-testid="row-clara" data-route="explain"/);
+  assert.ok(!/>Fill with Clara</.test(line));
   // View details lives in the ⋯ menu (row-more), not as its own button.
   assert.match(line, /data-testid="row-more"/);
   assert.ok(!/data-testid="row-details"/.test(line));
@@ -282,4 +284,17 @@ test("orderByPrerequisites: a present prerequisite renders before its dependents
   // Cycles fall back to engine order instead of looping.
   const cyc = [{ id: "A", depends_on_document_ids: ["B"] }, { id: "B", depends_on_document_ids: ["A"] }];
   assert.deepEqual(orderByPrerequisites(["A", "B"], id, cyc), ["A", "B"]);
+});
+
+test("upload-only row: the Complete slot reads 'Upload' (EN) / 'Subir' (ES), never 'Complete'", () => {
+  const props = {
+    index: 3, icon: null, iconTone: "gray" as const, name: "Professional License", agency: "Departamento de Estado", description: "d",
+    badge: { label: "Required", tone: "amber" as const }, whyLabel: "Why", why: null,
+    action: { kind: "upload" as const, label: "Upload license", onClick: noop },
+  };
+  const en = renderToStaticMarkup(createElement(RequirementCard, { ...props, language: "en" }));
+  assert.match(en, /data-testid="row-complete" data-route="upload"[^>]*>.*?<span>Upload<\/span>/);
+  assert.ok(!/data-route="upload"[^>]*>.*?<span>Complete<\/span>/.test(en));
+  const es = renderToStaticMarkup(createElement(RequirementCard, { ...props, language: "es" }));
+  assert.match(es, /data-testid="row-complete" data-route="upload"[^>]*>.*?<span>Subir<\/span>/);
 });
