@@ -21,7 +21,9 @@ import { projectContextAnswerToFacts } from "./ai/intake/projectContext.ts";
 
 const SID = "sess-s453-repro";
 
-function engineResult(projectContext: any, confirmedKeys: string[]) {
+type ProjectFactLike = { value?: unknown; confidence?: number };
+
+function engineResult(projectContext: Record<string, unknown>, confirmedKeys: string[]) {
   const profile = {
     business_type: "Bakery",
     municipality: "Ponce",
@@ -61,8 +63,9 @@ test("REG-LIVE-STALE-PROJECT-FACTS-001: renovation bridge facts fire OGPe in str
   const bridge = projectContextAnswerToFacts("renovations", true, "en");
   const pc: Record<string, unknown> = {};
   for (const { key, fact } of bridge) pc[key] = fact;
-  assert.equal((pc["project_type"] as any)?.value, "renovation");
-  assert.ok(((pc["project_type"] as any)?.confidence ?? 0) >= 0.85);
+  const projectType = pc["project_type"] as ProjectFactLike | undefined;
+  assert.equal(projectType?.value, "renovation");
+  assert.ok((projectType?.confidence ?? 0) >= 0.85);
 
   const res = engineResult(pc, [
     "business_type", "municipality", "Q_EMPLOYEES_HIRED", "renovations", "Q_OWNS_PROPERTY",
