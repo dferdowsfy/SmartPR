@@ -954,6 +954,16 @@ await page.waitForTimeout(300);
   await card.locator('[data-testid="passport-edit"]').click();
   const editor = page.locator('[data-testid="passport-editor"]');
   check("Passport card opens the editor without leaving the list", await editor.waitFor({ timeout: 5000 }).then(() => true).catch(() => false));
+  // Typing must stick: every keystroke re-renders the page, which used to pull focus back to the dialog.
+  const legal = editor.locator("input").first();
+  await legal.click();
+  await legal.fill("");
+  await page.keyboard.type("Panadería La Esperanza LLC", { delay: 25 });
+  check("Passport: a full name types without losing focus", (await legal.inputValue()) === "Panadería La Esperanza LLC", await legal.inputValue());
+  const email = editor.locator('input[type="email"]').first();
+  await email.click();
+  await page.keyboard.type("hola@laesperanza.pr", { delay: 25 });
+  check("Passport: a second field types too", (await email.inputValue()) === "hola@laesperanza.pr", await email.inputValue());
   await page.screenshot({ path: path.join(OUT, `${tag}_passport_editor.png`) });
   await editor.locator('[data-testid="passport-done"]').click();
   check("Passport editor closes back to the list", !(await editor.isVisible().catch(() => false)) && (await main.locator('[data-testid="row-actions"]').count()) > 0);
