@@ -2637,6 +2637,9 @@ export default function SmartPRIntake() {
     if (!draftMatchesUrl(draft, window.location.search)) return;
     guestRestoredRef.current = true;
     hydrateDraftState(draft);
+    // Mount-once guest/handoff restore keyed on auth readiness; hydrateDraftState
+    // is intentionally stable for this effect and must not re-run on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me]);
 
   useEffect(() => {
