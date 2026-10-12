@@ -87,7 +87,9 @@ test("collapsed RequirementCard renders the CTA on its line (outside the toggle)
   const line = html.slice(html.indexOf("ck-card-line"), html.indexOf("ck-card-line") + html.slice(html.indexOf("ck-card-line")).indexOf("</div></div>"));
   assert.match(line, /title="Complete registration form" data-testid="row-complete" data-route="smartpr_form"/);
   assert.match(line, />Complete</);
-  assert.match(line, /data-testid="row-clara" data-route="explain"[^>]*>.*Fill with Clara</);
+  // Clara can't file it: her slot stays empty (no second button doing the same thing).
+  assert.match(line, /rq-std-slot" aria-hidden="true" data-testid="row-clara" data-route="explain"/);
+  assert.ok(!/>Fill with Clara</.test(line));
   // View details lives in the ⋯ menu (row-more), not as its own button.
   assert.match(line, /data-testid="row-more"/);
   assert.ok(!/data-testid="row-details"/.test(line));

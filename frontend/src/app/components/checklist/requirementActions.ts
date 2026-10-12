@@ -12,6 +12,9 @@ type Language = "en" | "es";
 export type CompleteRoute = "smartpr_form" | "government" | "clara" | "upload" | "instructions" | "blocked";
 /** What "Fill with Clara" does for this row. */
 export type ClaraRoute = "learned" | "file" | "explain";
+// "explain" = Clara can't file this row yet. The row then shows no Clara
+// button (Complete is the one action: the Passport-prefilled form, which
+// hands off to Clara once finished); "Ask Clara" sits in ⋯ instead.
 
 export interface StandardAction<R extends string> {
   route: R;
@@ -36,7 +39,7 @@ export interface RequirementActions {
 
 export interface StandardActionContext {
   onViewDetails: () => void;
-  /** Opens Clara with this requirement's context and what she can do here. */
+  /** Asks Clara about this requirement (⋯ "Ask Clara" when she can't file it). */
   onExplainClara: () => void;
   /** Opens the row's unanswered question (answer rows). */
   onAnswer?: (() => void) | null;
@@ -118,5 +121,8 @@ export function standardRequirementActions(model: RowActionsModel, ctx: Standard
   }
 
   const overflow = rest.filter((c) => c !== completeCta);
+  if (clara.route === "explain") {
+    overflow.push({ id: "ask", kind: "assist", label: es ? "Preguntarle a Clara" : "Ask Clara", title: es ? "Preguntarle a Clara" : "Ask Clara", onClick: ctx.onExplainClara });
+  }
   return { clara, complete, onViewDetails: ctx.onViewDetails, overflow, done: model.done, learned: model.learned };
 }
