@@ -4597,6 +4597,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     setPendingReqCode(null);
     if (e.target) e.target.value = ''; // allow re-select same file later
     if (file && code) {
+      // The progress pipeline starts only once a file is actually chosen.
+      startProcessingPipeline(code, file.name);
       await processRealFileUpload(file, code);
     } else if (code) {
       setProcessingStates(prev => { const n = { ...prev }; delete n[code]; return n; });
@@ -4624,11 +4626,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     setTimeout(advance, 320);
   };
 
-  // Enhanced trigger that also starts the visual pipeline
+  // Opens the file picker; the visual pipeline starts in onFileInputChange
+  // once a file is chosen. Starting it here made a cancelled picker (which
+  // fires no change event) look like a file was being processed.
   const triggerFileUploadWithPipeline = (reqCode: string) => {
-    const doc = uploadedDocs.find(d => d.requirement_code === reqCode);
-    const name = doc?.name || `${reqCode}.pdf`;
-    startProcessingPipeline(reqCode, name);
     triggerFileUpload(reqCode);
   };
 
@@ -6175,7 +6176,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <ExtractionPanel ext={ext} docType={analysis.document_type} language={language} />
         )}
         {processingStates[req.code] && (
-          <div style={{ marginTop: 8, padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 12 }}>
+          <div data-testid="upload-processing" style={{ marginTop: 8, padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 8, fontSize: 12 }}>
             {PROCESS_STAGES.map((lab, i) => {
               const p = processingStates[req.code]!;
               const done = i < p.stageIndex;

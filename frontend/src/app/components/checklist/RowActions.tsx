@@ -105,7 +105,8 @@ function useMenu() {
 
 /**
  * The standard action column, identical on every requirement row:
- * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item). Positions
+ * Fill with Clara · Complete · ⋯ (View details is the first ⋯ item); Complete
+ * reads "Upload" when uploading proof is all SmartPR can do for the row. Positions
  * never change; each row's own capabilities decide only what a click does
  * (the route is exposed as data-route and in the tooltip). Fill with Clara
  * shows only when Clara can act on the row; otherwise its slot stays empty.
@@ -135,7 +136,8 @@ export function StandardRowActions({ actions, language, answerOpen = false }: { 
   const claraLink = link(clara);
   const completeLink = link(complete);
   const claraInner = pending === "clara" ? opening : <><Sparkles size={14} aria-hidden="true" /> <span>{STANDARD_LABELS.clara[lang]}</span></>;
-  const completeInner = pending === "complete" ? opening : <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{STANDARD_LABELS.complete[lang]}</span></>;
+  const isUpload = complete.route === "upload";
+  const completeInner = pending === "complete" ? opening : <>{complete.locked ? <Lock size={14} aria-hidden="true" /> : isUpload ? <Upload size={14} aria-hidden="true" /> : <CheckCircle2 size={14} aria-hidden="true" />} <span>{(isUpload ? STANDARD_LABELS.upload : STANDARD_LABELS.complete)[lang]}</span></>;
   return (
     <div className="rq-std-actions" ref={ref} onClick={stop} data-testid="row-actions">
       {clara.route === "explain" ? (

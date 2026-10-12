@@ -730,7 +730,7 @@ const bars = await visibleBars();
 console.log("rows:", bars.map((b) => `${b.name} [clara=${b.claraRoute} complete=${b.completeRoute}]`).join(" | "));
 check("every row has Fill with Clara · Complete · ⋯ (View details inside ⋯)", bars.length > 0 && bars.every((b) => b.clara && b.complete && b.more && !b.details), bars.filter((b) => !(b.clara && b.complete && b.more)).map((b) => b.name).join(" | ") || `${bars.length} rows`);
 // Fill with Clara shows only where Clara can act; elsewhere its slot is empty (rows stay aligned).
-check("labels never change by agency", bars.every((b) => (b.claraRoute === "explain" ? !b.clara?.text : b.clara?.text === "Fill with Clara") && /^(Complete|Completed)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
+check("labels never change by agency", bars.every((b) => (b.claraRoute === "explain" ? !b.clara?.text : b.clara?.text === "Fill with Clara") && /^(Complete|Completed|Upload)$/.test(b.complete?.text ?? "")), [...new Set(bars.flatMap((b) => [b.clara?.text, b.complete?.text]))].join(","));
 for (const k of ["clara", "complete", "more"] as const) {
   const xs = bars.map((b) => b[k]).filter((v): v is NonNullable<Slot> => !!v);
   check(`${k}: same x and width on every row`, xs.length > 1 && xs.every((v) => Math.abs(v.x - xs[0].x) <= 1 && Math.abs(v.w - xs[0].w) <= 1), xs.map((v) => `${v.x}/${v.w}`).join(","));
@@ -829,7 +829,10 @@ for (let i = 0; i < (await page.locator(rowSel).count()); i++) {
   } else if (route === "upload") {
     const chooser = page.waitForEvent("filechooser", { timeout: 15000 }).then(() => true).catch(() => false);
     await complete.click();
-    check(`"${name}": Complete opens the upload flow`, await chooser);
+    check(`"${name}": Upload opens the file picker`, await chooser);
+    // The picker is left without a file (like Cancel): nothing may look like it's processing.
+    await page.waitForTimeout(800);
+    check(`"${name}": no processing shown when no file was chosen`, (await row.locator('[data-testid="upload-processing"]').count()) === 0);
   } else if (route === "blocked") {
     await complete.click();
     const shown = (await row.locator('[data-testid="row-question"], .ck-q').first().isVisible().catch(() => false)) || (await row.locator(".ck-row-body").isVisible().catch(() => false));
@@ -892,7 +895,7 @@ console.log("routes seen:", [...routesSeen].join(", "));
     await langBtn.click();
     await page.waitForTimeout(600);
     const es = await visibleBars();
-    check("ES: Llenar con Clara · Completar · ⋯", es.length > 0 && es.every((b) => (b.claraRoute === "explain" || b.clara?.text === "Llenar con Clara") && /^(Completar|Completado)$/.test(b.complete?.text ?? "") && !!b.more));
+    check("ES: Llenar con Clara · Completar · ⋯", es.length > 0 && es.every((b) => (b.claraRoute === "explain" || b.clara?.text === "Llenar con Clara") && /^(Completar|Completado|Subir)$/.test(b.complete?.text ?? "") && !!b.more));
     await page.screenshot({ path: path.join(OUT, `${tag}_requirements_es.png`), fullPage: true });
     const enBtn = page.getByRole("button", { name: /^(EN|English)$/ }).first();
     if (await enBtn.isVisible().catch(() => false)) { await enBtn.click(); await page.waitForTimeout(500); }

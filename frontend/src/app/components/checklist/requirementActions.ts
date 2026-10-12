@@ -63,6 +63,8 @@ const COMPLETE_ROUTE: Partial<Record<RowCtaKind, CompleteRoute>> = {
 export const STANDARD_LABELS = {
   clara: { en: "Fill with Clara", es: "Llenar con Clara" },
   complete: { en: "Complete", es: "Completar" },
+  // Rows SmartPR can't complete in-platform, only take proof of: say so.
+  upload: { en: "Upload", es: "Subir" },
   details: { en: "View details", es: "Ver detalles" },
   done: { en: "Completed", es: "Completado" },
 } as const;

@@ -285,3 +285,16 @@ test("orderByPrerequisites: a present prerequisite renders before its dependents
   const cyc = [{ id: "A", depends_on_document_ids: ["B"] }, { id: "B", depends_on_document_ids: ["A"] }];
   assert.deepEqual(orderByPrerequisites(["A", "B"], id, cyc), ["A", "B"]);
 });
+
+test("upload-only row: the Complete slot reads 'Upload' (EN) / 'Subir' (ES), never 'Complete'", () => {
+  const props = {
+    index: 3, icon: null, iconTone: "gray" as const, name: "Professional License", agency: "Departamento de Estado", description: "d",
+    badge: { label: "Required", tone: "amber" as const }, whyLabel: "Why", why: null,
+    action: { kind: "upload" as const, label: "Upload license", onClick: noop },
+  };
+  const en = renderToStaticMarkup(createElement(RequirementCard, { ...props, language: "en" }));
+  assert.match(en, /data-testid="row-complete" data-route="upload"[^>]*>.*?<span>Upload<\/span>/);
+  assert.ok(!/data-route="upload"[^>]*>.*?<span>Complete<\/span>/.test(en));
+  const es = renderToStaticMarkup(createElement(RequirementCard, { ...props, language: "es" }));
+  assert.match(es, /data-testid="row-complete" data-route="upload"[^>]*>.*?<span>Subir<\/span>/);
+});
