@@ -91,3 +91,43 @@ Every source below was actually opened by a research worker. URLs copied verbati
 - **(c) Miami-Dade fee schedules** — still_open: No published dollar fee for any of the three items was located on official Miami-Dade County pages. What was established: (1) the Local Business Tax schedule lives in County Code Sec. 8A-223.1 (confir [source](https://www.miamidade.gov/global/permit.page?Mduid_permit=per1527602964755696)
 - **(d) TPP late/non-filing penalties** — resolved: Confirmed from the Florida Department of Revenue's official Property Taxpayers - Tangible Personal Property page (floridarevenue.com): 'Failure to file will result in a penalty of 25 percent of the to [source](http://floridarevenue.com/property/Pages/Taxpayers_TangiblePersonalProperty.aspx?gclid=Cj0KCQjwwJuVBhCAARIsAOPwGAQsD7Rp2D7OAPt6dFPC3njlSAcajB7nb86GGYohSlQYdxJVWxnpP48aAoKGEALw_wcB)
 - **(e) flsenate.gov chapter scope verification** — resolved: Verified on Online Sunshine (leg.state.fl.us; flsenate.gov chapter pages timed out on every fetch attempt from this environment, as in round 1): Ch. 605 - Florida Revised Limited Liability Company Act [source](https://www.leg.state.fl.us/statutes/index.cfm/index.cfm?App_mode=Display_Statute&URL=0200-0299%2F0212%2F0212ContentsIndex.html&StatuteYear=2024&Title=-%3E2024-%3EChapter+212)
+
+## construction-cilb (8 sources, round 3)
+- [Construction Industry – FAQs (CILB, MyFloridaLicense.com)](https://www2.myfloridalicense.com/construction-industry/faqs/) — agency_page
+- [CILB main page (applications & exams)](https://www2.myfloridalicense.com/construction-industry/) — agency_page
+- [Fla. Stat. s. 489.105 – Definitions (license categories)](http://flsenate.gov/laws/statutes/2011/489.105) — statute
+- [Fla. Stat. s. 489.111 – Licensure by examination](https://www.flsenate.gov/Laws/Statutes/2023/489.111) — statute
+- [Fla. Stat. s. 489.109 – Fees](https://www.flsenate.gov/Laws/Statutes/2018/0489.109) — statute
+- [Fla. Stat. s. 489.115 – Certification and registration; renewals; continuing education](https://www.flsenate.gov/Laws/Statutes/2010/0489.115) — statute
+- [Fla. Stat. s. 489.117 – Registration; specialty contractors (leg.state.fl.us)](http://www.leg.state.fl.us/statutes/index.cfm/index.cfm?App_mode=Display_Statute&Search_String&URL=0400-0499%2F0489%2FSections%2F0489.117.html) — statute
+- [DBPR CILB 7-H Application for Certified Contractor Qualifying an Additional Business (application instructions checklist)](https://www2.myfloridalicense.com/pro/cilb/documents/CILB7H_Certified_Contractor_Qualify_Additional_Business_Class-B-Air.pdf) — form
+
+## construction-operations (12 sources, round 3)
+- [Coverage Requirements | Workers' Compensation | Florida Department of Financial Services](https://myfloridacfo.com/division/wc/employer/coverage-requirements) — agency_page
+- [Construction Industry | Workers' Compensation | Florida Department of Financial Services](https://myfloridacfo.com/division/wc/employer/exemptions/construction) — agency_page
+- [Building Contractor Licenses (Miami-Dade County)](http://enet.miamidade.gov/global/license.page?Mduid_license=lic1552936407538433) — agency_page
+- [Building Specialty Licenses (Miami-Dade County)](https://wwwx.miamidade.gov/global/license.page?Mduid_license=lic1677270526169670) — agency_page
+- [Florida Contractor License Preemption FAQ (City of Miami, sourced from Miami-Dade County)](https://www.miami.gov/My-Government/Departments/Building/Florida-Contractor-License-Category-Preemption?lang_update=639140190938860468) — agency_page
+- [Contractor & Owner/Builder Responsibilities (Miami-Dade County)](https://wwwx.miamidade.gov/global/economy/building/contractor-owner-builder-responsibilities.page?submit=true&componentID=1553655066001) — agency_page
+- [Owner-Builder Permits (Miami-Dade County)](https://www.miamidade.gov/global/economy/building/owner-builder-permits.page) — agency_page
+- [How to Apply for Permits (Miami-Dade County)](https://www.miamidade.gov/global/economy/building/how-to-apply-for-permit.page) — agency_page
+- [Building Homepage — Common Permits & Certificates (Miami-Dade County)](https://www.miamidade.gov/global/economy/building/home.page) — agency_page
+- [Certificate of Occupancy and Certificate of Use (Miami-Dade County)](http://www.miamidade.gov/global/economy/building/cert-of-occupancy.page) — agency_page
+- [Construction Trades Qualifying Board — Rules and Procedures (Miami-Dade County)](http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf) — agency_rule
+- [Training requirements under the HAZWOPER standard (OSHA standard interpretation — Florida has no OSHA-approved state plan)](http://www.osha.gov/laws-regs/standardinterpretations/2010-10-28) — agency_page
+
+## construction-local (14 sources, round 3)
+- [CTQB Contractor Licensing Rules and Procedures (updated Feb 28, 2024)](http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf) — agency_rule
+- [How to Apply for Permits — Miami-Dade County](https://www.miamidade.gov/global/economy/building/how-to-apply-for-permit.page) — agency_page
+- [Building Inspections — Miami-Dade County permits index](http://www.miamidade.gov/permits/home.asp?cat=build&subcat=inspections) — agency_page
+- [Impact Fees — Miami-Dade County](http://www.miamidade.gov/zoning/impact-fees.asp) — agency_page
+- [Miami-Dade County Permit - E-Permitting for Contractors](https://www.miamidade.gov/global/permit.page?Mduid_permit=per1773673147194793) — agency_page
+- [Miami-Dade County Permit - New Construction (Fire Rescue)](https://www.miamidade.gov/global/permit.page?Mduid_permit=per152759981883570) — agency_page
+- [Inspection Routes & Results (RER Mobile)](https://wwwx.miamidade.gov/Apps/RER/Mobile3/Home/PermitRoutes) — agency_page
+- [Fire Permit Inspection (RER)](http://wwwx.miamidade.gov/apps/RER/BNZ2/BNZM7015.aspx) — agency_page
+- [Advisory Memo 2025-08-14: Code Administration Fee Adjustment (R-606-25)](http://wwwx.miamidade.gov/resources/economy/board-and-code/memos/2025-08-14-code-administration.pdf) — agency_page
+- [PSO Annual Operating Permit application and fee schedule (DERM)](http://www.miamidade.gov/permits/library/pso-permit-app.pdf) — form
+- [Administrative Order AO-04-115: building permit process and procedures](https://documents.miamidade.gov/ao-io/AO/AO-04-115.pdf) — agency_rule
+- [Mobility fee ordinance schedule (MinMatters Y2024/241708)](https://www.miamidade.gov/govaction/legistarfiles/MinMatters/Y2024/241708min.pdf) — statute
+- [Q1 2024 Report: collection of mobility, impact, and water/sewer connection fees](https://www.miamidade.gov/govaction/legistarfiles/Matters/Y2024/241769.pdf) — agency_page
+- [City of Miami Beach Appendix A copy of Miami-Dade Code fee surcharges (used only for 'unverified' surcharge line items)](https://miamibeach.novusagenda.com/agendapublic/AttachmentViewer.ashx?AttachmentID=29392&ItemID=14414) — fee_schedule

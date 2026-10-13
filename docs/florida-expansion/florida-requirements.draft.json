@@ -2,13 +2,13 @@
   "_disclaimer": "DRAFT research for a future Florida jurisdiction pack. Data-gathering only — not a pack, not legal guidance. Verify before modeling pack tables.",
   "jurisdiction": "fl",
   "vertical": "restaurants",
-  "researched": "2026-10-13 (round 2 gap-fill)",
+  "researched": "2026-10-13",
   "counts": {
-    "requirements": 64,
-    "verified": 61,
-    "unverified": 3,
-    "sources": 62,
-    "open_questions": 31,
+    "requirements": 101,
+    "verified": 97,
+    "unverified": 4,
+    "sources": 96,
+    "open_questions": 47,
     "by_area": {
       "formation": 8,
       "tax": 8,
@@ -16,7 +16,10 @@
       "miami-dade-local": 9,
       "statute-index": 11,
       "abt-alcohol": 8,
-      "employer-obligations": 6
+      "employer-obligations": 6,
+      "construction-cilb": 16,
+      "construction-operations": 11,
+      "construction-local": 10
     }
   },
   "requirements": [
@@ -1170,6 +1173,613 @@
       "timeline": "unverified (enrollment itself is a one-time setup completed in a single online session; third-party sources report account activation can take up to ~3 weeks)",
       "title": "E-Verify employer enrollment process",
       "verification": "verified"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Any person or business organization acting as a contractor in Florida for work in a regulated category.",
+      "citation": "Fla. Stat. ss. 489.113, 489.105",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "Varies by license type; see fee requirements",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0001",
+      "notes": "Two licensure paths: CERTIFIED — pass the state competency examination, work anywhere in the state (certified license numbers begin with C). REGISTERED — hold a local (county/city) certificate of competency and register with the state; practice only in the jurisdiction(s) that issued the local competency card (numbers begin with R). A new business wanting statewide operation needs certified licensure; a business staying in one locality may use the registered path if the locality still issues local competency licenses. Per s. 489.117, registered contractors may also practice in adjoining locales that accept the registration.",
+      "timeline": "Board must approve or deny an application within 90 days; licenses are typically issued within two weeks after the board meeting in which the application was approved.",
+      "title": "Contractor licensing required before doing business — certified vs registered",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Contracting for any activity requiring licensure under Ch. 489 Part I, i.e., any type of construction work.",
+      "citation": "Fla. Stat. s. 489.105(3)(a)",
+      "citation_url": "http://flsenate.gov/laws/statutes/2011/489.105",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0002",
+      "notes": "Division I license (Div I = paragraphs (a)-(c)). Services are unlimited as to type of work; may contract for and perform any work requiring licensure under Part I, except as expressly provided in s. 489.113. Division I licenses (general/building/residential) carry higher financial-stability thresholds (up to $20,000 net worth/cash/bonding by rule, s. 489.115(7)).",
+      "timeline": "unverified",
+      "title": "License category: General Contractor (CGC)",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Building commercial buildings or residential buildings no more than three stories tall, or non-structural remodeling/repair of any size building.",
+      "citation": "Fla. Stat. s. 489.105(3)(b)",
+      "citation_url": "http://flsenate.gov/laws/statutes/2011/489.105",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0003",
+      "notes": "Division I. Limited to construction of commercial and single-/multiple-dwelling residential buildings not exceeding three stories in height, plus accessory-use structures; or remodeling/repair/improvement of any size building if services do not affect structural members.",
+      "timeline": "unverified",
+      "title": "License category: Building Contractor (CBC)",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Building, remodeling, repairing, or improving one-, two-, or three-family residences not exceeding the statutory height limit.",
+      "citation": "Fla. Stat. s. 489.105(3)(c)",
+      "citation_url": "http://flsenate.gov/laws/statutes/2011/489.105",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0004",
+      "notes": "Division I. Limited to one-family, two-family, or three-family residences not exceeding two habitable stories above no more than one uninhabitable story, plus accessory-use structures.",
+      "timeline": "unverified",
+      "title": "License category: Residential Contractor (CRC)",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Contracting in a specialty trade rather than general/building/residential construction.",
+      "citation": "Fla. Stat. s. 489.105(3)(d)-(r); Fla. Stat. ss. 489.108, 489.113, 489.117, 489.131",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0005",
+      "notes": "Division II categories per CILB FAQ: sheet metal; roofing; air-conditioning (Classes A/B/C); mechanical; swimming pool/spa (commercial, residential, servicing); plumbing; underground utility and excavation; solar; and pollutant storage. In addition, certified specialty contractor licenses (created by CILB rulemaking, e.g., specialty structure, gypsum drywall, marine, glass and glazing, tower, building demolition, irrigation, industrial facilities, rooftop solar heating, structural masonry, structural steel, etc., plus pool specialties) are voluntary statewide licenses obtainable instead of a local specialty license. Division II financial-stability thresholds cap lower (up to $10,000 by rule, s. 489.115(7)).",
+      "timeline": "unverified",
+      "title": "License categories: Division II trades and certified specialty contractors",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Seeking a certified contractor license by examination.",
+      "citation": "Fla. Stat. s. 489.111(2)",
+      "citation_url": "https://www.flsenate.gov/Laws/Statutes/2023/489.111",
+      "fees": "unverified",
+      "forms": [
+        {
+          "name": "Florida contractor's examination application",
+          "url": "https://www2.myfloridalicense.com/construction-industry/"
+        }
+      ],
+      "id": "FL_DRAFT_CILB_0006",
+      "notes": "Must be 18 years old and of good moral character, plus one of: (1) baccalaureate degree from an accredited 4-year college in engineering, architecture, or building construction plus 1 year of proven experience in the category; or (2) at least 4 years of active experience as a skilled worker/apprentice or foreman, with at least 1 year as a foreman. Minimum 2,000 person-hours = full-time equivalency. Trade-knowledge exam exemption available for applicants with a building-construction baccalaureate degree and 3.0+ GPA (then only the Business and Finance exam is required).",
+      "timeline": "unverified",
+      "title": "Eligibility to sit for the certification examination",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Seeking a certified contractor license by examination.",
+      "citation": "Fla. Stat. s. 489.111; FAC Rule 61G4-16.009",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "unverified",
+      "forms": [
+        {
+          "name": "Florida contractor's examination application (via Professional Testing, Inc. / Pearson VUE)",
+          "url": "https://www2.myfloridalicense.com/construction-industry/"
+        }
+      ],
+      "id": "FL_DRAFT_CILB_0007",
+      "notes": "Open-book exams. Trade Knowledge, Project Management, and Contract Administration given the same day; Business/Finance exam is 6.5 hours. Computer-based exams (except Plumbing Trade Knowledge) administered by Pearson VUE at sites statewide, available at any time. Only failed sections must be retaken (61G4-16.009). Active CILB licensees adding a category are exempt from the Business/Finance portion. NASCLA-accredited general/building/residential exams plus the Florida Business and Finance exam and a Florida Building Code exam can support endorsement (Form DBPR CILB 10). Alternative path: hold an out-of-state license for 10+ years and apply for endorsement (2-hour Florida Building Code / wind mitigation course required for Division I and roofing).",
+      "timeline": "All exam portions must be completed within 4 years of the first attempt; after 4 years all scores expire and the full exam must be retaken. Application for licensure must be made within 4 years of passing.",
+      "title": "State contractor examination — format, sections, retakes",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Applying for initial certified licensure.",
+      "citation": "Fla. Stat. s. 489.111(2)(c); CILB FAQ",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "unverified",
+      "forms": [
+        {
+          "name": "Application for initial certified contractor's license",
+          "url": "https://www2.myfloridalicense.com/construction-industry/"
+        }
+      ],
+      "id": "FL_DRAFT_CILB_0008",
+      "notes": "Four years of field experience in the category of licensure, including at least one year of supervisory experience. Up to 3 years of any military service (DD214) or any accredited college credit hours may substitute; at least one year of supervisory construction experience in the licensed category is still required. Special experience required for general/building: demonstrate experience in 4 of 6 categories (foundations/slabs over 20,000 sq ft, masonry walls, steel erection, elevated slabs, column erection, formwork for structural reinforced concrete); for general contractors, at least one year of such experience must be new construction of structures of at least 4 stories.",
+      "timeline": "unverified",
+      "title": "Experience documentation — 4 years field + 1 year supervisory",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Applying for initial certification or registration, requesting a change of status, or qualifying a business entity.",
+      "citation": "Fla. Stat. s. 489.115(5)(b), (7)",
+      "citation_url": "https://www.flsenate.gov/Laws/Statutes/2010/0489.115",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0009",
+      "notes": "Submit a credit report from a nationally recognized credit agency showing a FICO-derived credit score of 660 or higher, with a public-records statement that local, state, and federal records were checked. If the score is below 660, applicant must complete a board-approved 14-hour financial responsibility and stability course. Proof of satisfaction of liens, judgments, and discharge of bankruptcy required where applicable. For business qualification, credit reports are required on the qualifying agent AND both the presently qualified and proposed qualified businesses. A financially responsible officer (FRO) model exists: if the qualifier lacks financial responsibility, the business must appoint an FRO, who must hold a $100,000 surety bond or irrevocable letter of credit payable to the CILB (letter of bondability not accepted). Statutory net-worth/cash/bonding guidelines are capped at $20,000 for Division I and $10,000 for Division II certificateholders.",
+      "timeline": "unverified",
+      "title": "Financial responsibility — credit report and FICO 660 / 14-hour course or bond",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Initial issuance and renewal of any certificate or registration; active licensees must maintain coverage at all times.",
+      "citation": "Fla. Stat. s. 489.115(5)(a)",
+      "citation_url": "https://www.flsenate.gov/Laws/Statutes/2010/0489.115",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0010",
+      "notes": "Submit board-form affidavit attesting to workers' compensation coverage per Ch. 440, public liability, and property damage insurance in board-determined amounts. CILB-published minimums: general and building contractors $300,000 liability / $50,000 property damage; all other categories $100,000 liability / $25,000 property damage (or amounts set by board rule). Active licensees must maintain workers' comp coverage OR an exemption; applicants may state they will obtain the exemption within 30 days of licensure.",
+      "timeline": "Affidavit of insurance required before issuance and at each renewal; workers' compensation exemption (if applicable) must be obtained within 30 days of becoming licensed.",
+      "title": "Insurance — general liability, property damage, workers' compensation affidavit",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Applying for initial licensure or qualifying a construction business.",
+      "citation": "Fla. Stat. s. 489.115(6)",
+      "citation_url": "https://www.flsenate.gov/Laws/Statutes/2010/0489.115",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0011",
+      "notes": "Electronic fingerprints and criminal-history disclosure are required (application checklists list electronic fingerprints and supporting legal documentation). The board may not deny licensure based solely on a felony conviction or failure to provide proof of restoration of civil rights (s. 489.115(6)), but criminal history, good moral character, and financial stability are review factors; applicants with concerns may be placed on probationary status and required to appear before the board twice annually. Number, severity, recency of convictions and rehabilitation efforts are weighed individually.",
+      "timeline": "unverified",
+      "title": "Fingerprint-based background check and criminal history disclosure",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Operating as a corporation, partnership, LLC, or any business entity other than a sole proprietorship; or operating as an individual under a business name.",
+      "citation": "Fla. Stat. ss. 489.109(1)(d), 489.119",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "Statutory cap: $50 initial application fee and $50 renewal fee to qualify a business organization",
+      "forms": [
+        {
+          "name": "Application for initial licensure qualifying a business (e.g., DBPR CILB 6-series by category)",
+          "url": "https://www2.myfloridalicense.com/construction-industry/"
+        }
+      ],
+      "id": "FL_DRAFT_CILB_0012",
+      "notes": "Contractors must qualify their construction business with their individual license; the license is issued in the qualifying agent's name with the business name noted on it. The qualifying agent must have supervisory authority and final approval over all construction affairs. Qualifying an additional business requires a separate application (e.g., DBPR CILB 7-H for an additional business) and triggers board appearance if the applicant owns under 20% or would qualify 3+ businesses. If a qualifying agent resigns/is fired, the company has 60 days to obtain another qualifier (temporary nonrenewable license available); if the qualifier dies, notify the board within 30 days. Certificates of Authority (qualified business licenses) have not been issued since October 1, 2009.",
+      "timeline": "unverified",
+      "title": "Qualifying agent — business must be qualified by a licensed contractor",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Submitting any application for initial certification or registration.",
+      "citation": "Fla. Stat. ss. 489.109(1)(a)-(c); DBPR CILB application instructions",
+      "citation_url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB7H_Certified_Contractor_Qualify_Additional_Business_Class-B-Air.pdf",
+      "fees": "Initial certification: $245 if applying May 1 of an EVEN year through Aug 31 of an ODD year; $145 if applying Sept 1 of an ODD year through Apr 30 of an EVEN year. Statutory caps: certificate application fee ≤$150 (≤$350 combined with exam cost); certification and renewal fees ≤$250; registration application fee ≤$100; registration and renewal fees ≤$200.",
+      "forms": [
+        {
+          "name": "DBPR CILB 6-series / 7-H application forms (per category)",
+          "url": "https://www2.myfloridalicense.com/pro/cilb/documents/CILB7H_Certified_Contractor_Qualify_Additional_Business_Class-B-Air.pdf"
+        }
+      ],
+      "id": "FL_DRAFT_CILB_0013",
+      "notes": "Mail completed application, documentation, and fees to DBPR, 2601 Blair Stone Road, Tallahassee, FL 32399-0783. Applications are also available through DBPR Online Services. Note registered-contractor application fee windows differ (odd/even year cycle); published registration fee examples ($205/$105) were seen in a third-party mirror of the state form — confirm current fee windows on the official form before paying.",
+      "timeline": "Board must approve or deny within 90 days of application; applications are typically sent to the first board meeting after receipt (board does not meet in December).",
+      "title": "Application fees and where to file",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Every CILB license holder at each biennial renewal.",
+      "citation": "Fla. Stat. ss. 489.109(1)(c),(e), 489.115(4); CILB FAQ",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "Delinquent fee $250; inactive-status fee $50 (no fee to become inactive during a renewal period). Statutory caps: renewal ≤$250 (certified) / ≤$200 (registered); inactive renewal ≤$50.",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0014",
+      "notes": "Renew by completing, signing, and forwarding the renewal application with fee; delinquency fees may not exceed the renewal fee. Licensees whose licenses were not renewed by expiration are expired (may not practice) — reactivation requires the reactivation application, fee, and CE for the preceding cycle. A null-and-void license (not renewed for an extended period) generally requires starting over, including retaking the exam; reinstatement applications (Form DBPR CILB 26, $100 fee) exist for illness/economic hardship cases at DBPR discretion. Additional $4 per application/renewal funds building-construction industry research/CE per s. 489.109(3).",
+      "timeline": "Certified contractors renew August 31 of every EVEN-numbered year; registered contractors renew August 31 of every ODD-numbered year. Inactive licenses must still be renewed every two years.",
+      "title": "Renewal cycle and renewal/delinquent/inactive fees",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "All active certified and registered contractors at each biennial renewal.",
+      "citation": "Fla. Stat. s. 489.115(4)",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0015",
+      "notes": "14 hours required, including at least 1 hour each in: Workplace Safety, Workers' Compensation, Business Practices, Advanced Module Building Code, and Laws and Rules. General, building, residential, roofing, specialty structure, and glass-and-glazing specialty contractors must also complete 1 hour of Wind Mitigation Methodology within the 14 hours; remainder are general credits. Reduced obligation for licenses issued mid-cycle: <12 months before renewal = no CE; 12-24 months = 7 hours general credits. Online courses available through providers designated C/I or I on the board's CE page. Core-course requirement was removed by the Legislature in 2009.",
+      "timeline": "14 hours due each 2-year renewal cycle (Aug 31 even years certified / odd years registered).",
+      "title": "Continuing education — 14 hours per renewal cycle",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Construction Industry Licensing Board (DBPR)",
+      "applies_when": "Any advertising, bidding, contracting, or permit application by a contractor or business.",
+      "citation": "Fla. Stat. s. 489.119(5); Fla. Stat. s. 489.127",
+      "citation_url": "https://www2.myfloridalicense.com/construction-industry/faqs/",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_CILB_0016",
+      "notes": "Every registered or certified contractor must display the license number on any building-permit application; offer of service; business proposal; bid; contract; advertisement (including websites); sign; and vehicles displaying the contractor/business name. Engaging in contracting without the required certificate or registration is prohibited and subject to cease-and-desist, noncriminal fines (up to $500; $250/day for continuing violations), and criminal penalties under s. 489.127. Work not requiring a state license: cabinets, countertops, paint, wallpaper, carpet, tile, window treatments; handyman jobs under $2,500 total construction cost that are casual/minor/inconsequential are exempt from state licensure (local rules may still apply).",
+      "timeline": "unverified",
+      "title": "Advertising and permit rules — license number display; no contracting without license",
+      "verification": "verified",
+      "area": "construction-cilb"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "You operate in the construction industry and have one or more employees. Unlike the general rule (non-construction employers need 4+ employees, covered in round 1), ANY construction employer with 1+ employees must carry workers' compensation coverage — and owners count: corporate officers and LLC members are considered employees for this purpose unless they hold a valid Certificate of Election to be Exempt.",
+      "citation": "Fla. Stat. ch. 440; Division of Workers' Compensation, Coverage Requirements page",
+      "citation_url": "https://myfloridacfo.com/division/wc/employer/coverage-requirements",
+      "fees": "unverified (premiums set by licensed carriers; not published as a fixed schedule)",
+      "forms": [],
+      "id": "FL_DRAFT_COPS_0001",
+      "notes": "Construction-only rule; builds on round 1 general findings. The Division lists which trades are 'construction industry' at Fla. Admin. Code 69L-6.021 (linked from the coverage page).",
+      "timeline": "unverified (coverage must be in place once the employer meets the threshold; no statutory deadline published on the coverage page)",
+      "title": "Workers' compensation — construction industry mandatory coverage (1+ employees)",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "A construction contractor subcontracts any part of its work. Before the subcontractor begins work, the contractor must verify the subcontractor has workers' compensation coverage (documentation requirements at Fla. Admin. Code 69L-6.032) — if not, the subcontractor's employees become the statutory employees of the contractor, and the contractor pays benefits for any work-related injury, illness, or fatality.",
+      "citation": "Fla. Stat. ch. 440; Division of Workers' Compensation, Coverage Requirements page ('Contractors' section)",
+      "citation_url": "https://myfloridacfo.com/division/wc/employer/coverage-requirements",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_COPS_0002",
+      "notes": "This is the construction-specific operational duty — a general contractor cannot rely on a sub's promise of coverage; uninsured subs' workers legally become the contractor's employees.",
+      "timeline": "Verification must occur BEFORE the subcontractor begins work on the project",
+      "title": "Workers' compensation — construction contractor subcontractor-verification duty",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "A corporate officer of a construction business wants to be exempt from workers' comp coverage for themselves. Corporation must be registered and active with the Florida Division of Corporations; applicant must be listed as an officer in those records AND attest to minimum 10% ownership. Strictly limited: no more than three officers of a corporation or any group of affiliated corporations (including LLCs) may elect to be exempt.",
+      "citation": "Fla. Stat. s. 440.05; Division of Workers' Compensation, Construction Industry exemption page",
+      "citation_url": "https://myfloridacfo.com/division/wc/employer/exemptions/construction",
+      "fees": "$50.00 application fee (non-construction exemptions are free). The Division warns service fees may also apply.",
+      "forms": [
+        {
+          "name": "Certificate of Election to be Exempt — online application (Division of Workers' Compensation)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_COPS_0003",
+      "notes": "Compare round 1 non-construction rules: no fee and no limit on number of exempt corporate officers. Construction is far stricter (3-officer cap, $50 fee). Applicant cannot be affiliated with an ACTIVE Stop Work Order or Working in Violation, and cannot have an associated insufficient payment.",
+      "timeline": "Exemptions valid for 2 years; effective/expiration dates listed on the Certificate. Renewal requires a valid state driver's license not expired more than 30 days at submission.",
+      "title": "Workers' compensation construction exemption — corporate officers (max 3, $50 fee)",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "An LLC member of a construction business wants to be exempt from workers' comp coverage for themselves. LLC must be registered and active with the Florida Division of Corporations; applicant must attest to minimum 10% ownership. Limit: no more than three members of an LLC or any group of affiliated LLCs (including corporations) may elect to be exempt.",
+      "citation": "Fla. Stat. s. 440.05; Division of Workers' Compensation, Construction Industry exemption page",
+      "citation_url": "https://myfloridacfo.com/division/wc/employer/exemptions/construction",
+      "fees": "$50.00 application fee per applicant; service fees may also apply",
+      "forms": [
+        {
+          "name": "Certificate of Election to be Exempt — online application (Division of Workers' Compensation)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_COPS_0004",
+      "notes": "Compare non-construction LLC rule: up to 10 members exempt, no fee. Exemption is issued to the individual, not the business — a separate application per person per entity. A valid state driver's license is required to obtain or renew.",
+      "timeline": "Valid for 2 years; renew before expiration. Customer service: (850) 413-1609, wc_exemption@myfloridacfo.com",
+      "title": "Workers' compensation construction exemption — LLC members (max 3, $50 fee)",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County Department of Regulatory and Economic Resources (RER), Construction Trades Qualifying Board",
+      "applies_when": "You do contracting work in Miami-Dade County in a trade category that is NOT covered by a State of Florida certified contractor license. State-certified contractors need NO further county license (state preempts local licensing; they only register with the County Building Department). County Certificates of Competency cover local-only categories issued under Chapter 10 of the Miami-Dade County Code — general/building/residential contractors and specialty trades (electrical, plumbing, mechanical, roofing, swimming pool, maintenance, and building specialties).",
+      "citation": "Miami-Dade County Code ch. 10; s. 163.211, F.S. (HB 735 preemption, effective July 1, 2021)",
+      "citation_url": "https://www.miami.gov/My-Government/Departments/Building/Florida-Contractor-License-Category-Preemption?lang_update=639140190938860468",
+      "fees": "$315 application fee for the personal certificate, plus an additional $315 for the business portion of the license",
+      "forms": [
+        {
+          "name": "Contractor application (personal certificate, then separate business application)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_COPS_0005",
+      "notes": "Key overlay rule from county-sourced FAQ: 'License by the state means the state approved and issued a license and no further licensing is required by the county.' Since July 1, 2023, HB 735 eliminated many local-only specialty categories (e.g., caulking, flooring, painting, ornamental iron); work in eliminated categories now needs a state or county license only if the scope requires a building permit. RER offers a registration program for state-licensed contractors.",
+      "timeline": "unverified for initial issuance; renewals every two years with continuing education credits required",
+      "title": "Miami-Dade County Certificate of Competency — when required on top of a state license",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County Department of Regulatory and Economic Resources (RER), Contractor Licensing Section",
+      "applies_when": "You apply for a Miami-Dade County Certificate of Competency (general, building, or residential contractor, or a specialty trade) to do permitted work in the county.",
+      "citation": "Miami-Dade County Code ch. 10; Miami-Dade County Building Contractor Licenses / Building Specialty Licenses pages",
+      "citation_url": "http://enet.miamidade.gov/global/license.page?Mduid_license=lic1552936407538433",
+      "fees": "$315 personal certificate application fee; additional $315 for the business portion",
+      "forms": [
+        {
+          "name": "Business Application (post-exam) — filed after personal certificate approved",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_COPS_0006",
+      "notes": "Requirements: 1-4 years proven field experience (trade-dependent), application with employer letters stating dates of employment and description of work plus W-2s covering the employment period, passing exam (70%+). Non-exam specialty categories require 16 hours of classroom training before issuance (incl. 1 hour each: workplace safety/OSHA, business practices, workers' comp, laws and rules). Licensed contractors must maintain general liability and workers' comp insurance in effect at all times; doing business without meeting requirements draws citations under Chapter 10.",
+      "timeline": "Exam: open-book, 70% or above to pass; book list provided at application. Proof of liability and workers' compensation insurance required after Board approval. Apply/inquire: Contractor Licensing Section, 786-315-2880, ContractorLicensing@miamidade.gov, Herbert S. Saffir Permitting and Inspection Center, 11805 SW 26 Street, Miami, FL 33175",
+      "title": "Miami-Dade County contractor certificate — application requirements",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County Department of Regulatory and Economic Resources (RER), Construction Trades Qualifying Board",
+      "applies_when": "You need to know which local license category matches your trade before applying (county categories are distinct from state CILB categories).",
+      "citation": "Miami-Dade County Code ch. 10; Construction Trades Qualifying Board rules and procedures",
+      "citation_url": "http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf",
+      "fees": "unverified (application fee per category; see FL_DRAFT_COPS_0006)",
+      "forms": [],
+      "id": "FL_DRAFT_COPS_0007",
+      "notes": "CTQB lists Building categories (General Contractor, Building Contractor, Residential Contractor — none include roofing or swimming pool), Building Specialties (concrete forming/placing, demolition, drywall, fence, glass & glazing, lathing & plastering, metal awning & storm shutter, misc. metals, pneumatic concreting, prestressed precast, reinforcing steel, roof, rook deck, screen enclosure, sign non-electric, structural steel, swimming pool, unit masonry and others), and Maintenance categories (Building Maintenance, Maintenance Electrician, Mechanical Maintenance, Plumbing Maintenance). Note: HB 735 eliminated some of these categories after 2023-07-01; the current live list on the CTQB page should be checked before relying on it.",
+      "timeline": "unverified",
+      "title": "Miami-Dade County Certificate of Competency — categories issued",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County Department of Regulatory and Economic Resources (RER), Building Department",
+      "applies_when": "Anyone who wants to construct, enlarge, alter, repair, move, demolish, or change the occupancy of a building or structure, or erect/install/alter/repair/remove/convert/replace electrical, gas, mechanical, or plumbing systems regulated by the technical codes in Miami-Dade County.",
+      "citation": "Miami-Dade County Code; Florida Building Code; 'How to Apply for Permits' page",
+      "citation_url": "https://www.miamidade.gov/global/economy/building/how-to-apply-for-permit.page",
+      "fees": "unverified (see Building Fee Schedule; some permits e.g. defective Chinese drywall expedite program waive fees)",
+      "forms": [
+        {
+          "name": "Building permit application (via the County Portal / E-permitting system)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_COPS_0008",
+      "notes": "Application may be filed by an owner, authorized agent, or contractor. The County process covers properties with folios starting with '30' (unincorporated Miami-Dade); each municipality has its own Building Official issuing permits within city limits. Plans must remain at the construction site with the address posted and visible from the street; inspection is required before covering any part of the construction. Special (threshold) inspectors' work is in addition to mandatory Department inspections.",
+      "timeline": "unverified (updated Construction and Permitting Procedures apply; inspections performed Mon-Fri 8:00 a.m.-3:30 p.m.)",
+      "title": "Who may obtain a Miami-Dade building permit — licensed contractor vs owner",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County RER (Contractor Licensing / Building); Fla. Stat. ch. 489",
+      "applies_when": "A construction business wants to pull permits for work in Miami-Dade County. A licensed contractor is required unless the property owner qualifies for and completes the owner-builder process.",
+      "citation": "Fla. Stat. ch. 489 (ss. 489.103(7) owner-builder exemption, 489.126, 489.127); Miami-Dade County Code ch. 10",
+      "citation_url": "https://www.miamidade.gov/global/economy/building/owner-builder-permits.page",
+      "fees": "Owner-builders may request a fee reduction via the Reduced Fee Owner Builder Permit Process Disclosure Statement; commercial owner-builder work capped at $75,000 cost",
+      "forms": [
+        {
+          "name": "Owner-Builder Disclosure Statement (must be reviewed before applying)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_COPS_0009",
+      "notes": "Operational guardrails from the county's Contractor & Owner/Builder Responsibilities page: s. 489.127 prohibits a contractor from letting an uncertified person use his certification and from obtaining permits without first having a contract (first-degree misdemeanor; felony on subsequent violation); s. 489.126 requires permits applied for within 30 days of receiving >10% of the residential contract price, and work started within 90 days of permit issuance; s. 489.1425 requires written notice of the Construction Industry Recovery Fund in residential contracts over $2,500. Owner-builder is limited to the owner's own use/occupancy (not for sale/lease); commercial building at a cost of $75,000 or less in any 12-month period; the owner must provide direct onsite supervision and ensure all hired persons hold required licenses and insurance. For a construction business, the practical rule: commercial work above $75,000 must be done by a licensed contractor.",
+      "timeline": "Owner-builder permit issued only upon passing an owner-builder validation appointment (Small Business and Homeowner Permitting Assistance Team); if validation is failed, a licensed contractor must apply for the permit and complete the work",
+      "title": "Licensed contractor requirement and owner-builder alternative for permits",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County RER, Building Department",
+      "applies_when": "A construction business scopes permitting for a commercial project in unincorporated Miami-Dade County.",
+      "citation": "Miami-Dade County Building Department — Common Permits & Certificates",
+      "citation_url": "https://www.miamidade.gov/global/economy/building/home.page",
+      "fees": "unverified (fee sheets break down cost by permit category; e.g., electrical '01' category covers commercial work)",
+      "forms": [],
+      "id": "FL_DRAFT_COPS_0010",
+      "notes": "Permit types published by the County: Master, Shop Drawings, Revision, Extension, Reissue, Supplemental, Demolition, Change of Contractor, Signs, and Environmental permits; trade categories (electrical categories include temp power for construction — Cat 14, temp for test — Cat 15 elevators/26 commercial-residential); Certificate of Occupancy/Completion required after final inspection and satisfaction of completion holds (temporary CO/TCC valid 90 days, extensions possible with trade and Fire approvals). County Building Fee Schedule governs permit fees; electrical permit page: http://www.miamidade.gov/global/economy/building/permits/electrical.page.",
+      "timeline": "unverified",
+      "title": "Miami-Dade permit types relevant to commercial construction work",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "U.S. Occupational Safety and Health Administration (federal)",
+      "applies_when": "A construction business operates in Florida and needs to know which agency's safety standards apply to its jobsites.",
+      "citation": "OSH Act s. 18; OSHA State Plans FAQ; OSHA standard interpretation (2010-10-28)",
+      "citation_url": "http://www.osha.gov/laws-regs/standardinterpretations/2010-10-28",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_COPS_0011",
+      "notes": "Verified negative finding: Florida does NOT have an OSHA-approved state plan — OSHA states expressly that 'Florida does not have an OSHA-approved state plan,' and OSHA's state-plan FAQ lists the 22 approved state-plan states/territories without Florida. Consequence: private-sector construction workers in Florida are covered DIRECTLY by federal OSHA (no Florida-specific construction safety standards overlay). Federal OSHA standards (e.g., 29 CFR 1926 construction standards) apply as written; there is no state construction safety program to register with or state-specific safety permit to obtain. State and local government workers are generally not covered by federal OSHA in non-state-plan states.",
+      "timeline": "unverified",
+      "title": "Workplace safety jurisdiction — Florida has no OSHA-approved state plan",
+      "verification": "verified",
+      "area": "construction-operations"
+    },
+    {
+      "agency": "Miami-Dade County, Regulatory and Economic Resources (RER) — Contractor Licensing Section / Construction Trades Qualifying Board (CTQB)",
+      "applies_when": "Any person, firm, joint venture, or corporation acting as a contractor, subcontractor, master, journeyman, or installer in the construction trades in Miami-Dade County (incorporated and unincorporated areas)",
+      "citation": "Code of Miami-Dade County, Chapter 10, Sec. 10-3 (certificate of competency required to do business); CTQB Rules and Procedures Sec. R10-104 (financial responsibility)",
+      "citation_url": "http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf",
+      "fees": "'unverified' (application/exam/license fees not found on the official pages opened)",
+      "forms": [],
+      "id": "FL_DRAFT_CLOC_0001",
+      "notes": "The verbatim Sec. 10-3 text (unlawful to contract without a current valid certificate of competency from the State CILB, the State Electrical Contractors Licensing Board, or the County CTQB; county certificate holders must also register with the State per FS 489.115/489.513; non-compliant bids on county/municipal public works are null and void) was read in a third-party copy; the CTQB Rules PDF (official) is the county's authoritative implementation of Chapter 10. CTQB Division A = general/specialty building trades; Division B = electrical, mechanical, plumbing, gas. Contractor Licensing Section: 11805 SW 26 St, Room 230, 786-315-2880.",
+      "timeline": "'unverified'",
+      "title": "County certificate of competency required to contract in Miami-Dade",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Construction Trades Qualifying Board",
+      "applies_when": "A specialty-trade contractor seeking a Miami-Dade county certificate in a trade that the Board determines does not need technical examination to determine proficiency",
+      "citation": "CTQB Rules and Procedures, Sec. R10-105 (Updated February 28, 2024)",
+      "citation_url": "http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf",
+      "fees": "CE course sponsor registration $200; CE course registration $25/credit hour, max $100 per course (Sec. R10-106.10) — official amounts",
+      "forms": [],
+      "id": "FL_DRAFT_CLOC_0002",
+      "notes": "Published non-exam specialty categories include: Canvas Awning, Caulking, Concrete Finish, Door, Finish Carpentry, Flagpole, Flooring, Garage and Industrial Door, Gypsum Finish Drywall, Gypsum Drywall Installer, Insulation and Acoustic Tile, Decorative Concrete and Masonry Fence, Limited Residential Repair (1- and 2-family dwellings and townhouses, max 3 stories; structural and MEP work must be subcontracted to licensed trades), Metal Partition, Ornamental Metals Iron, Painting, Painting and Waterproofing, Public Seating, Sheet Metal Gutter and Downspout, Shower and Tub Enclosure, Tennis Court Surfacing, Thatch Roof, Waterproofing (Limited); Mechanical: Pneumatic Tube Conveyor System; Plumbing: Portable Chemical Toilet. Each has a 1-3 year trade experience prerequisite.",
+      "timeline": "'unverified'",
+      "title": "Non-examination specialty contractor certificates (Division A)",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Construction Trades Qualifying Board",
+      "applies_when": "A contractor seeking a Miami-Dade county certificate in an examined category (general building, engineering, mechanical, electrical, plumbing trades)",
+      "citation": "CTQB Rules and Procedures, Sec. R10-104.1/104.3 (financial responsibility); Board interpretations Aug 26, 2010 (proven experience) and Dec 4, 2018 (journeyman experience)",
+      "citation_url": "http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf",
+      "fees": "'unverified'",
+      "forms": [],
+      "id": "FL_DRAFT_CLOC_0003",
+      "notes": "Division A exam categories published in CTQB agendas (official) include: Building Contractor, Residential Contractor, General Engineering Contractor, Pipeline Engineering Contractor, Paving Engineering Contractor, Concrete Works Engineering Contractor, Roofing, Swimming Pool, Drywall, Glass & Glazing, Lathing & Plastering, Fence, Structural Steel Erection, Metal Awning & Storm Shutters, Insulation & Acoustical Tile, Building Maintenance, Waterproofing. Division B exam categories (official agendas) include Master Electrician / Master Electric Utility / Master Low Voltage / Burglar Alarm / Fire Alarm / Sign Electrician / TV Antenna / Maintenance Electrician / Journeyman Electrician; Master Air Conditioning (Unlimited and Limited) / Master General Mechanical / Master Refrigeration & AC / Master Sheet Metal / Master Insulation / Master Room AC / Master Ammonia Refrigeration / Master Steam Generator Boiler & Piping / Master Transporting Assembly Install / Mechanical Maintenance / Journeyman mechanical trades; Master Plumber / Journeyman Plumber / Master & Journeyman Gas Fitter / Plumbing Maintenance. Proven experience = 1800 hours at minimum wage per year; qualifying-agent financial responsibility = clean national consumer credit report (no unsatisfied judgments/liens) or Board-approved payment plan.",
+      "timeline": "'unverified'",
+      "title": "CTQB examination categories and qualification requirements",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Board and Code Administration",
+      "applies_when": "Any owner, authorized agent, or contractor constructing, enlarging, altering, repairing, moving, demolishing, or changing occupancy of a building in unincorporated Miami-Dade County (folios starting with '30')",
+      "citation": "'How to Apply for Permits' (miamidade.gov); County Administrative Order AO-04-115 (permit process and procedures)",
+      "citation_url": "https://www.miamidade.gov/global/economy/building/how-to-apply-for-permit.page",
+      "fees": "'unverified'",
+      "forms": [
+        {
+          "name": "Building Permit Application (includes Notice of Commencement, Release of Lien, Affidavit, and guidelines)",
+          "url": "http://www.miamidade.gov/permits/home.asp?cat=pubworks"
+        }
+      ],
+      "id": "FL_DRAFT_CLOC_0004",
+      "notes": "County process (per AO-04-115, official): file a complete application on the Building Department form with the required fee; application accompanied by two sets of complete plans and specifications; Building Department assigns a tracking processing number, reviews plans for code compliance, and routes them to Planning & Zoning and Environmental Resources Management (DERM) for new residential/commercial construction; applicant notified within 2 days of completion of the last review; if additional information is not submitted or the permit is not purchased within 60 calendar days of notification, the application/permit becomes null and void. In-person: Herbert S. Saffir Permitting and Inspection Center, 11805 SW 26 St, Miami 33175, 786-315-2000; Stephen P. Clark Center, 111 NW 1st St, 11th Floor, 305-375-2877. Each municipality in the county has its own Building Official for work inside city limits.",
+      "timeline": "Application becomes null and void 60 calendar days after readiness notification if not purchased/completed (AO-04-115)",
+      "title": "Building permit application process (unincorporated county)",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Construction, Permitting & Building Code Division",
+      "applies_when": "A licensed/qualified contractor applying for subsidiary or stand-alone permits in the electrical, mechanical, plumbing, roofing, or gas trades (including subsidiary categories tied to a master building permit)",
+      "citation": "'E-Permitting for Contractors' (miamidade.gov)",
+      "citation_url": "https://www.miamidade.gov/global/permit.page?Mduid_permit=per1773673147194793",
+      "fees": "Permit fees paid online by credit card or e-Check — amounts 'unverified'",
+      "forms": [
+        {
+          "name": "Online e-Permitting forms (trade-specific categories)",
+          "url": "https://www.miamidade.gov/global/permit.page?Mduid_permit=per1773673147194793"
+        }
+      ],
+      "id": "FL_DRAFT_CLOC_0005",
+      "notes": "E-permitting lets qualified contractors apply online for subsidiary and stand-alone permits in the electrical, mechanical, plumbing, roofing and gas trades, pay fees, and print the permit card — no in-person visit. Available 7 days/week, 2 a.m. to 5 p.m. Forms are reviewed/approved programmatically if valid permit and jobsite data are entered. Stand-alone commercial reroofing cannot be obtained through e-permitting (subsidiary roofing tied to a master building permit only; Category 96 metal roof panels allowed for licensed roofing contractors). The general Portal supports 'Submit your permit or check status here' and 'Schedule/Cancel/Track Inspections'.",
+      "timeline": "Available 7 days/week 2 a.m.–5 p.m. (permit application/issuance)",
+      "title": "E-Permitting portal for qualified contractors",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Construction, Permitting & Building Code Division; Miami-Dade Fire Rescue — Fire Prevention Division",
+      "applies_when": "A construction business building new commercial structures, altering/adding to commercial buildings, or installing fire protection systems in unincorporated Miami-Dade County",
+      "citation": "'Miami-Dade County Permit - New Construction' (Fire Rescue); 'Find a Permit' index (miamidade.gov)",
+      "citation_url": "https://www.miamidade.gov/global/permit.page?Mduid_permit=per152759981883570",
+      "fees": "'unverified'",
+      "forms": [
+        {
+          "name": "Fire Rescue Permit Forms & Checklists",
+          "url": "https://www.miamidade.gov/global/permit.page?Mduid_permit=per152759981883570"
+        }
+      ],
+      "id": "FL_DRAFT_CLOC_0006",
+      "notes": "Published commercial permit types: master Building Permit (new construction/addition/alteration) with trade categories (electrical, mechanical, plumbing, gas, roofing); Fire Rescue construction inspections for commercial buildings (final inspection required for Certificate of Occupancy; sprinkler system rough, underground, pressure test, and final; fire alarm inspection; standpipe; fire pump start-up; fire suppression system; temporary CO inspection; water main extension/fire hydrant; entrance features) — New Construction Bureau 786-315-2770. Fire final required for CO on all commercial buildings incl. apartments/townhomes; single-family homes not inspected by Fire Rescue. County also publishes optional plan-review accelerators: Concurrent Plans Processing (CPP, electronic multi-department routing), Concierge Plan Review for large commercial buildings, and Green Building Expedited review per County Code Sec. 8-6.",
+      "timeline": "'unverified'",
+      "title": "Commercial construction permit types (building + fire construction)",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Construction, Permitting & Building Code Division",
+      "applies_when": "Any permitted construction project under county jurisdiction, at each stage before work is covered up",
+      "citation": "'Building Inspections' (miamidade.gov permits index); 'Inspection Routes & Results' (RER); 'Fire Permit Inspection' (RER)",
+      "citation_url": "https://wwwx.miamidade.gov/Apps/RER/Mobile3/Home/PermitRoutes",
+      "fees": "Reinspection fees apply if inspection not ready ('unverified' amounts); cancellation after 4:00 p.m. triggers a cancellation fee ('unverified' amount)",
+      "forms": [
+        {
+          "name": "Special Inspector Employment Notice (owner-hired special inspector)",
+          "url": "http://www.miamidade.gov/permits/home.asp?cat=build&subcat=inspections"
+        },
+        {
+          "name": "Threshold (Special) Inspector Building Affidavit / Building Completion Statement",
+          "url": "http://www.miamidade.gov/permits/home.asp?cat=build&subcat=inspections"
+        }
+      ],
+      "id": "FL_DRAFT_CLOC_0007",
+      "notes": "Official sequence/logistics: an inspection is required before covering any part of construction; inspections performed 8 a.m.–3:30 p.m., Monday–Friday; approved plans and permit must be at the jobsite with the address posted and visible from the street; inspectors may conduct inspections wearing body cameras; inspectors take calls 7:00–8:00 a.m. only; routes are reordered 7:00–8:15 a.m. — verify the day's order after 8:15. For fire inspections: must be requested online the day prior before 4:00 p.m.; inspections scheduled the day before a county holiday roll to the next business day; an approved electrical rough inspection is required before scheduling a fire alarm inspection. Special/Threshold inspectors hired by the owner perform additional inspections under an approved structural inspection plan — these are in addition to mandatory county inspections; the threshold inspector submits an affidavit and completion statement; Certificate of Occupancy issued after all mandatory inspections pass. Live route tracking: 'Inspection Routes & Results' (permit/CO/boiler number shows today's route, inspector photo, and your stop).",
+      "timeline": "Inspection requested day prior before 4:00 p.m. (fire); Building inspections M–F 8 a.m.–3:30 p.m.",
+      "title": "Building inspection sequence, scheduling, and logistics",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Impact Fee Section (786-315-2670)",
+      "applies_when": "Any building permit application for development activity in Miami-Dade County (no impact fees for sheds, swimming pools, or similar accessory structures)",
+      "citation": "'Impact Fees' (miamidade.gov); Board Ordinance 23-68 (mobility fee replaces road impact fee, effective Dec 31, 2023)",
+      "citation_url": "http://www.miamidade.gov/zoning/impact-fees.asp",
+      "fees": "Impact fee dollar amounts: 'unverified' (schedule document not readable in this environment)",
+      "forms": [
+        {
+          "name": "Impact Fees Online Payment (requires process number)",
+          "url": "https://miamidade.gov/apps/rer/ImpactFeesPayments/"
+        }
+      ],
+      "id": "FL_DRAFT_CLOC_0008",
+      "notes": "Impact fees must be paid in full before any building permit for development activity is issued. County collects for: Mobility (formerly road impact; countywide, all applications from Dec 31, 2023 assessed the mobility fee), Fire and Emergency Services (paid to the County for all municipalities except Miami, Miami Beach, Hialeah, Coral Gables, Key Biscayne which have their own fire departments), Police Services and Parks (usually paid to the cities directly — County currently collects for Palmetto Bay and Miami Lakes only), and Educational Facilities (transmitted to the School Board; paid countywide to the County). Each municipality may also impose its own impact fees — call the city with jurisdiction. Impact Fee Section: Miami-Dade Permitting and Inspection Center, 11805 SW 26 St, 786-315-2670, 7:30 a.m.–4 p.m. M–F.",
+      "timeline": "Fees due before permit issuance (pre-development cost)",
+      "title": "County impact fees for development activity",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Board and Code Administration; DERM",
+      "applies_when": "Commercial construction projects needing DERM environmental review, private sanitary sewer operating permits, or projects subject to county plan-review and code-administration surcharges",
+      "citation": "2025-08-14 Advisory Memo re Code Administration Fee Adjustment (R-606-25); DERM Comprehensive Development Master Plan instructions (Implementing Order 4-42)",
+      "citation_url": "http://wwwx.miamidade.gov/resources/economy/board-and-code/memos/2025-08-14-code-administration.pdf",
+      "fees": "Code administration fee: $0.60 per $1,000 of work valuation, computed on square footage at $49.20/sq ft (occupancy groups S1, F) or $71.09/sq ft (all other groups) effective 10/1/2025. DERM CDMP application review fee $920. PSO sewer permit: $0.12/LF (6 in.), $0.20/LF (8 in.), $0.26/LF (>8 in.), $175 per pump station, plus 7.5% county surcharge. Building permit surcharge components: 'unverified'.",
+      "forms": [
+        {
+          "name": "PSO Annual Operating Permit application",
+          "url": "http://www.miamidade.gov/permits/library/pso-permit-app.pdf"
+        }
+      ],
+      "id": "FL_DRAFT_CLOC_0009",
+      "notes": "Fee components seen on a City of Miami Beach copy of Miami-Dade Code Appendix A (NOT verified on an official county page): Florida Building Code surcharge 1.5% of permit fee (min $2.00), code compliance program surcharge 0.60 per $1,000 valuation, building code administrator/inspector surcharge 1.5% (min $2.00), sanitation surcharge 0.30% of project cost (min $15.00), employee training/technology surcharge 6% of each permit fee. Treat these as unverified until read in an official county document.",
+      "timeline": "'unverified'",
+      "title": "Published review, environmental, and code-administration fee schedules",
+      "verification": "verified",
+      "area": "construction-local"
+    },
+    {
+      "agency": "Miami-Dade County, RER — Contractor Licensing Section / Building Department",
+      "applies_when": "A construction business or contractor applying for county building permits or renewing registrations",
+      "citation": "Code of Miami-Dade County, Ch. 10 (contractor licensing); Florida AG Opinion re state-certified contractors and local requirements",
+      "citation_url": "http://miamidade.gov/resources/economy/board-and-code/ctqb/ctqb-rules-procedures.pdf",
+      "fees": "'unverified'",
+      "forms": [],
+      "id": "FL_DRAFT_CLOC_0010",
+      "notes": "Interaction with round 1 local findings (do not duplicate): a construction business needs a Miami-Dade County Local Business Tax Receipt (BTR) for its place of business in addition to its trade credential — state-certified contractors exhibit the state license and pay the occupational (BTR) license fee plus building permit fee; county-credentialed (CTQB) contractors use their Certificate of Competency. Municipality building departments (e.g., Doral's published process, which mirrors county practice) require the license plus workers' compensation and liability insurance certificates to register and pull permits; workers' comp exemptions trigger a Notice to Owner filing with the permit application. County-specific: the CTQB 'misleading contractor names' rule (R10-107) bars business names that imply a scope of work the contractor is not certified for. Qualifying agent must have officer/partner/principal-stockholder interest in the entity (Ch. 10, Sec. 10-6(E)(5)).",
+      "timeline": "'unverified'",
+      "title": "Miami-Dade-specific contractor obligations (license + BTR + insurance at permit application)",
+      "verification": "unverified",
+      "area": "construction-local"
     }
   ],
   "open_questions": [
@@ -1203,6 +1813,22 @@
     "[employer-obligations] IRS EIN: fax/mail processing times and Form SS-4 submission addresses/phone number not captured from irs.gov in this pass (online path fully verified).",
     "[employer-obligations] Florida DWC exemption application URL and exemption fee schedule not captured from myfloridacfo.com; only the exemption's existence and FY 2024/25 aggregate fee collection ($5,201,650) confirmed.",
     "[employer-obligations] E-Verify enrollment cost (third-party sources say free) not confirmed on a fetched official page; e-verify.gov pages on this pass did not state a fee schedule.",
-    "[employer-obligations] Whether a restaurant owner counts corporate-officer/LLC-member owners toward the 25-employee E-Verify threshold (headcount measured company-wide vs Florida payroll) is inferred from secondary sources (floridalawfirmnews.com), not from FloridaCommerce pages — needs official confirmation."
+    "[employer-obligations] Whether a restaurant owner counts corporate-officer/LLC-member owners toward the 25-employee E-Verify threshold (headcount measured company-wide vs Florida payroll) is inferred from secondary sources (floridalawfirmnews.com), not from FloridaCommerce pages — needs official confirmation.",
+    "[construction-cilb] The $245/$145 initial-certification fee windows and the $205/$105 initial-registration windows come from the official CILB application PDF instruction checklists (eff. July 2024); confirm they remain current before quoting — verify against the live application on the official CILB page.",
+    "[construction-cilb] Exact current exam fee amounts (vendor Professional Testing, Inc. / Pearson VUE) are not stated on the official pages read; only statutory caps ($350 combined) are confirmed.",
+    "[construction-cilb] FAC Chapter 61G4 rule details (e.g., 61G4-15.0021 board appearance rule, 61G4-16.009 exam retake rule, 61G4-12 fee rules, 61G4-15 financial-responsibility definitions) were not read directly on flrules.org in this pass — flrules.org page navigation was not attempted; rule-level amounts (actual renewal fees in dollars) should be verified there.",
+    "[construction-cilb] Reciprocity/endorsement list of states and NASCLA endorsement mechanics (CILB form 32 / CILB 10) are official per the FAQ but the list of reciprocity states and current forms were not opened.",
+    "[construction-cilb] Local registration option: post-2024 local-licensing regime (HB 735 / SB 1142 changes, 489.117 registration for contractors whose local jurisdiction eliminated local licensing) was touched only via legislative analyses; the current official CILB registration application requirements should be confirmed on myfloridalicense.com before advising a registered-path client.",
+    "[construction-cilb] s. 489.113(2) cease-and-desist and s. 489.129 discipline/grounds (including disqualifying application factors beyond criminal history) were not read directly in this pass.",
+    "[construction-operations] Exact URL of the Miami-Dade County Contractor Licensing Section's online application/registration portal (for county Certificates of Competency and for state-certified contractors registering with the County) — not captured in this pass; contact is 786-315-2880 / ContractorLicensing@miamidade.gov.",
+    "[construction-operations] Whether the $315 personal + $315 business county application fees are current — the published license pages carry no effective date; fee schedule may have changed.",
+    "[construction-operations] HB 735 category cleanup: the current live list of Miami-Dade County certificate categories (post-2023-07-01) was not fetched directly from the CTQB page in this pass; the category list in FL_DRAFT_COPS_0007 may include eliminated categories.",
+    "[construction-operations] Division of Workers' Compensation processing time for construction exemption applications specifically — not published on the construction exemption page (general 10-business-day stat from round 1 was for all online exemption applications FY 2024/25).",
+    "[construction-operations] State CILB (Construction Industry Licensing Board) license renewal and continuing-education obligations for state-certified contractors — construction-vertical initial licensing may belong to another part of this round; not captured here.",
+    "[construction-operations] Miami-Dade municipal permitting differences: each municipality has its own Building Official; municipal permit requirements, fee schedules, and contractor registration rules were not researched (scope was the County).",
+    "[construction-operations] No Florida-specific construction safety permit, registration, or state safety program was found published for private-sector construction operations beyond federal OSHA and workers' compensation compliance — recorded as a verified negative.",
+    "[construction-local] The 'See the Impact Fee Schedule' link on the official Impact Fees page (miamidade.gov/zoning/impact-fees.asp) resolved to the county privacy/notice page in this environment (bot/redirect issue); actual Mobility/Fire/Park/Police/School impact fee dollar amounts were not read from an official county source. The online 'Pay Impact Fees' tool requires a process number and gives no published schedule.",
+    "[construction-local] No official Miami-Dade County page found that publishes the valuation-based building permit fee formula or a current fee table for commercial construction permits; amounts therefore not stated in this file.",
+    "[construction-local] Commercial new-construction permit types (permit numbers, categories, fee codes for master building permits) are not detailed on the county permit pages opened; the county 'Find a Permit' index lists Building Permit Application, concierge review, and CPP but not a commercial new-construction checklist page."
   ]
 }
