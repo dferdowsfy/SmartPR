@@ -1,0 +1,192 @@
+{
+  "area": "formation",
+  "jurisdiction": "fl",
+  "open_questions": [
+    "The full text of the cited Florida Statutes sections (605.0201, 605.0113, 605.0212, 607.0202, 607.0505, 607.1622, 865.09) could not be re-read from Online Sunshine (flsenate.gov) during this session — a fetch timed out and was not retried per instruction. Requirements were verified against the official Department of State / Division of Corporations pages that cite those sections, not against the statute text itself. A follow-up read of the current Online Sunshine text would strengthen the citations.",
+    "Processing timelines: the Division states filings are processed in the order received and publishes no committed turnaround time on the pages read, so timelines for new-entity filings and fictitious-name registrations are recorded as unverified.",
+    "The direct form.sunbiz.org PDF URLs for the LLC Articles of Organization and the profit-corporation Articles of Incorporation mail-filing forms were not captured verbatim in this session; the online filing paths are confirmed but the printable-form links are marked unverified.",
+    "No restaurant-specific rules were found at this layer — entity formation, registered-agent, annual-report, and fictitious-name rules are entity-type based, not industry based. Restaurant-specific permitting/licensing belongs to a separate research area."
+  ],
+  "requirements": [
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "You want to create a Florida limited liability company (domestic LLC)",
+      "citation": "Fla. Stat. s. 605.0201 (cited by the Department of State instructions page)",
+      "citation_url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-llc/instructions/",
+      "fees": "$100 Articles of Organization filing fee + $25 registered-agent designation (required). Optional: certified copy $30; certificate of status $5.",
+      "forms": [
+        {
+          "name": "File or Correct Florida LLC Articles of Organization (online)",
+          "url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-llc/"
+        },
+        {
+          "name": "Articles of Organization for Florida Limited Liability Company (PDF, for mail filing with check/money order)",
+          "url": "unverified — the Department of State instructions page links a printable PDF, but its direct form.sunbiz.org URL was not captured in this session"
+        }
+      ],
+      "id": "FL_DRAFT_FORMATION_0001",
+      "notes": "Minimum contents per the instructions: distinguishable name containing Limited Liability Company/LLC/L.L.C.; principal office street address; mailing address (P.O. Box acceptable); registered agent name and Florida street address (no P.O. Box) with the agent's signed acceptance of s. 605.0113(3) obligations; authorized-representative signature; valid email. Purpose and manager/authorized-representative names are optional for non-professional LLCs. Entity existence begins when the Division receives and files the Articles unless an acceptable alternate effective date is specified (no more than 5 business days before, or 90 days after, receipt). Filing is online via efile.sunbiz.org or by mail.",
+      "timeline": "unverified — the Department of State states documents are processed in the order received; no committed processing-time figure is published on the pages read.",
+      "title": "File Articles of Organization to form a Florida LLC",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "Your LLC is on file with the Division (first report due the calendar year after formation/effective year)",
+      "citation": "Fla. Stat. s. 605.0212 (annual report) and s. 607.193(2)(b) (late fee, cited in Department of State annual-report FAQ)",
+      "citation_url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/",
+      "fees": "$138.75 if filed January 1–May 1; a $400 late fee is added to reports filed after May 1 (total $538.75); the late fee cannot be waived.",
+      "forms": [
+        {
+          "name": "Annual Report filing (online at Sunbiz.org)",
+          "url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/"
+        }
+      ],
+      "id": "FL_DRAFT_FORMATION_0002",
+      "notes": "The report confirms or updates the entity's information on Division records; it is not a financial statement. Per the Department of State, LLCs formed October 1–December 31 can list a January 1 effective date to defer the first annual report to the following calendar year.",
+      "timeline": "Filing window opens January 1 each year and closes May 1. Failure to file by the third Friday of September results in administrative dissolution at close of business on the fourth Friday of September.",
+      "title": "File the annual report for a Florida LLC",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "Forming or operating a Florida LLC (a registered agent is required at formation and on an ongoing basis)",
+      "citation": "Fla. Stat. s. 605.0113 (cited by the Department of State LLC instructions page)",
+      "citation_url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-llc/instructions/",
+      "fees": "$25 registered-agent designation fee at formation (included in the $100 + $25 filing total).",
+      "forms": [],
+      "id": "FL_DRAFT_FORMATION_0003",
+      "notes": "Who may serve, per the instructions: an individual or a legal entity that will accept service of process; a business entity with an active Florida filing or registration may serve; an entity cannot serve as its own registered agent, but an individual or principal associated with the business may. The agent must have a physical street address in Florida (P.O. Box not acceptable) and must sign the application, confirming familiarity with and acceptance of the s. 605.0113(3) obligations. If a business entity is the agent, a principal (individual) of that entity must sign. Online filings: typed name counts as signature under s. 15.16, F.S.",
+      "timeline": "Agent designated in the Articles of Organization at formation; changes are filed with the Division as they occur.",
+      "title": "Designate and maintain a registered agent for the LLC",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "You want to create a Florida for-profit corporation (domestic profit corporation)",
+      "citation": "Fla. Stat. s. 607.0202 (cited by the Department of State instructions page)",
+      "citation_url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-profit-corporation/instructions/",
+      "fees": "$35 filing fee + $35 registered-agent designation (required). Optional: certified copy $8.75; certificate of status $8.75.",
+      "forms": [
+        {
+          "name": "File Articles of Incorporation for a Florida Profit Corporation (online)",
+          "url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-profit-corporation"
+        },
+        {
+          "name": "Articles of Incorporation for Florida Profit Corporation (PDF, for mail filing with check/money order)",
+          "url": "unverified — the Department of State instructions page links a printable PDF, but its direct form.sunbiz.org URL was not captured in this session"
+        }
+      ],
+      "id": "FL_DRAFT_FORMATION_0004",
+      "notes": "Minimum contents per the instructions: distinguishable name containing Corporation, Company, Incorporated, Corp., Inc., or Co.; principal office street address; mailing address (P.O. Box acceptable); registered agent name and Florida street address (no P.O. Box) with the agent's signature accepting the s. 607.0505 obligations; incorporator name, address, and signature; number of authorized stock shares (must be at least one); valid email. Purpose and officer/director names are optional. Corporate existence begins when the Division receives and files the Articles unless an acceptable alternate effective date is specified (no more than 5 business days before, or 90 days after, receipt). Corporations incorporating October 1–December 31 can list a January 1 effective date to defer the first annual report one calendar year.",
+      "timeline": "unverified — the Department of State states documents are processed in the order received; no committed processing-time figure is published on the pages read.",
+      "title": "File Articles of Incorporation to form a Florida for-profit corporation",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "Your corporation is on file with the Division (first report due the calendar year after incorporation)",
+      "citation": "Fla. Stat. s. 607.1622 (annual report) and s. 607.193(2)(b) (late fee, cited in Department of State annual-report FAQ)",
+      "citation_url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/",
+      "fees": "$150 if filed January 1–May 1; a $400 late fee is added to reports filed after May 1 (total $550); the late fee cannot be waived.",
+      "forms": [
+        {
+          "name": "Annual Report filing (online at Sunbiz.org)",
+          "url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/"
+        }
+      ],
+      "id": "FL_DRAFT_FORMATION_0005",
+      "notes": "The report confirms or updates the corporation's information on Division records; it is not a financial statement. The Department of State notes administratively dissolved entities may be reinstated by submitting the reinstatement application and the fees then due.",
+      "timeline": "Filing window opens January 1 each year and closes May 1. Failure to file by the third Friday of September results in administrative dissolution at close of business on the fourth Friday of September.",
+      "title": "File the annual report for a Florida for-profit corporation",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "Incorporating or operating a Florida for-profit corporation (a registered agent is required at formation and on an ongoing basis)",
+      "citation": "Fla. Stat. s. 607.0505 (cited by the Department of State profit-corporation instructions page)",
+      "citation_url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-profit-corporation/instructions/",
+      "fees": "$35 registered-agent designation fee at incorporation (included in the $35 + $35 filing total).",
+      "forms": [],
+      "id": "FL_DRAFT_FORMATION_0006",
+      "notes": "Who may serve, per the instructions: an individual or a legal entity that will accept service of process; a business entity with an active Florida filing or registration may serve; an entity cannot serve as its own registered agent, but an individual or principal associated with the business may. The agent must have a physical street address in Florida (P.O. Box not acceptable) and must sign the application, confirming familiarity with and acceptance of the s. 607.0505 obligations. If a business entity is the agent, a principal (individual) of that entity must sign. Online filings: typed name counts as signature under s. 15.16, F.S.",
+      "timeline": "Agent designated in the Articles of Incorporation at formation; changes are filed with the Division as they occur.",
+      "title": "Designate and maintain a registered agent for the corporation",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "A person or business transacts business in Florida under any name other than its legal name (e.g., a restaurant trading under a brand name different from the LLC/corporation name)",
+      "citation": "Fla. Stat. s. 865.09 (cited by the Division of Corporations fictitious-name FAQ)",
+      "citation_url": "https://efile.sunbiz.org/ficfaq.html",
+      "fees": "$50 non-refundable processing fee. Optional: certificate of status $10; certified copy $30.",
+      "forms": [
+        {
+          "name": "Application for Registration of Fictitious Name (form CR4E001, online or by mail)",
+          "url": "http://form.sunbiz.org/pdf/CR4E001.pdf?Sid=1"
+        },
+        {
+          "name": "Fictitious name online filing (efile.sunbiz.org)",
+          "url": "https://efile.sunbiz.org/ficfaq.html"
+        }
+      ],
+      "id": "FL_DRAFT_FORMATION_0007",
+      "notes": "Application contents: the fictitious name as it is to be registered (a fictitious name may not include entity suffixes like Inc., LLC, Corp. unless at least one registrant is that type of entity); mailing address of the business; county of principal place of business; registrant/owner details. Newspaper advertising: the name must be advertised at least once in a newspaper as defined in ch. 50, F.S., in the county where the principal place of business is located — no proof of advertisement is required; the applicant certifies the advertisement in the signature block. Registration is for public notice only and does not reserve the name against future use or confer trademark rights. The Division does not require registration when the applicant is an entity already filed/in good standing with the Division and is not transacting business under any other name (exceptions also apply for attorneys and licensed professionals). Banks/financial institutions and local occupational-license authorities (s. 205.023, F.S.) may require proof of registration.",
+      "timeline": "unverified — no processing-time commitment was published on the pages read.",
+      "title": "Register a fictitious name (DBA) with the Division of Corporations",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Corporations",
+      "applies_when": "Your fictitious-name registration is approaching its 5th-year expiration",
+      "citation": "Fla. Stat. s. 865.09 (registration, renewal, and fee schedule; validity/expiration period published in the Division fictitious-name FAQ)",
+      "citation_url": "https://efile.sunbiz.org/ficfaq.html",
+      "fees": "$50 non-refundable renewal processing fee (statutory fee schedule for fictitious names).",
+      "forms": [
+        {
+          "name": "Fictitious name renewal (same form CR4E001 / uniform business report, per s. 865.09)",
+          "url": "http://form.sunbiz.org/pdf/CR4E001.pdf?Sid=1"
+        }
+      ],
+      "id": "FL_DRAFT_FORMATION_0008",
+      "notes": "Address changes must be made by letter or other written communication to the Division of Corporations. Failure to comply with s. 865.09 carries statutory penalties; among other consequences the business may not maintain court actions until the section is complied with.",
+      "timeline": "Registration is valid for 5 years and expires December 31 of the 5th year. The Division mails a renewal application to the last reported mailing address at least 3 months before expiration, so the mailing address must be kept current with the Division.",
+      "title": "Renew the fictitious-name registration every five years",
+      "verification": "verified"
+    }
+  ],
+  "researched": "2026-10-13",
+  "sources": [
+    {
+      "title": "Instructions for Articles of Organization (FL LLC) — Florida Department of State, Division of Corporations",
+      "type": "agency_page",
+      "url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-llc/instructions/"
+    },
+    {
+      "title": "Florida Limited Liability Company — Division of Corporations (efile overview)",
+      "type": "agency_page",
+      "url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-llc/"
+    },
+    {
+      "title": "Instructions for Articles of Incorporation (FL Profit) — Florida Department of State, Division of Corporations",
+      "type": "agency_page",
+      "url": "https://dos.fl.gov/sunbiz/start-business/efile/fl-profit-corporation/instructions/"
+    },
+    {
+      "title": "File Early Florida: Annual Report Filing Deadline on May 1 — Florida Department of State press release (annual report FAQ, fees, late fee, dissolution)",
+      "type": "fee_schedule",
+      "url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/"
+    },
+    {
+      "title": "Fictitious Names — Frequently Asked Questions (sunbiz efile)",
+      "type": "agency_page",
+      "url": "https://efile.sunbiz.org/ficfaq.html"
+    },
+    {
+      "title": "Application for Registration of Fictitious Name (form CR4E001) — form.sunbiz.org",
+      "type": "form",
+      "url": "http://form.sunbiz.org/pdf/CR4E001.pdf?Sid=1"
+    }
+  ],
+  "vertical": "restaurants"
+}
