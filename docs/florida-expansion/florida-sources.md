@@ -131,3 +131,30 @@ Every source below was actually opened by a research worker. URLs copied verbati
 - [Mobility fee ordinance schedule (MinMatters Y2024/241708)](https://www.miamidade.gov/govaction/legistarfiles/MinMatters/Y2024/241708min.pdf) — statute
 - [Q1 2024 Report: collection of mobility, impact, and water/sewer connection fees](https://www.miamidade.gov/govaction/legistarfiles/Matters/Y2024/241769.pdf) — agency_page
 - [City of Miami Beach Appendix A copy of Miami-Dade Code fee surcharges (used only for 'unverified' surcharge line items)](https://miamibeach.novusagenda.com/agendapublic/AttachmentViewer.ashx?AttachmentID=29392&ItemID=14414) — fee_schedule
+
+## str-state (13 requirements)
+- [DBPR HR-7028 Application for Vacation Rental or Timeshare Project License (official application packet, hosted on flrules.org)](https://www.FLRules.org/gateway/readRefFile.asp?filename=application_packet_for_vacation_rental_license.pdf&refId=6283) — form
+- [Florida Administrative Code R. 61C-1.008 License Fees (proposed-rule text with current fee tables, flrules.org)](https://flrules.org/gateway/readFile.asp?sid=2&tid=10624815&type=1&File=61C-1.008.htm) — agency_rule
+- [Chapter 509, Florida Statutes (2026), The Florida Senate Online Sunshine](https://flsenate.gov/Laws/Statutes/2026/Chapter509/All) — statute
+- [Fla. Stat. s. 509.032 (2023), The Florida Senate Online Sunshine](https://FLSENATE.GOV/laws/statutes/2023/509.032) — statute
+- [SB 280 (2024) Bill Analysis — final bill analysis, Florida Senate (created ss. 509.243, 509.244; amended ss. 509.241, 509.032)](https://flsenate.gov/Session/Bill/2024/280/Analyses/2024s00280.fp.PDF) — agency_page
+- [SB 280 (2024) enrolled bill text, Florida Senate](https://FLSENATE.GOV/Session/Bill/2024/280/BillText/c1/HTML) — statute
+
+## str-preemption (12 requirements)
+- [Senate Bill 280 (2024) - The Florida Senate (bill page; shows Veto Message transmitted to Secretary of State)](https://www.flsenate.gov/Session/Bill/2024/280/ByVersion) — bill_text
+- [CS/SB 280, 2nd Engrossed (2024 Legislature, 2024280er) — enrolled bill text](https://static-lobbytools.s3.amazonaws.com/bills/2024/pdf/0280ER.pdf) — bill_text
+- [2024 Summary of Legislation Passed, Committee on Regulated Industries — CS/SB 280](https://FLSenate.gov/PublishedContent/Session/2024/BillSummary/Regulated_RI0280ri_00280.pdf) — bill_text
+- [CS/SB 280 Final Bill Analysis (Fiscal Policy)](https://flsenate.gov/Session/Bill/2024/280/Analyses/2024s00280.fp.PDF) — bill_text
+- [Chapter 509 Section 032 - 2023 Florida Statutes (current s. 509.032, incl. (7) Preemption Authority)](https://FLSENATE.GOV/laws/statutes/2023/509.032) — statute
+- [Florida AG Opinion — Vacation Rentals, Municipalities, Land Use (quoting s. 509.032(7)(b) as amended by ch. 2014-71)](https://www.myfloridalegal.com/ag-opinions/vacation-rentals-municipalities-land-use) — agency_guidance
+- [DBPR Division of Hotels and Restaurants — Guide to Vacation Rentals and Timeshare Projects](https://www2.myfloridalicense.com/hotels-restaurants/licensing/vrtsp-guide/) — agency_guidance
+
+## str-local (7 requirements)
+- [Miami-Dade County Ord. creating Section 33-28, Code of Miami-Dade County (Vacation Rentals) - Legislative Matter 171561](http://www.miamidade.gov/govaction/matter.asp?matter=171561&file=true&fileAnalysis=false&yearFolder=Y2017) — county_code
+- [Miami-Dade County - Short-Term Vacation Rentals (Neighborhood Compliance)](https://www.miamidade.gov/global/economy/neighborhood-compliance/residential-short-term-vacation-rentals.page) — agency_page
+- [Miami-Dade County - Tourist and Restaurant Taxes (RER Business Section)](https://www.miamidade.gov/global/service.page?Mduid_service=ser1499797928395868) — agency_page
+- [Miami-Dade County - Find a Permit (Short-Term Vacation Rentals, Certificate of Use)](http://www.miamidade.gov/permits/home.asp?cat=business&subcat=use) — agency_page
+- [City of Miami - How to Convert to a Short-Term Rental/Lodging](https://www.miami.gov/Permits-Construction/Short-Term-RentalLodging-Procedures) — agency_page
+- [City of Miami - Zoning FAQs (short term rentals / lodging use; Certificate of Use)](https://www.miami.gov/Planning-Zoning-Land-Use/Zoning-FAQs) — agency_page
+- [Tourist Tax Account Registration Form (PDF, linked from official RER page)](https://www.miamidade.gov/resources/economy/consumer-protection/documents/tourist-tax-account-registration-application.pdf) — form
+- [Miami-Dade County Tax Collector - Local Business Tax Receipt Requirements (county/city receipt rule; Convention & Tourist taxes administered by RER)](https://www.mdctaxcollector.gov/requirements) — agency_page
