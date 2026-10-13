@@ -158,3 +158,45 @@ Every source below was actually opened by a research worker. URLs copied verbati
 - [City of Miami - Zoning FAQs (short term rentals / lodging use; Certificate of Use)](https://www.miami.gov/Planning-Zoning-Land-Use/Zoning-FAQs) — agency_page
 - [Tourist Tax Account Registration Form (PDF, linked from official RER page)](https://www.miamidade.gov/resources/economy/consumer-protection/documents/tourist-tax-account-registration-application.pdf) — form
 - [Miami-Dade County Tax Collector - Local Business Tax Receipt Requirements (county/city receipt rule; Convention & Tourist taxes administered by RER)](https://www.mdctaxcollector.gov/requirements) — agency_page
+
+## prof-real-estate (36 requirements)
+- [Fla. Stat. s. 475.17 - Qualifications for practice](http://www.leg.state.fl.us/Statutes/index.cfm?App_mode=Display_Statute&URL=0400-0499/0475/Sections/0475.17.html) — statute
+- [Fla. Stat. s. 475.175 - Examinations](http://leg.state.fl.us/Statutes/index.cfm?App_mode=Display_Statute&Search_String=&URL=0400-0499/0475/Sections/0475.175.html) — statute
+- [Fla. Stat. s. 475.182 - Renewal of license; continuing education](http://www.leg.state.fl.us/STATUTeS/index.cfm?App_mode=Display_Statute&Search_String=&URL=0400-0499/0475/Sections/0475.182.html) — statute
+- [Fla. Stat. s. 475.183 - Inactive status](http://www.leg.state.fl.us/Statutes/index.cfm/ch0825/index.cfm?App_mode=Display_Statute&Search_String=&URL=0400-0499/0475/Sections/0475.183.html) — statute
+- [Fla. Stat. s. 475.15 - Registration and licensing of general partners, members, officers, and directors of a firm](http://www.leg.state.fl.us/Statutes/index.cfm?App_mode=Display_Statute&URL=0400-0499/0475/Sections/0475.15.html) — statute
+- [Fla. Stat. s. 475.22 - Broker to maintain office and sign at entrance of office](http://www.leg.state.fl.us/Statutes/index.cfm/index.cfm?App_mode=Display_Statute&Search_String=&URL=0400-0499/0475/Sections/0475.22.html) — statute
+- [Fla. Stat. s. 475.24 - Branch office; fees](http://www.leg.state.fl.us/Statutes/index.cfm/index.cfm?App_mode=Display_Statute&Search_String=&URL=0400-0499/0475/Sections/0475.24.html) — statute
+- [Fla. Stat. s. 475.25 - Discipline](https://www.leg.state.fl.us/statutes/index.cfm?App_mode=Display_Statute&URL=0400-0499%2F0475%2FSections%2F0475.25.html) — statute
+- [Fla. Stat. s. 475.5015 - Brokerage business records](http://www.leg.state.fl.us/statutes/index.cfm?App_Mode=Display_Statute&Search_String=&URL=Ch0475/Sec5015.htm&StatuteYear=1998) — statute
+- [Fla. Admin. Code 61J2-1.011 - License Fees](http://flrules.elaws.us/fac/61j2-1.011/) — agency_rule
+- [Fla. Admin. Code 61J2-14.008 - Definitions (escrow)](http://flrules.elaws.us/fac/61j2-14.008/) — agency_rule
+- [DOAH Recommended Order 09-002995PL (DBPR Division of Real Estate vs. Gregory John Owen) - quotes Rules 61J2-14.009 and 61J2-14.010(1)](http://flrules.elaws.us/doahcase/09-002995pl) — agency_page
+- [DOAH Recommended Order 13-0011PL (DBPR Division of Real Estate vs. Guirlande Mardy) - quotes Rule 61J2-14.012(1)](http://flrules.elaws.us/Gateway/CourtOrders/2013\13-000011PL\13000011.pdf) — agency_page
+- [FREC Broker Course Syllabus (FREC Course II), effective 01/01/2017 - monthly reconciliation, escrow audit duties](https://flrules.org/gateway/readRefFile.asp?refId=9136&filename=FRECBKSyllabus.pdf) — agency_page
+- [DBPR Division of Real Estate - Real Estate Escrow FAQ answers list](https://myfloridalicense.custhelp.com/app/answers/list/kw/real%20estate%20escrow/page/0) — agency_page
+- [DBPR Real Estate Commission - Mutual Recognition States information page](https://www2.myfloridalicense.com/real-estate-commission/mutual-recognition-states/) — agency_page
+
+## prof-boards-index (15 requirements)
+- [Cosmetology – MyFloridaLicense.com](https://www2.myfloridalicense.com/cosmetology/) — agency_page
+- [Barbers – MyFloridaLicense.com](https://www2.myfloridalicense.com/barbers/) — agency_page
+- [Veterinary Medicine – Board Information – MyFloridaLicense.com](https://www2.myfloridalicense.com/veterinary-medicine/board-information/) — agency_page
+- [Certified Public Accounting – About the Board – MyFloridaLicense.com](https://www2.myfloridalicense.com/certified-public-accounting/board-information/) — agency_page
+- [Architecture and Interior Design – Board Information – MyFloridaLicense.com](https://www2.myfloridalicense.com/architecture-and-interior-design/board-information/) — agency_page
+- [Professional Engineers – Florida Board of Professional Engineers](https://fbpe.org/licensure/licensure-process/professional-engineers/) — agency_page
+- [Landscape Architecture – Board Information – MyFloridaLicense.com](https://www2.myfloridalicense.com/landscape-architecture/board-information/) — agency_page
+- [Auctioneers – Board Information – MyFloridaLicense.com](https://www2.myfloridalicense.com/auctioneers/board-information/) — agency_page
+- [Talent Agencies – FAQs – MyFloridaLicense.com](https://www2.myfloridalicense.com/talent-agencies/faqs/) — agency_page
+- [Employee Leasing Companies – Board Information – MyFloridaLicense.com](https://www2.myfloridalicense.com/employee-leasing-companies/board-information/) — agency_page
+- [Understanding DBPR Codes – MyFloridaLicense.com (official occupation/class code table)](https://www2.myfloridalicense.com/about-us/understanding-dbpr-codes/) — agency_page
+- [Home Inspectors – Archives – MyFloridaLicense.com](https://www2.myfloridalicense.com/home-inspectors/archives/) — agency_page
+- [Community Association Managers & Firms – MyFloridaLicense.com](https://www2.myfloridalicense.com/community-association-managers-and-firms/) — agency_page
+- [Harbor Pilots – Board Information – MyFloridaLicense.com](https://www2.myfloridalicense.com/harbor-pilots/board-information/) — agency_page
+- [Building Code Administrators & Inspectors – FAQs – MyFloridaLicense.com](https://www2.myfloridalicense.com/building-code-administrators-and-inspectors/faqs/) — agency_page
+- [Chapter 477 (Cosmetology) – Florida Senate Online Sunshine](https://flsenate.gov/Laws/Statutes/2024/Chapter477/All) — statute
+- [Chapter 474 (Veterinary Medical Practice) – Florida Senate Online Sunshine](https://www.flsenate.gov/Laws/Statutes/2019/Chapter474/All) — statute
+- [Chapter 473 (Public Accountancy) – Florida Senate Online Sunshine](https://flsenate.gov/Laws/Statutes/2023/Chapter473/All) — statute
+- [Chapter 471 (Engineering) – Florida Senate Online Sunshine](https://www.Flsenate.Gov/Laws/Statutes/2024/Chapter471/All) — statute
+- [Chapter 481 (Architecture / Landscape Architecture) – Florida Senate Online Sunshine](https://www.FlSenate.gov/Laws/Statutes/2010/Chapter481/All) — statute
+- [Chapter 468 (Miscellaneous Professions) – Florida Senate Online Sunshine](https://flsenate.gov/Laws/Statutes/2023/Chapter468/All) — statute
+- [Chapter 310 (Pilots, Piloting, and Pilotage) – Florida Senate Online Sunshine](https://www.flsenate.gov/Laws/Statutes/2018/Chapter310/All) — statute
