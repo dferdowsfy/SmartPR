@@ -1,0 +1,136 @@
+{
+  "id": "KG54",
+  "title": "Private school: change of use of a house in a residential district — Yauco, zone X",
+  "matrix": {
+    "businessType": "private_school",
+    "projectType": "change_of_use",
+    "locationContext": "urban_residential_x"
+  },
+  "description": "We are converting a house we own in a residential neighborhood of Yauco into a small private elementary school for about 40 students. This is a change of use from residence to school; interior work only.",
+  "profile": {
+    "business_type": "Private School",
+    "municipality": "Yauco",
+    "location_type": "Commercial Space",
+    "number_of_employees": 6,
+    "industry": "Education",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_CHILDREN_PRESENT": true,
+    "Q_OWNS_PROPERTY": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "change_of_use": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use from residence to school"
+    },
+    "occupancy_change": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use from residence to school"
+    },
+    "existing_use": {
+      "value": "residence",
+      "confidence": 0.9,
+      "evidence": "from residence"
+    },
+    "proposed_use": {
+      "value": "school",
+      "confidence": 0.9,
+      "evidence": "to school"
+    },
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "converting a house"
+    }
+  },
+  "site": {
+    "municipality": "Yauco",
+    "geo": "urban_residential_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0699: confirmed change of use -> new Permiso Unico for the new use."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0710: change of use at a pin in a residential district (location.zoning.residential) -> consulta de ubicacion."
+      },
+      {
+        "key": "DOC_BACKGROUND_CHECK",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0192 / RULE_0039: staff background checks where children are present."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0193: BT_PRIVATE_SCHOOL -> Bomberos fire-prevention certificate."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone: RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_CONSULTA_UBICACION",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "needs-expert-review",
+        "rationale": "RC-2023: the consulta de ubicacion (land-use siting) is decided before the Permiso Unico for the new use (no KB edge)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-13 by the scenario loop: first private-school scenario and first Yauco scenario. School accreditation (Consejo de Educación / Ley 212-2018 licensing) is not asserted here; it is not modeled as a KB document yet."
+}
