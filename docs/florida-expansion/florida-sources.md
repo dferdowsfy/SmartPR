@@ -61,3 +61,33 @@ Every source below was actually opened by a research worker. URLs copied verbati
 - **miami-dade-local**: Miami-Dade local stack: county Local Business Tax Receipt + mandatory county/city stacking (City of Miami restaurant needs City CU + City BTR + County BTR + state DBPR license), Certificate of Use triggers, DERM grease-discharge operating permit, Fire Life Safety annual permit, signage ZIP.
 - **statute-index**: Citation index: Fla. Stat. Chs. 605, 607, 865.09, 509, 205, 212, 220, FAC Title 61C, Ch. 561 (out of scope for now). Two unverified: FAC Division of Corporations rule set; Miami-Dade Code Ch. 8A business-tax chapter.
 - **tax**: DOR: DR-1 sales-tax dealer registration (restaurant prepared-food sales are taxable triggers), discretionary surtax, monthly filing >$1,000, reemployment-tax liability triggers and rates, TPP DR-405 by April 1 ($25k exemption), F-1120 corporate income tax.
+
+## abt-alcohol (8 requirements, round 2)
+- [ABT Licensing Portal - Checklist: Beer, Wine and Liquor Consumption on Premises (4COP)](https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1034&clientCode=4006&XACT_DEFN_ID=7059) — agency_page
+- [ABT Licensing Portal - Checklist: Transfer of Ownership of an Alcoholic Beverage License](https://www.myfloridalicense.com/CheckListDetail.asp?xactCode=1060&clientCode=4008&XACT_DEFN_ID=13356) — agency_page
+- [ABT Licensing Portal - Checklist: Delinquent Renewal of Alcoholic Beverage License](https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=8045&clientCode=4008&XACT_DEFN_ID=7121) — agency_page
+- [ABT Licensing Portal - Checklist: Beer and Wine Consumption on Premises (2COP)](https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1001&clientCode=4005&XACT_DEFN_ID=6897) — agency_page
+- [ABT Forms & Publications](https://www2.myfloridalicense.com/alcoholic-beverages-and-tobacco/forms-and-publications/) — agency_page
+- [ABT License Types - Alcoholic Beverages & Tobacco](https://www2.myfloridalicense.com/alcoholic-beverages-and-tobacco/) — agency_page
+- [DBPR ABT-6002 Transfer Application Package](https://www2.myfloridalicense.com/abt/forms/documents/abt-6002TransferAppPack.pdf) — form
+- [ABT License Fee Chart](https://www2.myfloridalicense.com/abt/documents/Fee_Chart.pdf) — fee_schedule
+- [ABT General Laws of Local Application and Special Acts (SFS reference chart)](https://www2.myfloridalicense.com/abt/documents/GENLAWS.pdf) — agency_page
+- [Fla. Stat. s. 561.20 - Limitation upon number of licenses issued](https://www.flsenate.gov/laws/statutes/2023/561.20) — statute
+- [Fla. Stat. s. 565.02 - License fees; vendors; clubs; caterers; and others](https://flsenate.gov/laws/statutes/2004/565.02) — statute
+- [Fla. Stat. s. 561.27 - Renewal of license (2024 Ch. 561)](https://flsenate.gov/Laws/Statutes/2024/Chapter561/All) — statute
+- [CS/CS/HB 639 (2023) Enrolled Bill Text - Issuance of Special Beverage Licenses](https://flsenate.gov/Session/Bill/2023/639/BillText/c2/PDF) — statute
+
+## employer-obligations (6 requirements, round 2)
+- [Get an employer identification number (IRS)](https://www.irs.gov/businesses/small-businesses-self-employed/get-an-employer-identification-number) — agency_page
+- [Coverage Requirements | Workers' Compensation | Florida Department of Financial Services](https://myfloridacfo.com/division/wc/employer/coverage-requirements) — agency_page
+- [Chapter 440 Section 107 - 2023 Florida Statutes - The Florida Senate](https://FLSENATE.GOV/Laws/Statutes/2023/440.107) — statute
+- [Chapter 448 Section 095 - 2024 Florida Statutes - The Florida Senate](https://FLSENATE.GOV/Laws/Statutes/2024/0448.095) — statute
+- [VerifyFlorida (FloridaCommerce)](https://floridajobs.org/secure-florida/VerifyFlorida) — agency_page
+- [The Enrollment Process (E-Verify)](https://e-verify.gov/employers/enrolling-in-e-verify/the-enrollment-process) — agency_page
+
+## open-question resolutions (round 2)
+- **(a) DBPR change-of-ownership timing** — resolved: The 18-month figure is the current controlling one. Rule 61C-1.002, F.A.C. (Licensing and Inspection Requirements) requires plan review for a public food service establishment 'reopened after being ou [source](https://www2.myfloridalicense.com/hr/forms/documents/application_packet_for_food_service_license_and_plan.pdf)
+- **(b) DOR sales-tax filing-frequency tiers** — resolved: Filing-frequency tiers (s. 212.11(1)(c), F.S., as implemented by DOR): MONTHLY if the dealer paid more than $1,000 in sales and use tax during the most recent state fiscal year (July 1-June 30); QUART [source](https://FLORIDAREVENUE.COM/Forms_library/current/dr15n.pdf)
+- **(c) Miami-Dade fee schedules** — still_open: No published dollar fee for any of the three items was located on official Miami-Dade County pages. What was established: (1) the Local Business Tax schedule lives in County Code Sec. 8A-223.1 (confir [source](https://www.miamidade.gov/global/permit.page?Mduid_permit=per1527602964755696)
+- **(d) TPP late/non-filing penalties** — resolved: Confirmed from the Florida Department of Revenue's official Property Taxpayers - Tangible Personal Property page (floridarevenue.com): 'Failure to file will result in a penalty of 25 percent of the to [source](http://floridarevenue.com/property/Pages/Taxpayers_TangiblePersonalProperty.aspx?gclid=Cj0KCQjwwJuVBhCAARIsAOPwGAQsD7Rp2D7OAPt6dFPC3njlSAcajB7nb86GGYohSlQYdxJVWxnpP48aAoKGEALw_wcB)
+- **(e) flsenate.gov chapter scope verification** — resolved: Verified on Online Sunshine (leg.state.fl.us; flsenate.gov chapter pages timed out on every fetch attempt from this environment, as in round 1): Ch. 605 - Florida Revised Limited Liability Company Act [source](https://www.leg.state.fl.us/statutes/index.cfm/index.cfm?App_mode=Display_Statute&URL=0200-0299%2F0212%2F0212ContentsIndex.html&StatuteYear=2024&Title=-%3E2024-%3EChapter+212)

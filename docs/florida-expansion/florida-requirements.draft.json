@@ -1,20 +1,22 @@
 {
-  "_disclaimer": "DRAFT research for a future Florida jurisdiction pack. Data-gathering only \u2014 not a pack, not legal guidance. Verify before modeling pack tables.",
+  "_disclaimer": "DRAFT research for a future Florida jurisdiction pack. Data-gathering only — not a pack, not legal guidance. Verify before modeling pack tables.",
   "jurisdiction": "fl",
   "vertical": "restaurants",
-  "researched": "2026-10-13",
+  "researched": "2026-10-13 (round 2 gap-fill)",
   "counts": {
-    "requirements": 50,
-    "verified": 47,
+    "requirements": 64,
+    "verified": 61,
     "unverified": 3,
-    "sources": 43,
-    "open_questions": 26,
+    "sources": 62,
+    "open_questions": 31,
     "by_area": {
       "formation": 8,
       "tax": 8,
       "dbpr-restaurants": 14,
       "miami-dade-local": 9,
-      "statute-index": 11
+      "statute-index": 11,
+      "abt-alcohol": 8,
+      "employer-obligations": 6
     }
   },
   "requirements": [
@@ -31,12 +33,12 @@
         },
         {
           "name": "Articles of Organization for Florida Limited Liability Company (PDF, for mail filing with check/money order)",
-          "url": "unverified \u2014 the Department of State instructions page links a printable PDF, but its direct form.sunbiz.org URL was not captured in this session"
+          "url": "unverified — the Department of State instructions page links a printable PDF, but its direct form.sunbiz.org URL was not captured in this session"
         }
       ],
       "id": "FL_DRAFT_FORMATION_0001",
       "notes": "Minimum contents per the instructions: distinguishable name containing Limited Liability Company/LLC/L.L.C.; principal office street address; mailing address (P.O. Box acceptable); registered agent name and Florida street address (no P.O. Box) with the agent's signed acceptance of s. 605.0113(3) obligations; authorized-representative signature; valid email. Purpose and manager/authorized-representative names are optional for non-professional LLCs. Entity existence begins when the Division receives and files the Articles unless an acceptable alternate effective date is specified (no more than 5 business days before, or 90 days after, receipt). Filing is online via efile.sunbiz.org or by mail.",
-      "timeline": "unverified \u2014 the Department of State states documents are processed in the order received; no committed processing-time figure is published on the pages read.",
+      "timeline": "unverified — the Department of State states documents are processed in the order received; no committed processing-time figure is published on the pages read.",
       "title": "File Articles of Organization to form a Florida LLC",
       "verification": "verified",
       "area": "formation"
@@ -46,7 +48,7 @@
       "applies_when": "Your LLC is on file with the Division (first report due the calendar year after formation/effective year)",
       "citation": "Fla. Stat. s. 605.0212 (annual report) and s. 607.193(2)(b) (late fee, cited in Department of State annual-report FAQ)",
       "citation_url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/",
-      "fees": "$138.75 if filed January 1\u2013May 1; a $400 late fee is added to reports filed after May 1 (total $538.75); the late fee cannot be waived.",
+      "fees": "$138.75 if filed January 1–May 1; a $400 late fee is added to reports filed after May 1 (total $538.75); the late fee cannot be waived.",
       "forms": [
         {
           "name": "Annual Report filing (online at Sunbiz.org)",
@@ -54,7 +56,7 @@
         }
       ],
       "id": "FL_DRAFT_FORMATION_0002",
-      "notes": "The report confirms or updates the entity's information on Division records; it is not a financial statement. Per the Department of State, LLCs formed October 1\u2013December 31 can list a January 1 effective date to defer the first annual report to the following calendar year.",
+      "notes": "The report confirms or updates the entity's information on Division records; it is not a financial statement. Per the Department of State, LLCs formed October 1–December 31 can list a January 1 effective date to defer the first annual report to the following calendar year.",
       "timeline": "Filing window opens January 1 each year and closes May 1. Failure to file by the third Friday of September results in administrative dissolution at close of business on the fourth Friday of September.",
       "title": "File the annual report for a Florida LLC",
       "verification": "verified",
@@ -87,12 +89,12 @@
         },
         {
           "name": "Articles of Incorporation for Florida Profit Corporation (PDF, for mail filing with check/money order)",
-          "url": "unverified \u2014 the Department of State instructions page links a printable PDF, but its direct form.sunbiz.org URL was not captured in this session"
+          "url": "unverified — the Department of State instructions page links a printable PDF, but its direct form.sunbiz.org URL was not captured in this session"
         }
       ],
       "id": "FL_DRAFT_FORMATION_0004",
-      "notes": "Minimum contents per the instructions: distinguishable name containing Corporation, Company, Incorporated, Corp., Inc., or Co.; principal office street address; mailing address (P.O. Box acceptable); registered agent name and Florida street address (no P.O. Box) with the agent's signature accepting the s. 607.0505 obligations; incorporator name, address, and signature; number of authorized stock shares (must be at least one); valid email. Purpose and officer/director names are optional. Corporate existence begins when the Division receives and files the Articles unless an acceptable alternate effective date is specified (no more than 5 business days before, or 90 days after, receipt). Corporations incorporating October 1\u2013December 31 can list a January 1 effective date to defer the first annual report one calendar year.",
-      "timeline": "unverified \u2014 the Department of State states documents are processed in the order received; no committed processing-time figure is published on the pages read.",
+      "notes": "Minimum contents per the instructions: distinguishable name containing Corporation, Company, Incorporated, Corp., Inc., or Co.; principal office street address; mailing address (P.O. Box acceptable); registered agent name and Florida street address (no P.O. Box) with the agent's signature accepting the s. 607.0505 obligations; incorporator name, address, and signature; number of authorized stock shares (must be at least one); valid email. Purpose and officer/director names are optional. Corporate existence begins when the Division receives and files the Articles unless an acceptable alternate effective date is specified (no more than 5 business days before, or 90 days after, receipt). Corporations incorporating October 1–December 31 can list a January 1 effective date to defer the first annual report one calendar year.",
+      "timeline": "unverified — the Department of State states documents are processed in the order received; no committed processing-time figure is published on the pages read.",
       "title": "File Articles of Incorporation to form a Florida for-profit corporation",
       "verification": "verified",
       "area": "formation"
@@ -102,7 +104,7 @@
       "applies_when": "Your corporation is on file with the Division (first report due the calendar year after incorporation)",
       "citation": "Fla. Stat. s. 607.1622 (annual report) and s. 607.193(2)(b) (late fee, cited in Department of State annual-report FAQ)",
       "citation_url": "http://dos.fl.gov/communications/press-releases/2015/file-early-florida-annual-report-filing-deadline-on-may-1/",
-      "fees": "$150 if filed January 1\u2013May 1; a $400 late fee is added to reports filed after May 1 (total $550); the late fee cannot be waived.",
+      "fees": "$150 if filed January 1–May 1; a $400 late fee is added to reports filed after May 1 (total $550); the late fee cannot be waived.",
       "forms": [
         {
           "name": "Annual Report filing (online at Sunbiz.org)",
@@ -147,8 +149,8 @@
         }
       ],
       "id": "FL_DRAFT_FORMATION_0007",
-      "notes": "Application contents: the fictitious name as it is to be registered (a fictitious name may not include entity suffixes like Inc., LLC, Corp. unless at least one registrant is that type of entity); mailing address of the business; county of principal place of business; registrant/owner details. Newspaper advertising: the name must be advertised at least once in a newspaper as defined in ch. 50, F.S., in the county where the principal place of business is located \u2014 no proof of advertisement is required; the applicant certifies the advertisement in the signature block. Registration is for public notice only and does not reserve the name against future use or confer trademark rights. The Division does not require registration when the applicant is an entity already filed/in good standing with the Division and is not transacting business under any other name (exceptions also apply for attorneys and licensed professionals). Banks/financial institutions and local occupational-license authorities (s. 205.023, F.S.) may require proof of registration.",
-      "timeline": "unverified \u2014 no processing-time commitment was published on the pages read.",
+      "notes": "Application contents: the fictitious name as it is to be registered (a fictitious name may not include entity suffixes like Inc., LLC, Corp. unless at least one registrant is that type of entity); mailing address of the business; county of principal place of business; registrant/owner details. Newspaper advertising: the name must be advertised at least once in a newspaper as defined in ch. 50, F.S., in the county where the principal place of business is located — no proof of advertisement is required; the applicant certifies the advertisement in the signature block. Registration is for public notice only and does not reserve the name against future use or confer trademark rights. The Division does not require registration when the applicant is an entity already filed/in good standing with the Division and is not transacting business under any other name (exceptions also apply for attorneys and licensed professionals). Banks/financial institutions and local occupational-license authorities (s. 205.023, F.S.) may require proof of registration.",
+      "timeline": "unverified — no processing-time commitment was published on the pages read.",
       "title": "Register a fictitious name (DBA) with the Division of Corporations",
       "verification": "verified",
       "area": "formation"
@@ -250,7 +252,7 @@
         }
       ],
       "id": "FL_DRAFT_TAX_0004",
-      "notes": "DOR's publication confirms only the >$1,000 annual-tax monthly-filing trigger (s. 212.12). The finer filing-frequency tiers for smaller dealers (annual/semiannual/quarterly) were seen in third-party summaries but not confirmed on an official DOR page; see open_questions.",
+      "notes": "RESOLVED 2026-10-13: official DOR tiers — monthly if annual tax >$1,000; quarterly if ≤$1,000; semiannual if <$500 over four consecutive quarters; annual if ≤$100 over four quarters (s. 212.11(1)(c)). Mandatory e-filing threshold is $5,000 (current DR-15N instructions, R. 10/25); the $30,000 figure in older DOR TIPs is outdated. Confirmed on floridarevenue.com. Original note: DOR's publication confirms only the >$1,000 annual-tax monthly-filing trigger (s. 212.12). The finer filing-frequency tiers for smaller dealers (annual/semiannual/quarterly) were seen in third-party summaries but not confirmed on an official DOR page; see open_questions.",
       "timeline": "Monthly tax returns are due on or before the 20th day of each month following the collection period (first business day after the 20th if the 20th falls on a weekend or state/federal holiday).",
       "title": "Sales and use tax filing frequency (monthly filing threshold)",
       "verification": "verified",
@@ -300,7 +302,7 @@
     },
     {
       "agency": "County property appraiser (Florida Department of Revenue form DR-405)",
-      "applies_when": "A business (restaurant included) owns tangible personal property used for commercial purposes on January 1, such as furniture, fixtures, computers, tools, supplies, machines, kitchen equipment, and leasehold improvements \u2014 property not included in the assessed value of the business's real property.",
+      "applies_when": "A business (restaurant included) owns tangible personal property used for commercial purposes on January 1, such as furniture, fixtures, computers, tools, supplies, machines, kitchen equipment, and leasehold improvements — property not included in the assessed value of the business's real property.",
       "citation": "Florida Department of Revenue, Instructions for Form DR-405 (R. 01/18); Fla. Stat. ss. 193.052, 196.183",
       "citation_url": "https://floridarevenue.com/property/Documents/DR405.pdf",
       "fees": "unverified",
@@ -311,7 +313,7 @@
         }
       ],
       "id": "FL_DRAFT_TAX_0007",
-      "notes": "Each DR-405 is eligible for an exemption of up to $25,000 of assessed value; filing on time automatically applies for the exemption, and Florida law provides for loss of the exemption if not filed on time. Report summary totals on page 1 with an itemized list (original cost and date acquired) attached. File a separate return for each site in the county where the business transacts business. This is an ad valorem tax assessed locally \u2014 DOR provides the form; the county property appraiser administers it.",
+      "notes": "RESOLVED 2026-10-13: official DOR property-tax page confirms 25% failure-to-file penalty, 5%/month late-filing penalty (capped at 25%), 15% for unlisted property — matching s. 193.072. Original note: Each DR-405 is eligible for an exemption of up to $25,000 of assessed value; filing on time automatically applies for the exemption, and Florida law provides for loss of the exemption if not filed on time. Report summary totals on page 1 with an itemized list (original cost and date acquired) attached. File a separate return for each site in the county where the business transacts business. This is an ad valorem tax assessed locally — DOR provides the form; the county property appraiser administers it.",
       "timeline": "Return must be filed with the county property appraiser's office by April 1 each year. A 30-day extension is granted on request; the property appraiser may grant an additional 15 days. The extension must be requested in time for the property appraiser to act before April 1.",
       "title": "Tangible personal property tax return (business fixtures/equipment)",
       "verification": "verified",
@@ -343,15 +345,15 @@
       "fees": "unverified",
       "forms": [
         {
-          "name": "DBPR HR-7030 \u2014 Application for Fixed Public Food Service Establishment License with Plan Review (combination packet)",
+          "name": "DBPR HR-7030 — Application for Fixed Public Food Service Establishment License with Plan Review (combination packet)",
           "url": "https://www2.myfloridalicense.com/hr/forms/documents/application_packet_for_food_service_license_and_plan.pdf"
         },
         {
-          "name": "DBPR HR-7035 \u2014 Application for Fixed Public Food Service Establishment License (no plan review)",
+          "name": "DBPR HR-7035 — Application for Fixed Public Food Service Establishment License (no plan review)",
           "url": "unverified"
         },
         {
-          "name": "DBPR HR-7007 \u2014 Application for Public Food Service Establishment License",
+          "name": "DBPR HR-7007 — Application for Public Food Service Establishment License",
           "url": "unverified"
         }
       ],
@@ -402,7 +404,7 @@
           "url": "unverified"
         },
         {
-          "name": "DBPR HR-7030 \u2014 license + plan review combination application",
+          "name": "DBPR HR-7030 — license + plan review combination application",
           "url": "https://www2.myfloridalicense.com/hr/forms/documents/application_packet_for_food_service_license_and_plan.pdf"
         }
       ],
@@ -425,7 +427,7 @@
           "url": "https://www2.myfloridalicense.com/hotels-restaurants/licensing/plan-review/"
         },
         {
-          "name": "DBPR HR-7030 \u2014 license + plan review combination application",
+          "name": "DBPR HR-7030 — license + plan review combination application",
           "url": "https://www2.myfloridalicense.com/hr/forms/documents/application_packet_for_food_service_license_and_plan.pdf"
         }
       ],
@@ -444,7 +446,7 @@
       "fees": "unverified",
       "forms": [],
       "id": "FL_DRAFT_DBPR_0006",
-      "notes": "After plan review approval, application, and fee payment, contact DBPR Customer Contact Center (850-487-1395) several business days before the opening date to schedule; inspectors do not routinely conduct pre-opening or courtesy inspections \u2014 do not call until absolutely ready. Do not serve food to the public until a satisfactory inspection and a license to operate are obtained. Have proof of other approvals onsite (building, electrical, fire, plumbing). After passing, the operator receives a temporary paper license on the spot. Change-of-ownership applications do not require an opening inspection if the previous owner received a satisfactory inspection within 120 days before the application is processed; otherwise an opening inspection is conducted after the new owner legally takes over.",
+      "notes": "After plan review approval, application, and fee payment, contact DBPR Customer Contact Center (850-487-1395) several business days before the opening date to schedule; inspectors do not routinely conduct pre-opening or courtesy inspections — do not call until absolutely ready. Do not serve food to the public until a satisfactory inspection and a license to operate are obtained. Have proof of other approvals onsite (building, electrical, fire, plumbing). After passing, the operator receives a temporary paper license on the spot. Change-of-ownership applications do not require an opening inspection if the previous owner received a satisfactory inspection within 120 days before the application is processed; otherwise an opening inspection is conducted after the new owner legally takes over.",
       "timeline": "unverified",
       "title": "Opening inspection required before operating",
       "verification": "verified",
@@ -458,7 +460,7 @@
       "fees": "unverified",
       "forms": [],
       "id": "FL_DRAFT_DBPR_0007",
-      "notes": "Routine inspections are unannounced. DBPR personnel inspect 'as often as necessary for enforcement of the provisions of law and rule, and the protection of the public's health, safety, and welfare,' and operators must permit right of entry at any reasonable time and make records available. Fla. Stat. s. 509.032 directs the division to adopt by rule a risk-based inspection frequency of at least 1 and no more than 4 routine inspections per year (considering inspection/compliance history, food type/preparation, and service type) \u2014 the statute's current text could not be fetched during this session (flsenate.gov timed out); confirm before quoting the 1-4 figure. Deficiencies are documented in inspection reports classified High Priority, Intermediate, or Basic, with references to the relevant regulation. Reports state when violations must be corrected (a date certain or by the next routine inspection); many violations are corrected on site. Division procedures compel compliance through follow-up visits, administrative action, or closure when necessary. Inspection reports are published publicly: DBPR's Licensing Portal 'View Food & Lodging Inspections' search shows detailed inspection reports (inspection type/date/result, violation counts and observations) for inspections after October 1, 2003. Establishments are not graded or rated.",
+      "notes": "Routine inspections are unannounced. DBPR personnel inspect 'as often as necessary for enforcement of the provisions of law and rule, and the protection of the public's health, safety, and welfare,' and operators must permit right of entry at any reasonable time and make records available. Fla. Stat. s. 509.032 directs the division to adopt by rule a risk-based inspection frequency of at least 1 and no more than 4 routine inspections per year (considering inspection/compliance history, food type/preparation, and service type) — the statute's current text could not be fetched during this session (flsenate.gov timed out); confirm before quoting the 1-4 figure. Deficiencies are documented in inspection reports classified High Priority, Intermediate, or Basic, with references to the relevant regulation. Reports state when violations must be corrected (a date certain or by the next routine inspection); many violations are corrected on site. Division procedures compel compliance through follow-up visits, administrative action, or closure when necessary. Inspection reports are published publicly: DBPR's Licensing Portal 'View Food & Lodging Inspections' search shows detailed inspection reports (inspection type/date/result, violation counts and observations) for inspections after October 1, 2003. Establishments are not graded or rated.",
       "timeline": "Risk-based; at least 1 and no more than 4 routine inspections per year (pending direct statute confirmation).",
       "title": "Routine inspections and public inspection reports",
       "verification": "verified",
@@ -466,18 +468,18 @@
     },
     {
       "agency": "DBPR Division of Hotels and Restaurants",
-      "applies_when": "Public food service establishments in Florida \u2014 food managers must complete training and pass a certification exam within 30 days of employment.",
+      "applies_when": "Public food service establishments in Florida — food managers must complete training and pass a certification exam within 30 days of employment.",
       "citation": "Fla. Stat. s. 509.039; FAC Rule 61C-4.023",
       "citation_url": "https://www2.myfloridalicense.com/hotels-restaurants/food-lodging/food-manager/",
       "fees": "unverified",
       "forms": [
         {
-          "name": "DBPR Form HR 5030-080 \u2014 food manager certification cut-sheet handout (English/Spanish PDFs)",
+          "name": "DBPR Form HR 5030-080 — food manager certification cut-sheet handout (English/Spanish PDFs)",
           "url": "https://www2.myfloridalicense.com/hotels-restaurants/food-lodging/food-manager/"
         }
       ],
       "id": "FL_DRAFT_DBPR_0008",
-      "notes": "Training and testing are provided by PRIVATE accredited entities, not by DBPR \u2014 DBPR approves/lists the programs (e.g., ServSafe/National Restaurant Association Educational Foundation, National Registry of Food Safety Professionals, 360training/Learn2Serve, State Food Safety, Always Food Safe, and others; ANAB-CFP is the accrediting body). All public food service establishments must provide the division with proof of food manager certification upon request, including at any division inspection. DBPR-published inspection standards cite a currently certified food service manager must be on duty when four or more employees are engaged in food preparation/handling (violation code 53A-05). Certification is valid 5 years (per ServSafe Florida regulatory summary; recertification by examination).",
+      "notes": "Training and testing are provided by PRIVATE accredited entities, not by DBPR — DBPR approves/lists the programs (e.g., ServSafe/National Restaurant Association Educational Foundation, National Registry of Food Safety Professionals, 360training/Learn2Serve, State Food Safety, Always Food Safe, and others; ANAB-CFP is the accrediting body). All public food service establishments must provide the division with proof of food manager certification upon request, including at any division inspection. DBPR-published inspection standards cite a currently certified food service manager must be on duty when four or more employees are engaged in food preparation/handling (violation code 53A-05). Certification is valid 5 years (per ServSafe Florida regulatory summary; recertification by examination).",
       "timeline": "Training and exam completed within 30 days of employment.",
       "title": "Certified food manager requirement (private accredited providers)",
       "verification": "verified",
@@ -492,14 +494,14 @@
       "forms": [],
       "id": "FL_DRAFT_DBPR_0009",
       "notes": "Florida requires all food service employees to be trained in proper food handling and hygiene practices every three years. Only division-approved training programs are accepted (the division maintains a Training Programs List of approved independent entities and states it is no longer accepting new applications for food safety training certification programs). In-house proprietary programs approved by DBPR and taught by the establishment's own certified food manager(s) are allowed. Third-party providers must maintain and electronically submit training data to DBPR per s. 509.049(7)(b). Establishments must provide proof of employee training on request, including at division inspections. DBPR's formerly contracted provider for this program was the Florida Restaurant and Lodging Association (SafeStaff).",
-      "timeline": "Training every 3 years; employees must complete certification within 60 days after employment (per Fla. Stat. s. 509.049 as published \u2014 section text confirmed via Florida Senate statute page snippet; direct fetch timed out).",
+      "timeline": "Training every 3 years; employees must complete certification within 60 days after employment (per Fla. Stat. s. 509.049 as published — section text confirmed via Florida Senate statute page snippet; direct fetch timed out).",
       "title": "Food service employee (handler) training via DBPR-approved programs",
       "verification": "verified",
       "area": "dbpr-restaurants"
     },
     {
       "agency": "DBPR Division of Hotels and Restaurants",
-      "applies_when": "When a restaurant is sold or its ownership otherwise changes \u2014 the new owner must apply for and receive a DBPR license before operating.",
+      "applies_when": "When a restaurant is sold or its ownership otherwise changes — the new owner must apply for and receive a DBPR license before operating.",
       "citation": "Fla. Stat. s. 509.241",
       "citation_url": "https://www2.myfloridalicense.com/hotels-restaurants/licensing/foodservice-guide/",
       "fees": "$50 one-time application (processing) fee in addition to the annual license fee (per published food service fee page).",
@@ -509,18 +511,18 @@
           "url": "unverified"
         },
         {
-          "name": "DBPR HR-7035 \u2014 used as the change-of-ownership application for fixed establishments with no plan review required",
+          "name": "DBPR HR-7035 — used as the change-of-ownership application for fixed establishments with no plan review required",
           "url": "unverified"
         },
         {
-          "name": "DBPR HR-7030 \u2014 if plan review is triggered",
+          "name": "DBPR HR-7030 — if plan review is triggered",
           "url": "https://www2.myfloridalicense.com/hr/forms/documents/application_packet_for_food_service_license_and_plan.pdf"
         }
       ],
       "id": "FL_DRAFT_DBPR_0010",
-      "notes": "The license does not transfer with the business: the new owner applies for a new license. Apply for CHANGE OF OWNER when taking over a space currently licensed by a restaurant or where a restaurant closed less than a year ago (per the guide); apply for a NEW license if the space was never a restaurant or closed over 18 months ago. No plan review is required for change of ownership if there is no interruption in operation, construction, remodeling, or conversion; no opening inspection is required if the previous owner received a satisfactory inspection within 120 days before the application is processed. The location address on the application must match the licensed kitchen's location. Caution: thresholds vary across DBPR pages (1 year vs 18 months) \u2014 see open_questions.",
+      "notes": "RESOLVED 2026-10-13: Rule 61C-1.002, F.A.C. is controlling — plan review is required for establishments reopened after being out of business for MORE THAN 18 MONTHS; change-of-ownership applications need no plan review when there is no interruption in operation or change to the establishment. The 'closed less than a year' language came from older DBPR form versions (HR-7007 era) and is superseded. Verified on current DBPR packet HR-7030 (May 2024) and the flrules.org rulemaking record. Original note: The license does not transfer with the business: the new owner applies for a new license. Apply for CHANGE OF OWNER when taking over a space currently licensed by a restaurant or where a restaurant closed less than a year ago (per the guide); apply for a NEW license if the space was never a restaurant or closed over 18 months ago. No plan review is required for change of ownership if there is no interruption in operation, construction, remodeling, or conversion; no opening inspection is required if the previous owner received a satisfactory inspection within 120 days before the application is processed. The location address on the application must match the licensed kitchen's location. Caution: thresholds vary across DBPR pages (1 year vs 18 months) — see open_questions.",
       "timeline": "Apply before commencing operation as the new owner; processed within a few business days online.",
-      "title": "Change of ownership \u2014 new license required for the buyer",
+      "title": "Change of ownership — new license required for the buyer",
       "verification": "verified",
       "area": "dbpr-restaurants"
     },
@@ -532,16 +534,16 @@
       "fees": "MFDV / Hot Dog Cart / Temporary Commercial Kitchen: $347 full-year / $178.50 half-year.",
       "forms": [
         {
-          "name": "DBPR HR-7036 \u2014 Application for Mobile Food Dispensing Vehicle License",
+          "name": "DBPR HR-7036 — Application for Mobile Food Dispensing Vehicle License",
           "url": "unverified"
         },
         {
-          "name": "DBPR HR-7022 \u2014 Commissary form",
+          "name": "DBPR HR-7022 — Commissary form",
           "url": "unverified"
         }
       ],
       "id": "FL_DRAFT_DBPR_0011",
-      "notes": "Same 4-step licensing path (account, plan review if required, license + fee, opening inspection). No plan review if buying an already-licensed vehicle with no changes; plan review required if the vehicle was never licensed, closed more than 18 months, or remodeled \u2014 submittals: plan of vehicle with equipment labeled, sample menu, side photograph showing wheels and open service window, and water/sewer or commissary location. Non-self-sufficient units must have a commissary; any FDACS-permitted or DBPR-licensed fixed food service establishment can serve as a commissary. Water tanks must be filled and wastewater emptied at a commercial (non-residential) location. MFDV license holders may also offer catering and may operate at 1-3 day temporary events without additional temporary-event fees. Food operations may not be conducted in a private residence.",
+      "notes": "Same 4-step licensing path (account, plan review if required, license + fee, opening inspection). No plan review if buying an already-licensed vehicle with no changes; plan review required if the vehicle was never licensed, closed more than 18 months, or remodeled — submittals: plan of vehicle with equipment labeled, sample menu, side photograph showing wheels and open service window, and water/sewer or commissary location. Non-self-sufficient units must have a commissary; any FDACS-permitted or DBPR-licensed fixed food service establishment can serve as a commissary. Water tanks must be filled and wastewater emptied at a commercial (non-residential) location. MFDV license holders may also offer catering and may operate at 1-3 day temporary events without additional temporary-event fees. Food operations may not be conducted in a private residence.",
       "timeline": "unverified",
       "title": "Mobile Food Dispensing Vehicles (MFDVs) and hot dog carts",
       "verification": "verified",
@@ -555,16 +557,16 @@
       "fees": "Caterer license: $263 full-year / $136.50 half-year.",
       "forms": [
         {
-          "name": "DBPR HR-7035 \u2014 for catering (no dine-in) license",
+          "name": "DBPR HR-7035 — for catering (no dine-in) license",
           "url": "unverified"
         },
         {
-          "name": "DBPR HR-7030 \u2014 if building a new kitchen or remodeling (plan review required)",
+          "name": "DBPR HR-7030 — if building a new kitchen or remodeling (plan review required)",
           "url": "https://www2.myfloridalicense.com/hr/forms/documents/application_packet_for_food_service_license_and_plan.pdf"
         }
       ],
       "id": "FL_DRAFT_DBPR_0012",
-      "notes": "One requirement: food must be prepared in a licensed kitchen \u2014 food operations may not be conducted in a private residence. A standalone catering license is only needed if catering is the sole activity; any licensed Seating (SEAT) or Non-Seating (NOST) establishment may also provide catering services without a separate catering license. Sharing an existing DBPR-licensed kitchen requires no plan review, but each independent business needs its own license (shared-kitchen applications must be mailed on HR-7035 with the kitchen's license number; not available online).",
+      "notes": "One requirement: food must be prepared in a licensed kitchen — food operations may not be conducted in a private residence. A standalone catering license is only needed if catering is the sole activity; any licensed Seating (SEAT) or Non-Seating (NOST) establishment may also provide catering services without a separate catering license. Sharing an existing DBPR-licensed kitchen requires no plan review, but each independent business needs its own license (shared-kitchen applications must be mailed on HR-7035 with the kitchen's license number; not available online).",
       "timeline": "unverified",
       "title": "Catering (standalone license or via existing food service license)",
       "verification": "verified",
@@ -578,12 +580,12 @@
       "fees": "Temporary event vendor licenses: 1-3 day event $91; 4-30 day event $105; annual vendor $456 (fees published on the temporary event guide).",
       "forms": [
         {
-          "name": "DBPR Form HR 5030-034 \u2014 temporary event notification (sponsor use)",
+          "name": "DBPR Form HR 5030-034 — temporary event notification (sponsor use)",
           "url": "unverified"
         }
       ],
       "id": "FL_DRAFT_DBPR_0013",
-      "notes": "One requirement: event sponsors must notify the division at least 3 business days before the event (type of food service, time/location, vendor list with license numbers) via dhr.info@myfloridalicense.com; vendors must be present, meet basic inspection requirements (handwash setup, thermometers, sanitizer, test strips), and pay the fee (cashier's check/money order) \u2014 inspectors issue the license after a passing inspection. MFDV license holders may work 1-3 day temporary events without additional fees.",
+      "notes": "One requirement: event sponsors must notify the division at least 3 business days before the event (type of food service, time/location, vendor list with license numbers) via dhr.info@myfloridalicense.com; vendors must be present, meet basic inspection requirements (handwash setup, thermometers, sanitizer, test strips), and pay the fee (cashier's check/money order) — inspectors issue the license after a passing inspection. MFDV license holders may work 1-3 day temporary events without additional fees.",
       "timeline": "unverified",
       "title": "Temporary food service events (30 days or less)",
       "verification": "unverified",
@@ -597,7 +599,7 @@
       "fees": "unverified",
       "forms": [],
       "id": "FL_DRAFT_DBPR_0014",
-      "notes": "One requirement: obtain a 'doggie dining' permit from the local government in the area where the restaurant is located; local government participation varies. (Included as the one restaurant-specific outdoor/seating extra found on DBPR pages. Outdoor seating expansions that increase seating counts affect the license fee tier and may require plan review as a remodel; DBPR states seating limits are set by local building, fire, and water/sewer authorities \u2014 treat as unverified until confirmed against rule text.)",
+      "notes": "One requirement: obtain a 'doggie dining' permit from the local government in the area where the restaurant is located; local government participation varies. (Included as the one restaurant-specific outdoor/seating extra found on DBPR pages. Outdoor seating expansions that increase seating counts affect the license fee tier and may require plan review as a remodel; DBPR states seating limits are set by local building, fire, and water/sewer authorities — treat as unverified until confirmed against rule text.)",
       "timeline": "unverified",
       "title": "Dog-friendly outdoor dining (local permit)",
       "verification": "verified",
@@ -616,15 +618,15 @@
         }
       ],
       "id": "FL_DRAFT_LOCAL_0001",
-      "notes": "Valid for one tax year: October 1 \u2013 September 30. Renewal deadline September 30; delinquency penalties: 10% added in October, plus 5% per additional month (capped at 25%); per Fla. Stat. 205.053(3) an additional penalty of up to $250 may apply if the tax is unpaid 150 days after the initial notice of tax due. Receipts are transferable on change of ownership, location, or trade name. County-issued fee amounts by classification were not published on the pages read.",
-      "timeline": "Apply online via BTExpress; allow 3\u20135 business days for staff review after application submittal and any follow-up steps. Note: pursuant to section 205.0532, Florida Statutes (HB 905, effective July 1, 2026), applicants must complete a Cuba-transaction attestation; the receipt is printable up to three (3) business days after attestation.",
+      "notes": "Valid for one tax year: October 1 – September 30. Renewal deadline September 30; delinquency penalties: 10% added in October, plus 5% per additional month (capped at 25%); per Fla. Stat. 205.053(3) an additional penalty of up to $250 may apply if the tax is unpaid 150 days after the initial notice of tax due. Receipts are transferable on change of ownership, location, or trade name. County-issued fee amounts by classification were not published on the pages read.",
+      "timeline": "Apply online via BTExpress; allow 3–5 business days for staff review after application submittal and any follow-up steps. Note: pursuant to section 205.0532, Florida Statutes (HB 905, effective July 1, 2026), applicants must complete a Cuba-transaction attestation; the receipt is printable up to three (3) business days after attestation.",
       "title": "Miami-Dade County Local Business Tax Receipt (county-level)",
       "verification": "verified",
       "area": "miami-dade-local"
     },
     {
       "agency": "The municipality where the business is located (e.g., City of Miami); county layer issued by the Miami-Dade County Tax Collector",
-      "applies_when": "Any business located inside an incorporated municipality (including the City of Miami) \u2014 the county receipt alone is not enough.",
+      "applies_when": "Any business located inside an incorporated municipality (including the City of Miami) — the county receipt alone is not enough.",
       "citation": "County requirement to hold both: Miami-Dade County Tax Collector service page; City of Miami Code Enforcement FAQ",
       "citation_url": "https://www.mdctaxcollector.gov/services/local-business-tax-receipt",
       "fees": "unverified",
@@ -637,7 +639,7 @@
       "id": "FL_DRAFT_LOCAL_0002",
       "notes": "The county's own page states: 'Businesses located within a municipality must obtain both a city receipt and a Miami-Dade County receipt.' The City of Miami (Department of Code Enforcement FAQ) confirms the city layer: to operate a business in the City you must apply for a Certificate of Use (CU) and a Business Tax Receipt (BTR). So a restaurant in the City of Miami needs (at minimum): City of Miami CU + City of Miami BTR + Miami-Dade County BTR, plus the state DBPR food-service license layer.",
       "timeline": "unverified",
-      "title": "Municipal (city) Business Tax Receipt \u2014 stacking with the county receipt",
+      "title": "Municipal (city) Business Tax Receipt — stacking with the county receipt",
       "verification": "verified",
       "area": "miami-dade-local"
     },
@@ -656,13 +658,13 @@
       "id": "FL_DRAFT_LOCAL_0003",
       "notes": "The CU confirms the business is allowed in the zoning district and that the structure holds a proper Certificate of Occupancy for the use, and certifies compliance with local zoning/environmental ordinances, the Florida Fire Prevention Code, and the Florida Building Code. Operating without a CU can draw a fine/ticket to both the business owner and the property owner. Restaurant-specific: applicants must submit a business process letter explaining the business use (for restaurants: whether dinnerware is disposable or metal/ceramic, indoor/outdoor seating area, etc.) plus any applicable DERM Operating Permit applications. A Certificate of Occupancy is a prerequisite to obtaining a CU (for buildouts, the building permit + CO must be issued first). Contacts: RER-CUINFO@miamidade.gov, 786-315-2660; MeetQ consults available. Fees exist (non-refundable upfront fee plus remainder on approval) but amounts were not published on the pages read.",
       "timeline": "unverified",
-      "title": "Certificate of Use (CU) \u2014 unincorporated Miami-Dade County",
+      "title": "Certificate of Use (CU) — unincorporated Miami-Dade County",
       "verification": "verified",
       "area": "miami-dade-local"
     },
     {
       "agency": "Miami-Dade County Department of Regulatory and Economic Resources (RER), Building/Permit Section",
-      "applies_when": "New construction, remodeling/renovation, or change of use \u2014 e.g., converting a school or retail space into a restaurant. Required before a Certificate of Use can be issued.",
+      "applies_when": "New construction, remodeling/renovation, or change of use — e.g., converting a school or retail space into a restaurant. Required before a Certificate of Use can be issued.",
       "citation": "Florida Building Code; Miami-Dade County Code Ch. 8 (Building); RER certificates page",
       "citation_url": "http://www.miamidade.gov/global/economy/building/cert-of-occupancy.page",
       "fees": "unverified",
@@ -694,7 +696,7 @@
       "id": "FL_DRAFT_LOCAL_0005",
       "notes": "DERM's Environmental Plan Review reviews building permits, Certificates of Use and Occupancy, and Local Business Tax applications for compliance with federal, state, and county environmental laws (Ch. 24). For restaurants, DERM Operating Permit applications (e.g., the FOG/GDO permit) may be required as part of the CU/BTR package. DERM contact: DERMPlanReview@miamidade.gov, 786-315-2800. So even inside the City of Miami, the county retains an environmental review touchpoint.",
       "timeline": "unverified",
-      "title": "Municipal Certificate of Use \u2014 county environmental (DERM) review for businesses inside municipalities",
+      "title": "Municipal Certificate of Use — county environmental (DERM) review for businesses inside municipalities",
       "verification": "verified",
       "area": "miami-dade-local"
     },
@@ -711,15 +713,15 @@
         }
       ],
       "id": "FL_DRAFT_LOCAL_0006",
-      "notes": "Businesses needing inspection may request one online or by contacting the Fire Prevention Division (786-331-4800). The specific fee amounts per occupancy/restaurant classification were not published on the pages read; the Fire Prevention Fee Schedule is set by Implementing Order. NOTE: a September 2026 county ordinance amending Ch. 14 reportedly shifted fire inspections for small business occupancies from annual to biennial \u2014 this came from a non-official news source and needs confirmation against the current county code (see open questions).",
+      "notes": "Businesses needing inspection may request one online or by contacting the Fire Prevention Division (786-331-4800). The specific fee amounts per occupancy/restaurant classification were not published on the pages read; the Fire Prevention Fee Schedule is set by Implementing Order. NOTE: a September 2026 county ordinance amending Ch. 14 reportedly shifted fire inspections for small business occupancies from annual to biennial — this came from a non-official news source and needs confirmation against the current county code (see open questions).",
       "timeline": "Inspection required; the permit is issued upon compliance with any pending violations and payment of the required fee (per MDFR payment site, referencing Implementing Order 4-123). Inspections are conducted in order of priority based on occupancy type.",
-      "title": "Life Safety Operating Permit \u2014 Miami-Dade Fire Rescue annual inspection",
+      "title": "Life Safety Operating Permit — Miami-Dade Fire Rescue annual inspection",
       "verification": "verified",
       "area": "miami-dade-local"
     },
     {
       "agency": "Miami-Dade Fire Rescue Department, Fire Prevention Division",
-      "applies_when": "All commercial buildings \u2014 new construction or remodeling of existing construction (e.g., a restaurant buildout or kitchen renovation). Single-family homes are not inspected.",
+      "applies_when": "All commercial buildings — new construction or remodeling of existing construction (e.g., a restaurant buildout or kitchen renovation). Single-family homes are not inspected.",
       "citation": "Miami-Dade County Code Ch. 14; Florida Fire Prevention Code",
       "citation_url": "https://www.miamidade.gov/global/permit.page?Mduid_permit=per1518190923457614",
       "fees": "unverified",
@@ -751,7 +753,7 @@
       "id": "FL_DRAFT_LOCAL_0008",
       "notes": "Requires both an approved, installed grease trap/interceptor and the operating permit itself. DERM regulates grease traps through its FOG program (a federal court-order consent decree context). This is a distinct restaurant-critical county layer beyond the state DBPR food-service license.",
       "timeline": "The permit must be obtained and maintained; facilities with GDO permit class OP (operator) or GENOP (generator/operator) must file a Liquid Waste Transporter Electronic Manifest on or before the 20th of the month in which the FOG control device is cleaned.",
-      "title": "Fats, Oil and Grease (FOG) Discharge Control / Grease Discharge Operating (GDO) Permit \u2014 DERM",
+      "title": "Fats, Oil and Grease (FOG) Discharge Control / Grease Discharge Operating (GDO) Permit — DERM",
       "verification": "verified",
       "area": "miami-dade-local"
     },
@@ -768,7 +770,7 @@
         }
       ],
       "id": "FL_DRAFT_LOCAL_0009",
-      "notes": "ZIP assistance: RER-ZIP@miamidade.gov, 786-315-2660; MeetQ consults available. Sign rules inside municipalities (e.g., City of Miami) are set by the municipality's own code \u2014 the county ZIP applies in unincorporated areas.",
+      "notes": "ZIP assistance: RER-ZIP@miamidade.gov, 786-315-2660; MeetQ consults available. Sign rules inside municipalities (e.g., City of Miami) are set by the municipality's own code — the county ZIP applies in unincorporated areas.",
       "timeline": "unverified",
       "title": "Zoning Improvement Permit (ZIP) for restaurant storefront signage",
       "verification": "verified",
@@ -776,13 +778,13 @@
     },
     {
       "agency": "Florida Legislature; filings via Department of State, Division of Corporations",
-      "applies_when": "citation index entry \u2014 governs formation, articles of organization, management, and dissolution of limited liability companies",
+      "applies_when": "citation index entry — governs formation, articles of organization, management, and dissolution of limited liability companies",
       "citation": "Fla. Stat. Ch. 605 (Florida Revised Limited Liability Company Act)",
       "citation_url": "https://www.flsenate.gov/Laws/Statutes/2021/Chapter605/All",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0001",
-      "notes": "Florida Revised Limited Liability Company Act \u2014 governs LLC formation (articles of organization), members/managers, operating agreements, and entity administration; primary statute for LLC-based restaurant formation.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — Ch. 605 — Florida Revised Limited Liability Company Act. Current selectable statute year is 2025. Florida Revised Limited Liability Company Act — governs LLC formation (articles of organization), members/managers, operating agreements, and entity administration; primary statute for LLC-based restaurant formation.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 605",
       "verification": "verified",
@@ -790,13 +792,13 @@
     },
     {
       "agency": "Florida Legislature; filings via Department of State, Division of Corporations",
-      "applies_when": "citation index entry \u2014 governs formation, governance, annual reports, and dissolution of business corporations",
+      "applies_when": "citation index entry — governs formation, governance, annual reports, and dissolution of business corporations",
       "citation": "Fla. Stat. Ch. 607 (Florida Business Corporation Act)",
       "citation_url": "https://www.flsenate.gov/Laws/Statutes/2021/Chapter607",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0002",
-      "notes": "Florida Business Corporation Act \u2014 governs incorporation (articles of incorporation), corporate powers, directors/officers, registered agent, and annual reports; primary statute for corporation-based restaurant formation.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — Ch. 607 — Florida Business Corporation Act. Current selectable statute year is 2025. Florida Business Corporation Act — governs incorporation (articles of incorporation), corporate powers, directors/officers, registered agent, and annual reports; primary statute for corporation-based restaurant formation.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 607",
       "verification": "verified",
@@ -804,13 +806,13 @@
     },
     {
       "agency": "Florida Legislature; registered with Department of State, Division of Corporations",
-      "applies_when": "citation index entry \u2014 governs registration of a fictitious (DBA) business name before transacting business under it",
+      "applies_when": "citation index entry — governs registration of a fictitious (DBA) business name before transacting business under it",
       "citation": "Fla. Stat. s. 865.09 (Fictitious Name Act)",
       "citation_url": "https://www.flsenate.gov/laws/statutes/2018/865.09",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0003",
-      "notes": "Fictitious Name Act \u2014 requires registration of any business name other than the legal name with the Division of Corporations (sworn statement, newspaper advertisement, 5-year term); needed when a restaurant trades under a brand name.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — s. 865.09 — Fictitious Name Act. Current selectable statute year is 2025. Fictitious Name Act — requires registration of any business name other than the legal name with the Division of Corporations (sworn statement, newspaper advertisement, 5-year term); needed when a restaurant trades under a brand name.",
       "timeline": "n/a",
       "title": "Fla. Stat. s. 865.09",
       "verification": "verified",
@@ -818,13 +820,13 @@
     },
     {
       "agency": "Florida Legislature; enforced by Department of Business and Professional Regulation, Division of Hotels and Restaurants",
-      "applies_when": "citation index entry \u2014 governs licensure, sanitation, and operation of public lodging and public food service establishments",
+      "applies_when": "citation index entry — governs licensure, sanitation, and operation of public lodging and public food service establishments",
       "citation": "Fla. Stat. Ch. 509",
       "citation_url": "https://flsenate.gov/Laws/Statutes/2026/Chapter509/All?utm_source=chatgpt.com",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0004",
-      "notes": "Authorizes the Division of Hotels and Restaurants to regulate public lodging and public food service establishments \u2014 the core state license (ss. 509.241-509.302) every Florida restaurant must hold.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — Ch. 509 — DBPR lodging and food-service licensing. Current selectable statute year is 2025. Authorizes the Division of Hotels and Restaurants to regulate public lodging and public food service establishments — the core state license (ss. 509.241-509.302) every Florida restaurant must hold.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 509",
       "verification": "verified",
@@ -832,13 +834,13 @@
     },
     {
       "agency": "Florida Legislature; levied by counties and municipalities",
-      "applies_when": "citation index entry \u2014 governs county/municipal local business tax and the local business tax receipt",
+      "applies_when": "citation index entry — governs county/municipal local business tax and the local business tax receipt",
       "citation": "Fla. Stat. Ch. 205",
       "citation_url": "https://www.flsenate.gov/Laws/Statutes/2023/Chapter205/All",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0005",
-      "notes": "Authorizes counties and municipalities to levy a local business tax for the privilege of engaging in business and issue a local business tax receipt; every Florida business location typically needs one from each local jurisdiction.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — Ch. 205 — Local Business Taxes. Current selectable statute year is 2025. Authorizes counties and municipalities to levy a local business tax for the privilege of engaging in business and issue a local business tax receipt; every Florida business location typically needs one from each local jurisdiction.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 205",
       "verification": "verified",
@@ -846,13 +848,13 @@
     },
     {
       "agency": "Florida Legislature; administered by Department of Revenue",
-      "applies_when": "citation index entry \u2014 governs sales and use tax collection, dealer registration, transient rentals, and the local-option food and beverage tax",
+      "applies_when": "citation index entry — governs sales and use tax collection, dealer registration, transient rentals, and the local-option food and beverage tax",
       "citation": "Fla. Stat. Ch. 212",
       "citation_url": "https://www.flsenate.gov/Laws/Statutes/2025/Chapter212",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0006",
-      "notes": "State sales and use tax (6% on retail sales of tangible personal property and taxable services, s. 212.06); restaurants must register as dealers and remit tax on food/beverage sales; also covers transient rentals and local-option food/beverage taxes.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — Ch. 212 — Tax on Sales, Use, and Other Transactions. Current selectable statute year is 2025. State sales and use tax (6% on retail sales of tangible personal property and taxable services, s. 212.06); restaurants must register as dealers and remit tax on food/beverage sales; also covers transient rentals and local-option food/beverage taxes.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 212",
       "verification": "verified",
@@ -860,13 +862,13 @@
     },
     {
       "agency": "Florida Legislature; administered by Department of Revenue",
-      "applies_when": "citation index entry \u2014 governs state corporate income tax on corporations doing business in Florida",
+      "applies_when": "citation index entry — governs state corporate income tax on corporations doing business in Florida",
       "citation": "Fla. Stat. Ch. 220",
       "citation_url": "https://FLSENATE.GOV/Laws/Statutes/2023/Chapter220/All",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0007",
-      "notes": "Florida Income Tax Code \u2014 imposes corporate income tax on corporations conducting business in Florida; LLCs classified as partnerships for federal tax purposes are not subject; applies to restaurant entities taxed as corporations.",
+      "notes": "RESOLVED 2026-10-13: scope verified on Online Sunshine (leg.state.fl.us) — Ch. 220 — Florida Income Tax Code. Current selectable statute year is 2025. Florida Income Tax Code — imposes corporate income tax on corporations conducting business in Florida; LLCs classified as partnerships for federal tax purposes are not subject; applies to restaurant entities taxed as corporations.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 220",
       "verification": "verified",
@@ -874,7 +876,7 @@
     },
     {
       "agency": "Department of Business and Professional Regulation, Division of Hotels and Restaurants",
-      "applies_when": "citation index entry \u2014 governs implementing rules for hotel/restaurant licensure, inspections, and food-service sanitation under Ch. 509",
+      "applies_when": "citation index entry — governs implementing rules for hotel/restaurant licensure, inspections, and food-service sanitation under Ch. 509",
       "citation": "Fla. Admin. Code, Div. 61C",
       "citation_url": "https://flrules.org/gateway/organization.asp?id=249",
       "fees": "n/a",
@@ -888,7 +890,7 @@
     },
     {
       "agency": "Department of State, Division of Corporations",
-      "applies_when": "citation index entry \u2014 would govern administrative filing procedures for entity formation, annual reports, and fictitious names",
+      "applies_when": "citation index entry — would govern administrative filing procedures for entity formation, annual reports, and fictitious names",
       "citation": "Fla. Admin. Code, Div. 1N",
       "citation_url": "https://flrules.org/gateway/Department.asp?toType=&DeptID=1&Sort=Name",
       "fees": "n/a",
@@ -902,13 +904,13 @@
     },
     {
       "agency": "Miami-Dade County",
-      "applies_when": "citation index entry \u2014 governs the county local business tax receipt and the certificate-of-use required before a business may operate",
+      "applies_when": "citation index entry — governs the county local business tax receipt and the certificate-of-use required before a business may operate",
       "citation": "Miami-Dade County Code Ch. 8A, Art. 9 & 10 (business tax); certificate-of-use (zoning)",
       "citation_url": "https://lfpub.bbfl.us/WebLink/edoc/1276296/new%20lbtr_387663.pdf?dbid=2&repo=Development",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0010",
-      "notes": "County-issued local business tax receipts cite County Code Ch. 8A, Art. 9 & 10 as authority; a certificate of use (zoning/building inspection clearance) is separately required to operate \u2014 official code-chapter pages on municode not opened, so entry is recorded but unverified.",
+      "notes": "County-issued local business tax receipts cite County Code Ch. 8A, Art. 9 & 10 as authority; a certificate of use (zoning/building inspection clearance) is separately required to operate — official code-chapter pages on municode not opened, so entry is recorded but unverified.",
       "timeline": "n/a",
       "title": "Miami-Dade County Code business-tax / certificate-of-use provisions",
       "verification": "unverified",
@@ -916,45 +918,291 @@
     },
     {
       "agency": "Florida Legislature; enforced by Department of Business and Professional Regulation, Division of Alcoholic Beverages and Tobacco",
-      "applies_when": "citation index entry \u2014 governs manufacture, distribution, and sale of alcoholic beverages; out-of-scope-for-now for the restaurant pack",
+      "applies_when": "citation index entry — governs manufacture, distribution, and sale of alcoholic beverages; out-of-scope-for-now for the restaurant pack",
       "citation": "Fla. Stat. Ch. 561",
       "citation_url": "https://flsenate.gov/Laws/Statutes/2024/Chapter561/All",
       "fees": "n/a",
       "forms": [],
       "id": "FL_DRAFT_INDEX_0011",
-      "notes": "Beverage Law administration (s. 561.02) \u2014 state retains primary regulatory authority over alcoholic beverage manufacture, distribution, and sale via the Division of Alcoholic Beverages and Tobacco; indexed now, deferred from current pack scope.",
+      "notes": "Beverage Law administration (s. 561.02) — state retains primary regulatory authority over alcoholic beverage manufacture, distribution, and sale via the Division of Alcoholic Beverages and Tobacco; indexed now, deferred from current pack scope.",
       "timeline": "n/a",
       "title": "Fla. Stat. Ch. 561",
       "verification": "verified",
       "area": "statute-index"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "A Florida restaurant (or bar) wants to sell beer, wine, AND distilled spirits (full liquor) by the drink for on-premises consumption, without meeting the Special Food Service (SFS) restaurant criteria.",
+      "citation": "Fla. Stat. ss. 561.20(1), 565.02(1)",
+      "citation_url": "https://flsenate.gov/laws/statutes/2004/565.02",
+      "fees": "$624-$1,820/year by county population per Fla. Stat. s. 565.02(1)(b)-(f): county population over 100,000 = $1,820; 75,001-100,000 = $1,560; 50,001-75,000 = $1,300; 25,001-50,000 = $858; 25,000 or less = $624. Temporary license = 1/4 of permanent fee or $100, whichever is greater (ABT checklist).",
+      "forms": [
+        {
+          "name": "DBPR ABT-6001 - Application for New Alcoholic Beverage License (with detailed instructions)",
+          "url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1034&clientCode=4006&XACT_DEFN_ID=7059"
+        }
+      ],
+      "id": "FL_DRAFT_ABT_0001",
+      "notes": "ABT checklist states the 4COP category covers 'Beer, Wine and Liquor Consumption on Premises' (on-premises consumption only, not package sales). Apply online via the myfloridalicense.com Online Services link or mail/hand-deliver to an ABT district office. Applicants must complete form ABT-6001; may be required to submit fingerprints (ABT ORI# FL920150Z via FDLE Livescan vendor list; out-of-state applicants request a fingerprint card from the division), certified arrest dispositions, moral-character mitigation, right of occupancy, premises sketch, zoning approval, health approval, FEIN/SSN, contracts, partner/officer/stockholder info, Secretary of State certificate of status, and Department of Revenue clearance. Note: new 4COP quota licenses can only be issued if the county has quota availability (see FL_DRAFT_ABT_0003); most buyers acquire an existing license by transfer (see FL_DRAFT_ABT_0004).",
+      "timeline": "unverified",
+      "title": "4COP quota license - beer, wine, and liquor for consumption on premises",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "A bona fide food service establishment wants a full-liquor on-premises license outside the county quota by meeting food-service criteria instead of buying a quota license.",
+      "citation": "Fla. Stat. s. 561.20(2)(a)4 (as amended by 2023 HB 639)",
+      "citation_url": "https://flsenate.gov/Session/Bill/2023/639/BillText/c2/PDF",
+      "fees": "unverified",
+      "forms": [
+        {
+          "name": "DBPR ABT-6001 - Application for New Alcoholic Beverage License (with detailed instructions)",
+          "url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1034&clientCode=4006&XACT_DEFN_ID=7059"
+        }
+      ],
+      "id": "FL_DRAFT_ABT_0002",
+      "notes": "Eligibility under s. 561.20(2)(a)4 as amended in 2023 (HB 639, effective 2023): a bona fide food service establishment with at least 2,000 sq ft of service area, equipped to serve meals to 120 persons at one time, at least 120 physical seats for patrons during operating hours, holding itself out as a restaurant, deriving at least 51% of gross food and beverage revenue from food and nonalcoholic beverages. (Prior to 2023 the thresholds were 2,500 sq ft / 150 persons; the 2020 statute text confirmed on flsenate.gov.) License may NOT operate as a package store and no liquor sales after food service/consumption hours have elapsed. The 51% test is measured over the first 60-day operating period and each 12-month period thereafter; failure = revocation or denial, and the disqualified person is ineligible for a subsequent SFS application for 120 days. SFS licenses are NOT movable to a new location - valid only on the premises where issued. ABT requires Division of Hotels and Restaurants approval for SFS applications. Annual fee: ABT's 2017 fact sheet (hosted third-party but sourced to ABT) listed $1,820; current fee chart PDF did not render during research - confirm on the ABT fee chart. ABT also publishes a General Laws of Local Application and Special Acts reference (GENLAWS.pdf) because local special acts in some counties set different SFS thresholds.",
+      "timeline": "unverified",
+      "title": "SFS special restaurant license (non-quota full liquor, formerly 'SRX')",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "Assessing whether a new 4COP quota license can be issued in a given county, or whether a quota license must be purchased from an existing holder.",
+      "citation": "Fla. Stat. s. 561.20(1)",
+      "citation_url": "https://www.flsenate.gov/laws/statutes/2023/561.20",
+      "fees": "unverified",
+      "forms": [],
+      "id": "FL_DRAFT_ABT_0003",
+      "notes": "Statutory cap: no licenses under s. 565.02(1)(a)-(f) may be issued so that the number in any county exceeds ONE license per 7,500 residents, based on the latest regular county population estimate prepared under s. 186.901 (Bureau of Economic and Business Research, University of Florida). A new license is issued for each population increase of 7,500 residents above the April 1, 1999 baseline. Regardless of the cap, at least THREE licenses must be available in any county that approves liquor sales. Quota licenses are issued by the division subject to this limitation; when new quota capacity opens, ABT issues licenses via a drawing process (s. 561.19) - details not verified on an official source during this research. ABT publishes NO secondary-market price data; private sale prices are negotiated between parties and ABT does not set them.",
+      "timeline": "unverified",
+      "title": "Quota-license mechanics - county population caps and issuance",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "Buying an existing 4COP quota license (or other retail license) from its current holder - the standard path to full liquor in counties with no quota availability.",
+      "citation": "Fla. Stat. s. 561.20; ABT transfer checklist",
+      "citation_url": "https://www.myfloridalicense.com/CheckListDetail.asp?xactCode=1060&clientCode=4008&XACT_DEFN_ID=13356",
+      "fees": "Pay up to $5,000 for the permanent license; transfer penalty fees may apply (ABT checklist). Private purchase price negotiated between buyer and seller - ABT does not publish or regulate it.",
+      "forms": [
+        {
+          "name": "DBPR ABT-6002 - Application for Transfer of Ownership of an Alcoholic Beverage License",
+          "url": "https://www2.myfloridalicense.com/abt/forms/documents/abt-6002TransferAppPack.pdf"
+        },
+        {
+          "name": "DBPR ABT-6002 checklist page",
+          "url": "https://www.myfloridalicense.com/CheckListDetail.asp?xactCode=1060&clientCode=4008&XACT_DEFN_ID=13356"
+        }
+      ],
+      "id": "FL_DRAFT_ABT_0004",
+      "notes": "ABT-6001 is for NEW licenses only - ABT instructs 'Do not use this form for a transfer of ownership of an existing license.' Transfers require division approval; the transferor must clear Department of Revenue liability (ABT-6002 includes a DOR disclosure/notarized release so the buyer can learn of potential tax liability). The division retains authority over the transfer. Special (non-quota) licenses under 561.20 may transfer only to a bona fide purchaser of the hotel/motel/restaurant facility itself (per 2023 HB 639 bill text on flsenate.gov) - an SFS license cannot be moved to a new location or sold as a standalone asset. ABT publishes no data on quota-license secondary-market prices.",
+      "timeline": "unverified",
+      "title": "Transfer of ownership of an alcoholic beverage license (quota license resale)",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "A restaurant wants to serve beer and wine (no distilled spirits) by the drink for on-premises consumption.",
+      "citation": "Fla. Stat. s. 565.02(1); ABT license types page",
+      "citation_url": "https://www2.myfloridalicense.com/alcoholic-beverages-and-tobacco/",
+      "fees": "unverified",
+      "forms": [
+        {
+          "name": "DBPR ABT-6001 - Application for New Alcoholic Beverage License (via 2COP checklist page)",
+          "url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1001&clientCode=4005&XACT_DEFN_ID=6897"
+        }
+      ],
+      "id": "FL_DRAFT_ABT_0005",
+      "notes": "ABT's license-type page lists 'Beer and Wine Consumption on Premises (2COP)' as a non-quota retail license class. The 2COP checklist page exists on the ABT licensing portal; its detailed requirements and current fee were not fully read during research - verify fees on the ABT fee chart before quoting.",
+      "timeline": "unverified",
+      "title": "2COP license - beer and wine for consumption on premises",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "A restaurant applicant wants to begin alcohol operations before ABT completes review of the permanent 4COP/SFS license application.",
+      "citation": "ABT 4COP checklist",
+      "citation_url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1034&clientCode=4006&XACT_DEFN_ID=7059",
+      "fees": "Temporary licenses are 1/4 of the permanent license fee or $100, whichever is greater (ABT checklist).",
+      "forms": [
+        {
+          "name": "DBPR ABT-6001 - Application for New Alcoholic Beverage License (temporary requested via same form/checklist)",
+          "url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=1034&clientCode=4006&XACT_DEFN_ID=7059"
+        }
+      ],
+      "id": "FL_DRAFT_ABT_0006",
+      "notes": "Fee rule confirmed on the official ABT 4COP checklist. Processing time and temporary-license duration not published on the checklist - unverified.",
+      "timeline": "unverified",
+      "title": "Temporary alcoholic beverage license while permanent application is pending",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "Holding any ABT retail license (4COP, SFS, 2COP) past its first year - licenses must be renewed annually.",
+      "citation": "Fla. Stat. s. 561.27",
+      "citation_url": "https://flsenate.gov/Laws/Statutes/2024/Chapter561/All",
+      "fees": "Annual license tax (per license type/county population); delinquency penalty = $5 for each month or fraction of a month of delinquency, OR 5% of the license fee, whichever is greater.",
+      "forms": [],
+      "id": "FL_DRAFT_ABT_0007",
+      "notes": "Renewal is 'as a matter of course' year to year per a division-established renewal schedule, on payment of the annual license tax and any required bond (s. 561.27(1)). A license not renewed within 60 days of expiration is CANCELED by the division unless involved in litigation/administrative action (good-cause exception at division discretion) (s. 561.27(2)). Mid-cycle applicants: full annual fee if issued more than 6 months before the next renewal date; half fee if less than 6 months.",
+      "timeline": "unverified",
+      "title": "Annual renewal of alcoholic beverage licenses",
+      "verification": "verified"
+    },
+    {
+      "agency": "Division of Alcoholic Beverages and Tobacco (ABT)",
+      "applies_when": "An alcoholic beverage license has been put into null-and-void status and the former holder wants to restore it.",
+      "citation": "ABT delinquent renewal checklist",
+      "citation_url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=8045&clientCode=4008&XACT_DEFN_ID=7121",
+      "fees": "Fees vary depending on the length of the delinquency and the license type (ABT checklist).",
+      "forms": [
+        {
+          "name": "DBPR ABT-6015 - Delinquent Renewal application",
+          "url": "https://www.myfloridalicense.com/CheckListDetail.asp?SID=&xactCode=8045&clientCode=4008&XACT_DEFN_ID=7121"
+        }
+      ],
+      "id": "FL_DRAFT_ABT_0008",
+      "notes": "Submit form ABT-6015 to an ABT district office by mail, hand delivery, or by appointment. This is the official recovery path after cancellation under s. 561.27(2).",
+      "timeline": "unverified",
+      "title": "Delinquent renewal of a null-and-void alcoholic beverage license",
+      "verification": "verified"
+    },
+    {
+      "agency": "IRS",
+      "applies_when": "You need an EIN to hire employees, operate a partnership or corporation, pay sales/excise taxes, or change business structure/ownership. If forming a corporation or LLC, form the entity with the Florida Division of Corporations (Sunbiz) before applying, or the EIN application may be delayed.",
+      "citation": "IRS, 'Get an employer identification number' (irs.gov); 26 USC s. 6109 not independently verified",
+      "citation_url": "https://www.irs.gov/businesses/small-businesses-self-employed/get-an-employer-identification-number",
+      "fees": "Free. The IRS states you never have to pay a fee for an EIN and warns against websites that charge for one.",
+      "forms": [
+        {
+          "name": "Form SS-4, Application for Employer Identification Number (required for fax or mail filing)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_EMPL_0001",
+      "notes": "Online tool eligibility (all must be true): domestic organization formed in the US or US territories; principal place of business in the US or US territories; applicant is the responsible party or its authorized representative; has the responsible party's SSN or ITIN. Cannot apply online with an existing EIN (except government entities) or if principal place of business is outside the US (use phone/fax/mail). One EIN per responsible party per day. Session expires after 15 minutes of inactivity; the application cannot be saved mid-session. Availability (ET): Mon-Fri 6:00 a.m.-1:00 a.m. next day; Sat 6:00 a.m.-9:00 p.m.; Sun 6:00 p.m.-12:00 a.m.",
+      "timeline": "Online: issued immediately after the application is approved. Fax and mail timelines: unverified on the fetched IRS page (third-party sources report ~4 business days by fax, ~4 weeks by mail).",
+      "title": "Employer Identification Number (EIN) application",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "A restaurant (non-construction industry) that employs four (4) or more employees, including business owners who are corporate officers or LLC members, must carry workers' compensation coverage. Non-construction sole proprietors or partners in a partnership are not employees unless they elect to be included on the policy (Form DWC-251).",
+      "citation": "Florida Statutes ch. 440; s. 440.38 (securing compensation) not independently verified",
+      "citation_url": "https://myfloridacfo.com/division/wc/employer/coverage-requirements",
+      "fees": "unverified (premiums set by licensed carriers; not published as a fixed schedule on the coverage page)",
+      "forms": [
+        {
+          "name": "Form DWC-251, Notice of Election of Coverage (for sole proprietors/partners electing coverage)",
+          "url": "https://myfloridacfo.com/division/wc/employer/coverage-requirements"
+        }
+      ],
+      "id": "FL_DRAFT_EMPL_0002",
+      "notes": "The Division publishes a Proof of Coverage Database (dwcdataportal.fldfs.com), a Non-Compliance Referral database, and an Exemption Search for verifying coverage and reporting non-compliant employers. Contrast: construction employers need coverage with 1+ employees; agricultural employers at 6 regular or 12 seasonal workers (more than 30 days in a season / 45 days in a calendar year). Out-of-state employers working in Florida must obtain a Florida policy from a Florida-approved carrier with 'Florida' listed in Section 3A of the policy.",
+      "timeline": "unverified (no statutory deadline published on the fetched coverage page; coverage must be in place once the employer meets the threshold)",
+      "title": "Florida workers' compensation insurance — non-construction coverage rule",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "A business owner who is a corporate officer or LLC member in a non-construction business may opt out of coverage for themselves by meeting the Division's exemption requirements. The exemption applies to the individual filer only — the business must still carry coverage for all other employees (including the owner count toward the 4-employee threshold).",
+      "citation": "Fla. Stat. s. 440.05 (not independently verified)",
+      "citation_url": "https://myfloridacfo.com/division/wc/employer/coverage-requirements",
+      "fees": "unverified (Division reported collecting exemption fees in FY 2024/25 annual report; specific fee amounts not confirmed on fetched pages)",
+      "forms": [
+        {
+          "name": "Exemption application (electronic, via Division of Workers' Compensation)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_EMPL_0003",
+      "notes": "Verified on the Division's coverage page: 'Exemptions are available to business owners who opt out of the insurance coverage protections for themselves and who meet the requirements for an Exemption.' The 4-employee threshold is calculated including corporate officers/LLC members; an exempted officer still counts toward the 4-employee threshold for the business (per Division FAQ guidance published in secondary sources; exact online application URL not captured from fetched pages — needs confirmation).",
+      "timeline": "unverified (Division reports processing 99.33% of online exemption applications within 10 business days of receipt in FY 2024/25)",
+      "title": "Workers' compensation exemption for corporate officers / owners",
+      "verification": "verified"
+    },
+    {
+      "agency": "Florida Division of Workers' Compensation",
+      "applies_when": "Any employer required to secure workers' compensation coverage under Fla. Stat. ch. 440 that fails to do so. The Division (Bureau of Compliance) conducts onsite and virtual inspections; if noncompliant, the Division must issue a Stop-Work Order requiring the employer to cease all business operations.",
+      "citation": "Fla. Stat. s. 440.107 (2023 statute text as published by the Florida Senate)",
+      "citation_url": "https://FLSENATE.GOV/Laws/Statutes/2023/440.107",
+      "fees": "Penalty equal to 2 times the amount the employer would have paid in premium (approved manual rates applied to payroll) during the noncompliant period within the preceding 12-month period, or $1,000, whichever is greater; for employers with a prior stop-work order (or material payroll understatement/concealment) the preceding 24-month period is used. Plus $1,000 per day for each day of operations in violation of a stop-work order.",
+      "forms": [],
+      "id": "FL_DRAFT_EMPL_0004",
+      "notes": "Credit for initial premium payment: an employer not previously issued a stop-work order may receive a credit for the initial estimated annual workers' comp policy premium (with documentation) applied against the penalty; the $1,000 minimum applies even after the credit. The statute also provides for orders of conditional release, periodic payment agreements (the Division managed 2,536 PPAs totaling ~$24.9M outstanding as of 6/30/2025, per the DWC 2025 annual report), and stop-work orders binding successor entities. Note: older Florida statutes and many secondary sources cite '1.5 times the premium for the preceding 3-year period'; the 2023 statute text shows the 2x / 12-month (24-month for repeat offenders) formula. Flagged as a possible amendment — see open questions.",
+      "timeline": "unverified",
+      "title": "Penalties for failure to secure Florida workers' compensation coverage",
+      "verification": "verified"
+    },
+    {
+      "agency": "E-Verify / Florida",
+      "applies_when": "Beginning July 1, 2023, a private employer with 25 or more employees must use the federal E-Verify system to verify the employment eligibility of each new employee within 3 business days after the first day the employee begins working for pay. Applies only to new hires (not retroactive). Employers with fewer than 25 employees verify via Form I-9 documentation instead and must retain a copy for at least 3 years.",
+      "citation": "Fla. Stat. s. 448.095(2)(a)-(b)",
+      "citation_url": "https://FLSENATE.GOV/Laws/Statutes/2024/0448.095",
+      "fees": "unverified (third-party sources report E-Verify itself is a free DHS/SSA service; not confirmed on the fetched official pages)",
+      "forms": [
+        {
+          "name": "Form I-9, Employment Eligibility Verification (federal; fallback if E-Verify unavailable for 3 business days)",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_EMPL_0005",
+      "notes": "Enforcement by FloridaCommerce (formerly DEO). First determination of noncompliance: notice and 30 days to cure. Three failures in any 24-month period: $1,000 per day fine until compliance is proved; noncompliance is grounds for suspension of all licenses issued by a ch. 120 licensing agency until cured. FloridaCommerce, FDLE, the Attorney General, a State Attorney, or the Statewide Prosecutor may request the employer's verification documentation. Complaints may be sent to EVerifyCompliance@commerce.fl.gov.",
+      "timeline": "Verify each new employee within 3 business days after the first day of work for pay. Employers required to use E-Verify must certify compliance on their first unemployment/reemployment-assistance tax return each calendar year. If the E-Verify system is unavailable for 3 business days, use Form I-9 and document the unavailability (screenshots each day, public announcement, or other recorded notice). Retain documentation for at least 3 years.",
+      "title": "Florida E-Verify mandate for private employers with 25 or more employees",
+      "verification": "verified"
+    },
+    {
+      "agency": "E-Verify / Florida",
+      "applies_when": "A Florida employer subject to the s. 448.095 E-Verify mandate (25+ employees) must first enroll in E-Verify before creating verification cases for new hires.",
+      "citation": "E-Verify, 'The Enrollment Process' (e-verify.gov)",
+      "citation_url": "https://e-verify.gov/employers/enrolling-in-e-verify/the-enrollment-process",
+      "fees": "unverified",
+      "forms": [
+        {
+          "name": "E-Verify Memorandum of Understanding (MOU) — electronically reviewed and signed during enrollment",
+          "url": "unverified"
+        }
+      ],
+      "id": "FL_DRAFT_EMPL_0006",
+      "notes": "Per e-verify.gov, enrollment steps include: visit the enrollment website and accept terms; create a new company account via email activation link (one-time-use; enrollment completed in a single session); review the enrollment checklist; choose an access method (Employer, E-Verify Employer Agent, Corporate Administrator, or Web Services) by answering four guided questions; choose employer category (federal contractor w/ or w/o FAR clause, government, or none); then complete company details, NAICS code, hiring-site information, program administrator registration, and certification of information. A restaurant would select the standard 'Employer' access method with 'None of these categories apply.' Direct E-Verify enrollment URL (everify.uscis.gov/enroll) appeared only in secondary sources — not used as a citation URL.",
+      "timeline": "unverified (enrollment itself is a one-time setup completed in a single online session; third-party sources report account activation can take up to ~3 weeks)",
+      "title": "E-Verify employer enrollment process",
+      "verification": "verified"
     }
   ],
   "open_questions": [
-    "[formation] The full text of the cited Florida Statutes sections (605.0201, 605.0113, 605.0212, 607.0202, 607.0505, 607.1622, 865.09) could not be re-read from Online Sunshine (flsenate.gov) during this session \u2014 a fetch timed out and was not retried per instruction. Requirements were verified against the official Department of State / Division of Corporations pages that cite those sections, not against the statute text itself. A follow-up read of the current Online Sunshine text would strengthen the citations.",
+    "[formation] The full text of the cited Florida Statutes sections (605.0201, 605.0113, 605.0212, 607.0202, 607.0505, 607.1622, 865.09) could not be re-read from Online Sunshine (flsenate.gov) during this session — a fetch timed out and was not retried per instruction. Requirements were verified against the official Department of State / Division of Corporations pages that cite those sections, not against the statute text itself. A follow-up read of the current Online Sunshine text would strengthen the citations.",
     "[formation] Processing timelines: the Division states filings are processed in the order received and publishes no committed turnaround time on the pages read, so timelines for new-entity filings and fictitious-name registrations are recorded as unverified.",
     "[formation] The direct form.sunbiz.org PDF URLs for the LLC Articles of Organization and the profit-corporation Articles of Incorporation mail-filing forms were not captured verbatim in this session; the online filing paths are confirmed but the printable-form links are marked unverified.",
-    "[formation] No restaurant-specific rules were found at this layer \u2014 entity formation, registered-agent, annual-report, and fictitious-name rules are entity-type based, not industry based. Restaurant-specific permitting/licensing belongs to a separate research area.",
-    "[tax] Finer sales-and-use-tax filing-frequency tiers (annual, semiannual, quarterly thresholds, e.g., '$100 or less = annual') were found only in third-party summaries of DOR materials, not on an official DOR page reviewed in this task; the officially confirmed figure is only the >$1,000-in-prior-fiscal-year monthly trigger (s. 212.12, TIP 08A01-10).",
-    "[tax] The mandatory electronic filing/payment threshold for sales and use tax returns (third-party sources report >$5,000 in annual tax paid) was not confirmed on an official DOR page reviewed in this task.",
+    "[formation] No restaurant-specific rules were found at this layer — entity formation, registered-agent, annual-report, and fictitious-name rules are entity-type based, not industry based. Restaurant-specific permitting/licensing belongs to a separate research area.",
     "[tax] No official processing timeline for the DR-1 registration application or issuance of the DR-11 Certificate of Registration was found in the materials reviewed.",
     "[tax] No registration fee for Form DR-1 is stated in the official materials reviewed (DOR dealer registration is generally no-fee, but this was not confirmed).",
-    "[tax] Tangible personal property late/non-filing penalty amounts (county guidance cites 25% for failure to file and 5% per month late under Fla. Stat. s. 193.072) were not directly confirmed on a DOR page opened in this task.",
     "[tax] The F-1120 due date (May 1 for calendar-year filers, per Fla. Stat. s. 220.222) comes from third-party guidance; the DOR materials reviewed did not state the due date.",
     "[tax] The surtax rates list (current county discretionary sales surtax rates, DOR form DR-15DSS) should be checked on the DOR surtax page before drafting requirements that quote specific county rates; no county rate figures are recorded here.",
     "[dbpr-restaurants] Fla. Stat. s. 509.032 inspection-frequency rule text could not be fetched directly (flsenate.gov timed out during this research session). The statute's risk-based rule reportedly requires at least 1 and no more than 4 routine inspections per year for public food service establishments; confirm the current section text and the implementing FAC rule (cited in bill analyses as 61C-1.002) before using exact cadence figures.",
-    "[dbpr-restaurants] Change-of-ownership timing threshold is inconsistent across DBPR's own pages: the Guide to Permanent Food Service says apply for CHANGE OF OWNER when taking over a space 'currently licensed by a restaurant or where a restaurant has been closed less than a year,' while the plan-review trigger is reopened after being closed 'at least 18 months' and the mobile license application (DBPR HR-7036) defines change of ownership as 'previously licensed within the last 18 months by Hotels & Restaurants.' Reconcile which cutoff applies to fixed restaurants.",
     "[dbpr-restaurants] Standalone PDF URLs for DBPR HR-7035 (fixed food service, no plan review), HR-7007 (public food service license application), and HR-7036 (mobile) were not captured verbatim from official pages; only the HR-7030 combination packet PDF URL was captured. Applications are also accepted online via DBPR Online Services.",
     "[dbpr-restaurants] Specific triggers for follow-up/re-inspection inspections (e.g., violation counts, closure criteria) beyond 'follow-up visits, administrative action or closure when necessary' were not published on the pages opened; confirm against FAC rule 61C-1.006 enforcement provisions if exact triggers are needed.",
-    "[miami-dade-local] Certificate of Use fee amounts: the RER certificates page references a Fees section and a non-refundable upfront fee with the balance due on approval, but no dollar amounts were published in the pages read. Fee schedule location unverified.",
-    "[miami-dade-local] County Local Business Tax Receipt restaurant-classification fee amounts: not published on the Tax Collector pages read; fee schedule unverified.",
-    "[miami-dade-local] Life Safety Operating Permit fee amounts per occupancy/restaurant and the exact inspection cadence: the county's Fire Prevention Fee Schedule (Implementing Order 4-123) was not opened. A September 2026 Board of County Commissioners ordinance amending Ch. 14 reportedly moved small business occupancies from annual to biennial inspections \u2014 sourced from a non-official news article; needs confirmation against current county code.",
+    "[miami-dade-local] Certificate of Use fee amounts: the RER certificates page references a Fees section and a non-refundable upfront fee with the balance due on approval, but no dollar amounts were published in the pages read. Fee schedule location unverified. [STILL OPEN 2026-10-13: no published dollar fees on official county pages; follow-up: pull 2026 BCC legislative record for the Gonzalez Ch. 14 ordinance and request fee schedules from the county.]",
+    "[miami-dade-local] County Local Business Tax Receipt restaurant-classification fee amounts: not published on the Tax Collector pages read; fee schedule unverified. [STILL OPEN 2026-10-13: no published dollar fees on official county pages; follow-up: pull 2026 BCC legislative record for the Gonzalez Ch. 14 ordinance and request fee schedules from the county.]",
+    "[miami-dade-local] Life Safety Operating Permit fee amounts per occupancy/restaurant and the exact inspection cadence: the county's Fire Prevention Fee Schedule (Implementing Order 4-123) was not opened. A September 2026 Board of County Commissioners ordinance amending Ch. 14 reportedly moved small business occupancies from annual to biennial inspections — sourced from a non-official news article; needs confirmation against current county code. [STILL OPEN 2026-10-13: no published dollar fees on official county pages; follow-up: pull 2026 BCC legislative record for the Gonzalez Ch. 14 ordinance and request fee schedules from the county.]",
     "[miami-dade-local] Sidewalk cafe / outdoor dining permit at the county level: no current Miami-Dade County (unincorporated area) sidewalk cafe permit program was found on official pages. Found: municipal programs (Miami Beach Ch. 82, Surfside) and a 2020 temporary UMSA outdoor-seating resolution (COVID-era). Unclear whether unincorporated-area sidewalk cafes now require a county permit or are folded into the CU/zoning process.",
     "[miami-dade-local] Fire alarm/suppression system plan-review triggers specific to restaurant buildouts (e.g., Type I hood suppression, fire alarm): the county's fire permit forms/checklists exist but were not opened; plan-review submission requirements and fees are unverified beyond the MDFR CO-inspection requirement.",
-    "[miami-dade-local] City of Miami restaurant BTR fee schedule (an archived FY 2024-25 revenue manual lists restaurant fees by seat count) \u2014 archived document, currency unverified against the current city code.",
-    "[statute-index] browser_open fetches of the flsenate.gov full-chapter pages timed out (upstream source-fetch failure); chapter URLs above were recorded verbatim from search results and titles/scope confirmed from result snippets, but the live pages were not opened.",
-    "[statute-index] Formal chapter-title lines for Chs. 605, 509, 205, 212, and 220 were confirmed via search-result content, not by opening the chapter pages \u2014 future extraction pass should verify the title line on the live page.",
-    "[statute-index] Division 1N (Division of Corporations) rule set: only the division's listing on flrules.org was located; the actual filing rules (entity formation, annual reports, fictitious names) were not readily found \u2014 needs a targeted flrules.org lookup.",
-    "[statute-index] Miami-Dade County Code: Ch. 8A Arts. 9 & 10 (local business tax) cited from a county-issued receipt; the official municode chapter page and the certificate-of-use provision were not located \u2014 needs a direct municode lookup.",
-    "[statute-index] Section-year note: chapter pages were located across multiple statute years (2021-2026); the future pack extraction should standardize on the most current year for each chapter."
+    "[miami-dade-local] City of Miami restaurant BTR fee schedule (an archived FY 2024-25 revenue manual lists restaurant fees by seat count) — archived document, currency unverified against the current city code.",
+    "[statute-index] Division 1N (Division of Corporations) rule set: only the division's listing on flrules.org was located; the actual filing rules (entity formation, annual reports, fictitious names) were not readily found — needs a targeted flrules.org lookup.",
+    "[statute-index] Miami-Dade County Code: Ch. 8A Arts. 9 & 10 (local business tax) cited from a county-issued receipt; the official municode chapter page and the certificate-of-use provision were not located — needs a direct municode lookup.",
+    "[abt-alcohol] flsenate.gov statute pages repeatedly timed out during research (network-level receive timeouts, not blocks). The current verbatim text of s. 561.20(2)(a)4 (SFS criteria as amended by 2023 HB 639: 2,000 sq ft / 120 persons / 120 seats / bona fide food service establishment) was confirmed via the official HB 639 enrolled bill text (flsenate.gov) and multiple secondary quotes of the amended statute, but the live statute page should be re-verified before quoting verbatim.",
+    "[abt-alcohol] ABT's Fee_Chart.pdf (https://www2.myfloridalicense.com/abt/documents/Fee_Chart.pdf) did not render text during research; the 4COP fee brackets in FL_DRAFT_ABT_0001 were read from the archived (2004) flsenate.gov text of s. 565.02. Amounts should be confirmed against the current ABT fee chart; the 2COP and SFS annual fees remain unverified.",
+    "[abt-alcohol] No ABT-published processing timelines were found for new applications, transfers, or SFS approvals - all timeline fields are 'unverified'.",
+    "[abt-alcohol] Direct PDF/Word URLs for DBPR ABT-6001 were not captured verbatim; the official checklist page (which hosts the 'Printable Application' links) is cited instead.",
+    "[abt-alcohol] The ABT 2COP checklist requirements beyond the license classification were not fully read; fees and full application items for 2COP should be verified on the checklist page and fee chart.",
+    "[abt-alcohol] s. 561.19 (issuance of new quota licenses by drawing when population quota increases) was referenced but not read on an official source - the drawing process details are unverified.",
+    "[abt-alcohol] Caterer special license (561.20(2)(a)5) and other specialty COP classes (5COP-8COP, hotel S license, etc.) were outside restaurant scope and not researched.",
+    "[employer-obligations] Did Fla. Stat. s. 440.107's noncompliance penalty change from 1.5x premium over 3 years to 2x over 12 months (24 months for repeat offenders)? The 2023 Florida Senate text shows the 2x/12-month formula, while most secondary sources and industry guides still cite 1.5x/3 years. Needs a current-year statute read or DWC confirmation.",
+    "[employer-obligations] IRS EIN: fax/mail processing times and Form SS-4 submission addresses/phone number not captured from irs.gov in this pass (online path fully verified).",
+    "[employer-obligations] Florida DWC exemption application URL and exemption fee schedule not captured from myfloridacfo.com; only the exemption's existence and FY 2024/25 aggregate fee collection ($5,201,650) confirmed.",
+    "[employer-obligations] E-Verify enrollment cost (third-party sources say free) not confirmed on a fetched official page; e-verify.gov pages on this pass did not state a fee schedule.",
+    "[employer-obligations] Whether a restaurant owner counts corporate-officer/LLC-member owners toward the 25-employee E-Verify threshold (headcount measured company-wide vs Florida payroll) is inferred from secondary sources (floridalawfirmnews.com), not from FloridaCommerce pages — needs official confirmation."
   ]
 }
