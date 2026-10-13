@@ -1,10 +1,10 @@
 {
   "summary": {
-    "scenarios": 52,
-    "pass": 49,
+    "scenarios": 55,
+    "pass": 52,
     "fail": 3,
-    "expectations": 762,
-    "verified": 700,
+    "expectations": 800,
+    "verified": 737,
     "lint": []
   },
   "results": [
@@ -5974,6 +5974,329 @@
         }
       ],
       "testName": "KG52 kg-scenario: spa / new_business_existing_building / coastal_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG53",
+      "title": "Ice cream shop, new business in an existing leased storefront, no construction — Cayey, zone X",
+      "matrix": {
+        "businessType": "ice_cream_shop",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_CFPM",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 11,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [
+        {
+          "field": "projectContext.existing_building",
+          "reason": "evidence is not a quote from the description"
+        }
+      ],
+      "testName": "KG53 kg-scenario: ice_cream_shop / new_business_existing_building / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG54",
+      "title": "Private school: change of use of a house in a residential district — Yauco, zone X",
+      "matrix": {
+        "businessType": "private_school",
+        "projectType": "change_of_use",
+        "locationContext": "urban_residential_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_FIRE_CERT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Cuerpo de Bomberos"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CONSULTA_UBICACION",
+          "group": "required_now",
+          "applicability": "likely_required",
+          "position": 8,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 9,
+          "agency": "Property Owner"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 10,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 13,
+          "agency": "Property Registry"
+        }
+      ],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG54 kg-scenario: private_school / change_of_use / urban_residential_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG55",
+      "title": "Trucking company, new business in an existing leased industrial yard, no construction — Juncos, zone X",
+      "matrix": {
+        "businessType": "trucking_company",
+        "projectType": "new_business_existing_building",
+        "locationContext": "urban_industrial_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_VEHICLE_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "DTOP"
+        },
+        {
+          "key": "DOC_TRANSPORT_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Comisión de Servicio Público"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 10,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG55 kg-scenario: trucking_company / new_business_existing_building / urban_industrial_x",
       "findingsClassified": []
     }
   ]

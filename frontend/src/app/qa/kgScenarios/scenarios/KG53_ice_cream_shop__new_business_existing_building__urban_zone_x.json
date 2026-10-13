@@ -1,0 +1,111 @@
+{
+  "id": "KG53",
+  "title": "Ice cream shop, new business in an existing leased storefront, no construction — Cayey, zone X",
+  "matrix": {
+    "businessType": "ice_cream_shop",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "We are opening an ice cream shop in an existing leased storefront in Cayey. We make the ice cream on site and serve cones and cups at the counter. No alcohol and no construction; the space is already finished.",
+  "profile": {
+    "business_type": "Ice Cream Shop",
+    "municipality": "Cayey",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 3,
+    "industry": "Food Services",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_FOOD_PREPARED": true,
+    "Q_ALCOHOL_SOLD": false
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased storefront, already finished"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased storefront"
+    }
+  },
+  "site": {
+    "municipality": "Cayey",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007 / RULE_0078: physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0075: BT_ICE_CREAM_SHOP -> Departamento de Salud sanitary license (food prepared on site)."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0076: BT_ICE_CREAM_SHOP -> Bomberos fire-prevention certificate."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643/0644 need a construction / renovation project type."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone: RULE_0708 needs location.czm."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-13 by the scenario loop: first ice cream shop scenario and first Cayey scenario."
+}
