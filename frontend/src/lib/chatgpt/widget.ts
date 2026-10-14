@@ -26,13 +26,13 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./vendor/leaflet.generated";
 import { tileTemplates } from "./tiles";
 import { PORTAL_DEFAULT } from "./portalUrl";
 
-// Canonical URI is v11 (refine panel removed; requirements full width).
+// Canonical URI is v12 (embedded signup form; password via direct fetch).
 // v8 rather than v7: ChatGPT caches templates (and their CSP) per URI, so every
 // production, and ChatGPT caches templates (and their CSP) per URI, so the
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v11.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v12.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -44,6 +44,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v8.html",
   "ui://smartpr/requirements-v9.html",
   "ui://smartpr/requirements-v10.html",
+  "ui://smartpr/requirements-v11.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -75,7 +76,8 @@ h1{font-size:22px;margin:16px 0 2px}.sub{color:var(--mut);margin:0 0 12px}
 label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}select,input{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
 .btn{display:inline-block;border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;font-weight:600;touch-action:manipulation}.btn.p{background:var(--teal);color:#fff;border:1px solid var(--teal)}.btn.o{background:#fff;color:var(--teal2);border:1px solid var(--teal)}
 .btn[disabled]{opacity:.55;cursor:default}.full{width:100%;margin-top:12px}.hint{color:var(--mut);font-size:12px;margin-top:6px}
-.cta{margin-top:12px;background:var(--tealbg);border:1px solid #b7e1da;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.cta.signup{background:#0f172a;border-color:#0f172a;color:#fff}.cta.signup b{color:#fff}.cta.signup span{color:#cbd5e1}.cta.signup>div{flex:1 1 220px}.cta.signup .btn{flex:1 1 200px;text-align:center}.cta div{flex:1;min-width:220px}.cta b{display:block}
+.cta{margin-top:12px;background:var(--tealbg);border:1px solid #b7e1da;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.cta.signup{background:#0f172a;border-color:#0f172a;color:#fff;display:block}.cta.signup b{color:#fff}.cta.signup span{color:#cbd5e1}.cta.signup>div{flex:1 1 220px}.cta.signup .btn{flex:1 1 200px;text-align:center}.cta div{flex:1;min-width:220px}.cta b{display:block}
+.signup-fields{display:grid;gap:10px;margin:12px 0}.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:480px){.row2{grid-template-columns:1fr}}.field label{display:block;font-size:12px;font-weight:600;color:#cbd5e1;margin-bottom:4px}.field label em{font-weight:400;color:#94a3b8;font-style:normal}.field input{width:100%;box-sizing:border-box;background:#1e293b;border:1px solid #334155;color:#fff;border-radius:8px;padding:10px 12px;font-size:14px}.field input:focus{outline:none;border-color:#2dd4bf}.field input::placeholder{color:#64748b}.terms{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#cbd5e1}.terms input{margin-top:2px;accent-color:#2dd4bf}.terms a{color:#2dd4bf}.signup-err{background:#7f1d1d;border:1px solid #ef4444;color:#fecaca;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px}.signup-ok{background:#064e3b;border:1px solid #10b981;color:#a7f3d0;border-radius:8px;padding:12px;font-size:14px;margin-top:10px}
 .cont{display:flex;gap:8px;align-items:flex-start;padding:12px 4px 0;background:none;border:0;cursor:pointer;font:inherit;text-align:left;color:inherit}.cont b{color:var(--ink)}
 .note{border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px}.note.warn{background:#fffbeb;border:1px solid #fde68a}.note.err{background:#fef2f2;border:1px solid #fecaca}.note.info{background:var(--soft);border:1px solid var(--line)}
 .foot{color:var(--mut);font-size:11px;margin-top:12px}.sk{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200%;animation:s 1.2s infinite;border-radius:8px;height:14px;margin:10px 0}@keyframes s{to{background-position:-200% 0}}
@@ -119,7 +121,7 @@ const JS = String.raw`
 (function(){
 var CFG=__CFG__;
 var root=document.getElementById("root"),pending={},nextId=1,lastSizeH=0,callSeq=0,lastTO=null,restored=false,lastPersist="";
-var state={result:null,resultAt:0,input:null,answers:{},busy:false,siteBusy:false,error:null,note:null,lastAction:null,pin:null,confirmed:null,details:null};
+var state={result:null,resultAt:0,input:null,answers:{},busy:false,siteBusy:false,error:null,note:null,lastAction:null,pin:null,confirmed:null,details:null,signup:{},signupBusy:false,signupError:null,signupDone:false,signupEmail:null};
 var DBG=window.__smartpr={events:[],mode:null,tiles:{loaded:0,errors:0},state:state};
 function trace(s){DBG.events.push(s);if(DBG.events.length>300)DBG.events.shift()}
 function post(m){try{window.parent.postMessage(m,"*")}catch(_){}}
@@ -343,6 +345,65 @@ function updateCard(r){var box=el("div","card");add(box,el("h2",null,"Your answe
  if(aa.length){var ans=el("div","ans");aa.forEach(function(a){var d=el("div","a");add(d,el("b",null,a.question),el("span",null,a.answer));add(ans,d)});add(box,ans)}
  else add(box,el("p","sub","Scenario updated with your answers."));
  var sh=el("button","btn o full","Show full assessment");sh.type="button";sh.onclick=function(){state.view="full";render()};add(box,sh);return box}
+// Embedded signup form. Mirrors /signup page fields. Password is POSTed
+// directly to /api/chatgpt/signup via fetch — never through an MCP tool call.
+function signupForm(r){
+ var box=el("div","cta signup");
+ add(box,el("b",null,"Create your SmartPR account"),el("span",null,"Your ChatGPT assessment carries into your new account. Takes about 2 minutes."));
+ if(state.signupDone){add(box,el("div","signup-ok","Account created! Check "+state.signupEmail+" for a verification email — click the link to confirm and your assessment will load into your new account."));return box}
+ var fields=el("div","signup-fields");
+ function field(labelText,opts){
+  var f=el("div","field");var lab=el("label",null,labelText);
+  if(opts&&opts.optional){var em=document.createElement("em");em.textContent=" (optional)";lab.appendChild(em)}
+  var inp=el("input");inp.type=(opts&&opts.type)||"text";inp.placeholder=(opts&&opts.ph)||"";
+  inp.value=state.signup[opts.key]||"";
+  inp.oninput=function(){state.signup[opts.key]=inp.value;state.signupError=null};
+  add(f,lab,inp);return {wrap:f,input:inp};
+ }
+ var row=el("div","row2");
+ var fn=field("First name",{key:"firstName",ph:"Maria"});var ln=field("Last name",{key:"lastName",ph:"Rodr\u00edguez"});
+ add(row,fn.wrap,ln.wrap);add(fields,row);
+ var em=field("Work email",{key:"email",type:"email",ph:"maria@negocio.com"});add(fields,em.wrap);
+ var pw=field("Password",{key:"password",type:"password",ph:"At least 8 characters"});add(fields,pw.wrap);
+ var ph=field("Phone number",{key:"phone",type:"tel",ph:"(787) 555-0123",optional:true});add(fields,ph.wrap);
+ var bn=field("Business name",{key:"businessName",ph:"Your new business name",optional:true});add(fields,bn.wrap);
+ var terms=el("label","terms");var cb=el("input");cb.type="checkbox";cb.checked=!!state.signup.agreed;
+ cb.onchange=function(){state.signup.agreed=cb.checked;state.signupError=null};
+ var tsp=document.createElement("span");tsp.innerHTML="I agree to the <a href=\""+CFG.origin+"/terms\" target=\"_blank\" rel=\"noopener\">Terms of Service</a> and <a href=\""+CFG.origin+"/privacy\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>.";
+ add(terms,cb,tsp);add(fields,terms);
+ if(state.signupError)add(fields,el("div","signup-err",state.signupError));
+ var sb=el("button","btn p full",state.signupBusy?"Creating account\u2026":"Create account");
+ sb.type="button";sb.disabled=!!state.signupBusy;
+ sb.onclick=function(){submitSignup(r)};
+ add(fields,sb);
+ add(box,fields);
+ return box;
+}
+function submitSignup(r){
+ if(state.signupBusy)return;
+ var s=state.signup;
+ // Client-side validation mirrors /signup page + /api/chatgpt/signup.
+ if(!s.firstName||!s.firstName.trim()||!s.lastName||!s.lastName.trim()){state.signupError="First and last name are required.";render();return}
+ if(!/\S+@\S+\.\S+/.test(s.email||"")){state.signupError="Enter a valid work email.";render();return}
+ if(!(s.password||"")||s.password.length<8){state.signupError="Password must be at least 8 characters.";render();return}
+ if(!s.agreed){state.signupError="Please accept the Terms of Service and Privacy Policy.";render();return}
+ state.signupBusy=true;state.signupError=null;render();
+ // First create the handoff so the scenario survives the email-verification
+ // round trip, then POST the form directly to our API (password never
+ // touches an MCP tool call).
+ callTool("create_portal_handoff",{scenario:scenarioPayload()||r.scenario,intent:"continue",answers:drafts()}).then(function(res){
+  var sc=res&&(res.structuredContent||(res.result&&res.result.structuredContent));
+  var u=sc&&sc.url;var path=u?String(u).replace(/^https?:\/\/[^/]+/,""):"/businesses";
+  return fetch(CFG.origin+"/api/chatgpt/signup",{method:"POST",headers:{"content-type":"application/json"},
+   body:JSON.stringify({firstName:s.firstName.trim(),lastName:s.lastName.trim(),email:(s.email||"").trim(),password:s.password,phone:(s.phone||"").trim(),businessName:(s.businessName||"").trim(),handoffPath:path,intent:"start",agreed:true})})
+  .then(function(resp){return resp.json().then(function(j){return {ok:resp.ok,j:j}})});
+ }).then(function(out){
+  state.signupBusy=false;
+  if(out.ok&&out.j.ok){state.signupDone=true;state.signupEmail=out.j.email;state.signup={};trace("chatgpt signup ok for "+out.j.email)}
+  else{state.signupError=(out.j&&out.j.error)||"We couldn't create your account. Please try again."}
+  render();
+ }).catch(function(){state.signupBusy=false;state.signupError="Could not reach SmartPR. Check your connection and retry.";render()});
+}
 function render(){
  // Keep the persistent map node out of the teardown so Leaflet survives.
  if(MAP&&MAP.wrap.parentNode)MAP.wrap.parentNode.removeChild(MAP.wrap);
@@ -378,9 +439,11 @@ function render(){
  add(w,reqsCard(r));
  var cta=el("div","cta"),ct=el("div");add(ct,el("b",null,"Turn this preview into a complete assessment"),el("span",null,"Requirement-by-requirement reasoning, official sources, dependencies, and a downloadable report."));
  var u1=el("button","btn p","Unlock full assessment");u1.type="button";u1.disabled=state.busy;u1.onclick=function(){act("unlock")};var u2=el("button","btn o","Use my SmartPR plan");u2.type="button";u2.disabled=state.busy;u2.onclick=function(){act("use_plan")};add(cta,ct,u1,u2);add(w,cta);
- // Signup CTA: drive users to getsmartpr.com — ChatGPT previews, SmartPR completes.
- var sup=el("div","cta signup");var st=el("div");add(st,el("b",null,"Your assessment carries into your account"),el("span",null,"Sign up at getsmartpr.com — your ChatGPT assessment loads into your new account, where you complete the required forms."));
- var sb=el("button","btn p full","Sign up at getsmartpr.com \u2192");sb.type="button";sb.disabled=state.busy;sb.onclick=function(){act("signup")};add(sup,st,sb);add(w,sup);
+ // Embedded signup: full SmartPR signup form inside the widget. The password is
+ // POSTed directly to /api/chatgpt/signup (never via MCP tool call) so it
+ // never passes through ChatGPT's infrastructure. On success the verification
+ // email carries the handoff token: chatgpt -> email -> getsmartpr.com.
+ add(w, signupForm(r));
  var cont=el("button","cont");cont.type="button";cont.disabled=state.busy;add(cont,el("span",null,"\u2197"));var cc=el("div");add(cc,el("b",null,"Continue in SmartPR"),el("div","hint","Review your scenario in the portal before anything is saved."));add(cont,cc);cont.onclick=function(){act("continue")};add(w,cont);
  add(w,el("div","foot","Preliminary triage from SmartPR's rules engine, not legal advice. "+(r.coverage_limits||[]).slice(2).join(" ")+" Generated "+new Date(r.versions.generated_at).toLocaleString()+" \u00b7 "+r.versions.kb));
  if(MAP&&MAP.wrap.parentNode){try{MAP.sync();MAP.attach()}catch(err){trace("map sync failed: "+(err&&err.message))}}

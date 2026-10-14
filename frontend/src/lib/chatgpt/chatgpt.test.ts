@@ -91,7 +91,7 @@ test("MCP: initialize, tools/list, resources, tools/call", async () => {
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v11.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v12.html");
   const listed = ((await rpc("resources/list")).body as Body).result.resources.map((r: any) => r.uri);
   assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
   const res = ((await rpc("resources/read", { uri: WIDGET_URI })).body as Body).result.contents[0];
@@ -247,7 +247,7 @@ test("map pin: resolved server-side, authoritative for municipality, carried to 
   assert.equal(Math.round(restored!.latitude * 1e5), Math.round(g.latitude * 1e5));
 });
 
-test("widget CSP v11: only the portal origin, declared in resource + connect (+redirect) and as widget domain", async () => {
+test("widget CSP v12: only the portal origin, declared in resource + connect (+redirect) and as widget domain", async () => {
   const portal = "https://www.getsmartpr.com";
   const meta = widgetResourceMeta(portal);
   assert.deepEqual(meta.ui.csp, { connectDomains: [portal], resourceDomains: [portal] });
@@ -301,8 +301,8 @@ test("widget map data: 78 municipios, decodable polyline rings inside Puerto Ric
   }
 });
 
-test("widget v11: map visible after assess, auto-pin for a named municipality (approximate), map_focus in schema", async () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v11.html");
+test("widget v12: map visible after assess, auto-pin for a named municipality (approximate), map_focus in schema", async () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v12.html");
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
   assert.equal(MAP_MAX_ZOOM, 19);
   assert.equal(SVG_MAP_MAX_ZOOM, 14);
@@ -330,8 +330,8 @@ test("widget v11: map visible after assess, auto-pin for a named municipality (a
   const withMuni = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } })).body as Body).result;
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
 });
-test("widget URI aliases: resources/read serves current HTML + v11 CSP for v1–v11; tools advertise v11 only", async () => {
-  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((n) => `ui://smartpr/requirements-v${n}.html`));
+test("widget URI aliases: resources/read serves current HTML + v12 CSP for v1–v12; tools advertise v12 only", async () => {
+  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => `ui://smartpr/requirements-v${n}.html`));
   assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
   for (const t of TOOLS.slice(0, 2)) {
     const meta = t._meta as Record<string, unknown>;
@@ -354,7 +354,7 @@ test("widget URI aliases: resources/read serves current HTML + v11 CSP for v1–
     assert.equal(c._meta["openai/widgetDomain"], SITE.siteUrl);
   }
   assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" })).body as Body).error?.code, -32602);
-  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v12.html" })).body as Body).error?.code, -32602);
+  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v13.html" })).body as Body).error?.code, -32602);
 });
 
 test("free preview surfaces at least 5 requirements for a typical restaurant scenario", async () => {
@@ -367,7 +367,7 @@ test("free preview surfaces at least 5 requirements for a typical restaurant sce
   assert.equal(FREE_PREVIEW_LIMIT >= 5, true);
 });
 
-test("widget v11 state model: forward-only results, pin/answers survive host globals, persisted via setWidgetState", async () => {
+test("widget v12 state model: forward-only results, pin/answers survive host globals, persisted via setWidgetState", async () => {
   const html = widgetHtml();
   // Root cause of "tap doesn't stick": v5 re-applied the ORIGINAL toolOutput on every openai:set_globals.
   assert.match(html, /function rTime\(/);
@@ -408,9 +408,9 @@ test("refine_scenario marks results for the compact update view; assess_scenario
   assert.match(html, /class\\"\\s*:\\s*\\"card reqs\\"|"card reqs"/);
   assert.match(html, /\.reqs\{max-height/);
   assert.doesNotMatch(html, /Refine your scenario/);
-  assert.match(html, /Sign up at getsmartpr\.com/);
-  assert.match(html, /act\("signup"\)/);
-  assert.match(html, /\/signup\?next=/);
+  assert.match(html, /Create your SmartPR account/);
+  assert.match(html, /\/api\/chatgpt\/signup/);
+  assert.doesNotMatch(html, /Sign up at getsmartpr\.com \u2192/);
 });
 
 test("refine_scenario with a pin returns site_details from the portal layer lookups (never invented)", async () => {
