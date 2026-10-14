@@ -6637,7 +6637,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         searchInputId="spr-requirements-location"
         knownMunicipality={intakeSite ? null : profile.municipality || null}
       />
-      {intakeSite && <SiteLayerChips site={intakeSite} lang={language} onRetry={retrySiteSources} variant="rows" />}
+      {intakeSite && <SiteLayerChips site={intakeSite} lang={language} onRetry={retrySiteSources} variant="rows" parcel={landUseParcel} />}
       {propertyReport && (
         <button type="button" className="spr-srp-open" onClick={(e) => openPropertyReport(e.currentTarget)} data-testid="open-property-report-summary" aria-haspopup="dialog">
           {language === 'es' ? 'Ver informe completo de la propiedad' : 'View full property report'}

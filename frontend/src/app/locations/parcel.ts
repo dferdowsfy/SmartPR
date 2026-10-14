@@ -225,10 +225,19 @@ export function parseParcelBoundary(resp: ArcGisQueryResponse | string, lng: num
   if (typeof resp === "string" || arcgisError(resp)) return { status: "unavailable", value: null, reason: typeof resp === "string" ? resp : arcgisError(resp), source };
   // Prefer a real parcel (with a catastro number) that contains the point.
   const candidates = features(resp)
-    .map((f) => ({ cat: str(f.attributes?.NUM_CATASTRO), geo: f.geometry?.rings ? ringsToGeoJson(f.geometry.rings) : null }))
+    .map((f) => ({ cat: str(f.attributes?.NUM_CATASTRO), tipo: str(f.attributes?.TIPO), geo: f.geometry?.rings ? ringsToGeoJson(f.geometry.rings) : null }))
     .filter((c) => c.geo);
   const pick = candidates.find((c) => c.cat && pointInGeometry(lng, lat, c.geo!.geometry)) ?? candidates.find((c) => c.cat) ?? null;
-  if (!pick) return { status: "none_mapped", value: null, reason: candidates.length ? "only_right_of_way_polygon_at_point" : "no_parcel_polygon_at_point", source };
+  if (!pick) {
+    if (!candidates.length) return { status: "none_mapped", value: null, reason: "no_parcel_polygon_at_point", source };
+    // Same reading of CRIM's TIPO as the point layer (parseCrimParcel): only a
+    // street / right-of-way polygon (V) is a roadway and only A is water; a
+    // lot polygon without a number (P, or no TIPO) is not a road.
+    const at = candidates.find((c) => pointInGeometry(lng, lat, c.geo!.geometry)) ?? candidates[0]!;
+    const tipo = at.tipo?.toUpperCase() ?? null;
+    const reason = tipo === "V" ? "only_right_of_way_polygon_at_point" : tipo === "A" ? "only_water_polygon_at_point" : `parcel_without_catastro_number (TIPO ${tipo ?? "?"})`;
+    return { status: "none_mapped", value: null, reason, source };
+  }
   return { status: "sourced", value: { catastro: pick.cat, geometry: pick.geo!.geometry, area_m2: pick.geo!.area_m2, bbox: pick.geo!.bbox }, reason: null, source };
 }
 

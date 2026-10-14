@@ -17,6 +17,7 @@ import type { PassportLocationWithGeographies } from "../../locations/geo";
 import { siteLabel, siteLayersCurrent, type IntakeSite, type LocationNeed, type LocationNeedReason } from "../../locations/intakeLocation";
 import { SiteIntelligencePanel } from "./SiteIntelligencePanel";
 import type { Lang } from "../../forms/engine/types";
+import type { ParcelFindings } from "../../locations/parcel";
 
 const L = (en: string, es: string, lang: Lang) => (lang === "es" ? es : en);
 
@@ -285,7 +286,7 @@ export function LocationStepCard({
  * chips while it runs, then a "Site checked" line over the real chips. The
  * wrapper is a polite live region, so the change is also announced.
  */
-export function SiteLayerChips({ site, lang, onRetry, variant }: { site: IntakeSite; lang: Lang; onRetry?: () => void; variant?: "cards" | "rows" }) {
+export function SiteLayerChips({ site, lang, onRetry, variant, parcel }: { site: IntakeSite; lang: Lang; onRetry?: () => void; variant?: "cards" | "rows"; /** Whole-parcel findings for this pin: the parcel pill then matches the Property & Site Report. */ parcel?: ParcelFindings | null }) {
   if (!siteLayersCurrent(site)) {
     return (
       <div
@@ -333,7 +334,7 @@ export function SiteLayerChips({ site, lang, onRetry, variant }: { site: IntakeS
               )}
         </span>
       </p>
-      <SiteIntelligencePanel layers={site.layers!} lang={lang} municipality={site.municipality.name} address={site.formatted_address} onRetry={onRetry} variant={variant} />
+      <SiteIntelligencePanel layers={site.layers!} lang={lang} municipality={site.municipality.name} address={site.formatted_address} onRetry={onRetry} variant={variant} parcel={parcel} />
     </div>
   );
 }

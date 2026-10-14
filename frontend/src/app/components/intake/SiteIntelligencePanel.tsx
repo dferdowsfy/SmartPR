@@ -10,6 +10,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, H
 import { useId, useRef, useState } from "react";
 import type { Lang } from "../../forms/engine/types";
 import type { SiteLayers } from "../../locations/layers";
+import type { ParcelFindings } from "../../locations/parcel";
 import { buildSiteIntelligence, type PillTone, type ProviderStatus, type SiteGroupId, type SourceAgencyKey } from "../../locations/siteIntelligence";
 
 /** Agency marks (public/sources); FEMA is a plain text badge. */
@@ -79,8 +80,11 @@ export function SiteIntelligencePanel({
   address,
   onRetry,
   variant = "cards",
+  parcel,
 }: {
   layers: SiteLayers;
+  /** Whole-parcel findings for this pin, so the parcel pill matches the Property & Site Report. */
+  parcel?: ParcelFindings | null;
   lang: Lang;
   municipality?: string | null;
   address?: string | null;
@@ -88,7 +92,7 @@ export function SiteIntelligencePanel({
   /** "rows": Requirements page — advisory banners + one compact row per group. */
   variant?: "cards" | "rows";
 }) {
-  const si = buildSiteIntelligence(layers, { municipality, address });
+  const si = buildSiteIntelligence(layers, { municipality, address, parcel });
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState<SiteGroupId | null>(null);
   const panelId = useId();
