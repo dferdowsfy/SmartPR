@@ -91,7 +91,7 @@ test("MCP: initialize, tools/list, resources, tools/call", async () => {
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v13.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v14.html");
   const listed = ((await rpc("resources/list")).body as Body).result.resources.map((r: any) => r.uri);
   assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
   const res = ((await rpc("resources/read", { uri: WIDGET_URI })).body as Body).result.contents[0];
@@ -302,7 +302,7 @@ test("widget map data: 78 municipios, decodable polyline rings inside Puerto Ric
 });
 
 test("widget v13: map visible after assess, auto-pin for a named municipality (approximate), map_focus in schema", async () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v13.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v14.html");
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
   assert.equal(MAP_MAX_ZOOM, 19);
   assert.equal(SVG_MAP_MAX_ZOOM, 14);
@@ -330,8 +330,8 @@ test("widget v13: map visible after assess, auto-pin for a named municipality (a
   const withMuni = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } })).body as Body).result;
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
 });
-test("widget URI aliases: resources/read serves current HTML + v13 CSP for v1–v13; tools advertise v13 only", async () => {
-  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((n) => `ui://smartpr/requirements-v${n}.html`));
+test("widget URI aliases: resources/read serves current HTML + v14 CSP for v1–v14; tools advertise v14 only", async () => {
+  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map((n) => `ui://smartpr/requirements-v${n}.html`));
   assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
   for (const t of TOOLS.slice(0, 2)) {
     const meta = t._meta as Record<string, unknown>;
@@ -354,7 +354,7 @@ test("widget URI aliases: resources/read serves current HTML + v13 CSP for v1–
     assert.equal(c._meta["openai/widgetDomain"], SITE.siteUrl);
   }
   assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" })).body as Body).error?.code, -32602);
-  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v14.html" })).body as Body).error?.code, -32602);
+  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v15.html" })).body as Body).error?.code, -32602);
 });
 
 test("free preview surfaces at least 5 requirements for a typical restaurant scenario", async () => {

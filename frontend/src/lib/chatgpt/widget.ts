@@ -32,7 +32,7 @@ import { PORTAL_DEFAULT } from "./portalUrl";
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v13.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v14.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -46,6 +46,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v10.html",
   "ui://smartpr/requirements-v11.html",
   "ui://smartpr/requirements-v12.html",
+  "ui://smartpr/requirements-v13.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -64,7 +65,14 @@ const CSS = `
 h1{font-size:22px;margin:16px 0 2px}.sub{color:var(--mut);margin:0 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.chip{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 12px;font-weight:500}
 .chip.unk{border-style:dashed;color:var(--mut)}
-.reqs{max-height:560px;overflow-y:auto;overscroll-behavior:contain}.ans{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.ans .a{border:1px solid var(--line);background:var(--tealbg);border-radius:10px;padding:8px 12px}.ans .a b{display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.ans .a span{font-weight:600;color:var(--teal2)}
+.reqs{max-height:560px;overflow-y:auto;overscroll-behavior:contain}
+/* Mobile: let the requirements flow naturally so the ChatGPT app handles
+   scrolling. The internal scroll pane traps touch on iOS iframes. */
+@media(max-width:640px){.reqs{max-height:none;overflow-y:visible;overscroll-behavior:auto}}
+/* Mobile: allow vertical page scroll over the Leaflet map. Horizontal pan
+   and pinch-zoom still work; vertical swipes scroll the ChatGPT app. */
+@media(max-width:640px){.leaflet-container{touch-action:pan-y pinch-zoom!important}}
+.ans{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.ans .a{border:1px solid var(--line);background:var(--tealbg);border-radius:10px;padding:8px 12px}.ans .a b{display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.ans .a span{font-weight:600;color:var(--teal2)}
 .card{border:1px solid var(--line);border-radius:12px;padding:14px}.card h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
 .badge{margin-left:auto;font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--tealbg);color:var(--teal2)}
 .grp{border-top:1px solid var(--line)}.grp:first-of-type{border-top:0}.grow{display:flex;gap:10px;align-items:center;padding:10px 0;cursor:pointer;width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}
