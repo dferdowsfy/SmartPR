@@ -26,13 +26,13 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./vendor/leaflet.generated";
 import { tileTemplates } from "./tiles";
 import { PORTAL_DEFAULT } from "./portalUrl";
 
-// Canonical URI is v9 (signup CTA driving to getsmartpr.com).
+// Canonical URI is v10 (signup routes via handoff so the scenario lands in the new account).
 // v8 rather than v7: ChatGPT caches templates (and their CSP) per URI, so every
 // production, and ChatGPT caches templates (and their CSP) per URI, so the
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v9.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v10.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -42,6 +42,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v6.html",
   "ui://smartpr/requirements-v7.html",
   "ui://smartpr/requirements-v8.html",
+  "ui://smartpr/requirements-v9.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -191,7 +192,10 @@ function act(kind){if(state.busy)return;state.lastAction=kind;state.note=null;va
  else{state.busy=true;state.error=null;render();
   // Always the CURRENT scenario: pinned site + applied answers, plus any
   // dropdown answers not yet sent with Update preview.
-  callTool("create_portal_handoff",{scenario:scenarioPayload()||r.scenario,intent:kind,answers:drafts()}).then(function(res){state.busy=false;var sc=res&&(res.structuredContent||(res.result&&res.result.structuredContent));var u=sc&&sc.url;if(u){trace("handoff "+kind+" carried "+JSON.stringify(sc.carried||{}));openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
+  // Signup routes through /signup?next=<handoff path> so the scenario survives
+  // account creation and lands in the new user's intake (token TTL covers it).
+  var intent=kind==="signup"?"continue":kind;
+  callTool("create_portal_handoff",{scenario:scenarioPayload()||r.scenario,intent:intent,answers:drafts()}).then(function(res){state.busy=false;var sc=res&&(res.structuredContent||(res.result&&res.result.structuredContent));var u=sc&&sc.url;if(u){trace("handoff "+kind+" carried "+JSON.stringify(sc.carried||{}));if(kind==="signup"){var path=String(u).replace(/^https?:\/\/[^/]+/,"");openLink(CFG.origin+"/signup?next="+encodeURIComponent(path))}else openLink(u)}else{state.error=txt(res)||"Could not create a SmartPR link."}render()}).catch(function(){state.busy=false;state.error="Could not reach SmartPR. Retry.";render()})}}
 // Pin dropped (tap) or dragged: show it immediately, then resolve it server-side.
 function movePin(lat,lng,how){if(!state.result||!isFinite(lat)||!isFinite(lng))return;lat=r6(lat);lng=r6(lng);
  var prev={pin:state.pin,confirmed:state.confirmed,details:state.details};state.pin={lat:lat,lng:lng,approx:false};state.siteBusy=true;state.error=null;state.note=null;state.lastAction="pin";
@@ -380,8 +384,8 @@ function render(){
  var cta=el("div","cta"),ct=el("div");add(ct,el("b",null,"Turn this preview into a complete assessment"),el("span",null,"Requirement-by-requirement reasoning, official sources, dependencies, and a downloadable report."));
  var u1=el("button","btn p","Unlock full assessment");u1.type="button";u1.disabled=state.busy;u1.onclick=function(){act("unlock")};var u2=el("button","btn o","Use my SmartPR plan");u2.type="button";u2.disabled=state.busy;u2.onclick=function(){act("use_plan")};add(cta,ct,u1,u2);add(w,cta);
  // Signup CTA: drive users to getsmartpr.com — ChatGPT previews, SmartPR completes.
- var sup=el("div","cta signup");var st=el("div");add(st,el("b",null,"Complete your forms and file with Clara"),el("span",null,"Clara, our browser agent, walks you through each filing. Sign up free at getsmartpr.com."));
- var sb=el("button","btn p full","Sign up at getsmartpr.com \u2192");sb.type="button";sb.onclick=function(){openLink(CFG.origin+"/signup")};add(sup,st,sb);add(w,sup);
+ var sup=el("div","cta signup");var st=el("div");add(st,el("b",null,"Your assessment carries into your account"),el("span",null,"Sign up at getsmartpr.com — your ChatGPT assessment loads into your new account, where you complete the required forms."));
+ var sb=el("button","btn p full","Sign up at getsmartpr.com \u2192");sb.type="button";sb.disabled=state.busy;sb.onclick=function(){act("signup")};add(sup,st,sb);add(w,sup);
  var cont=el("button","cont");cont.type="button";cont.disabled=state.busy;add(cont,el("span",null,"\u2197"));var cc=el("div");add(cc,el("b",null,"Continue in SmartPR"),el("div","hint","Review your scenario in the portal before anything is saved."));add(cont,cc);cont.onclick=function(){act("continue")};add(w,cont);
  add(w,el("div","foot","Preliminary triage from SmartPR's rules engine, not legal advice. "+(r.coverage_limits||[]).slice(2).join(" ")+" Generated "+new Date(r.versions.generated_at).toLocaleString()+" \u00b7 "+r.versions.kb));
  if(MAP&&MAP.wrap.parentNode){try{MAP.sync();MAP.attach()}catch(err){trace("map sync failed: "+(err&&err.message))}}
