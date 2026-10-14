@@ -17,6 +17,7 @@
 import type { KBRule } from "../rulesEngine.ts";
 import { isHomeBasedLocation, isMobileLocation, isOnlineOnlyLocation } from "../locationTypes.ts";
 import { buildLocationContext, locationEngineFacts, type LocationEngineFacts } from "./locationContext.ts";
+import { addressWithOfficialBarrio } from "./siteAddress.ts";
 import { normalizeMunicipio, type CoordinateSource, type LocationGeography, type PassportLocation } from "./geo.ts";
 import { layerFactDetails, layerGeographies, layerStatusFacts, restoreSiteLayers, type LayerFactDetail, type SiteLayers } from "./layers.ts";
 
@@ -275,7 +276,9 @@ export function siteLocationId(site: IntakeSite): string {
 
 /** Short label for "Rules for: …". */
 export function siteLabel(site: IntakeSite): string {
-  const addr = site.formatted_address?.trim();
+  // The official barrio wins over a contradicting geocoder segment (E6).
+  const officialBarrio = site.barrio && fold(site.barrio.name) !== fold(site.municipality.name) ? site.barrio.name : null;
+  const addr = site.formatted_address?.trim() ? addressWithOfficialBarrio(site.formatted_address.trim(), officialBarrio) : "";
   if (addr) {
     return fold(addr).includes(fold(site.municipality.name)) ? addr : `${addr}, ${site.municipality.name}`;
   }

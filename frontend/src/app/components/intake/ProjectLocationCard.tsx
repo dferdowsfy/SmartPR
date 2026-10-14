@@ -529,8 +529,8 @@ export function ProjectLocationCard({
             {resolvedFrom && !message && (draft || pending) && resolvedFrom.match.toLowerCase() !== resolvedFrom.query.toLowerCase() && (
               <p className="spr-plc-message" role="status" data-testid="location-resolved-from">
                 {L(
-                  `“${resolvedFrom.query}” was matched to ${resolvedFrom.match}. If that’s not the exact site, drag the pin onto it or pick another match.`,
-                  `«${resolvedFrom.query}» se ubicó en ${resolvedFrom.match}. Si no es el lugar exacto, arrastra el pin o elige otra coincidencia.`,
+                  `“${resolvedFrom.query}” was matched to the address “${resolvedFrom.match}”.${shown?.barrio && shown.barrio.name !== shown.municipality.name ? ` The official barrio map places this pin in ${shown.barrio.name}.` : ""} If that’s not the exact site, drag the pin onto it or pick another match.`,
+                  `«${resolvedFrom.query}» se ubicó en la dirección «${resolvedFrom.match}».${shown?.barrio && shown.barrio.name !== shown.municipality.name ? ` Según el mapa oficial de barrios, el pin está en ${shown.barrio.name}.` : ""} Si no es el lugar exacto, arrastra el pin o elige otra coincidencia.`,
                   lang
                 )}
               </p>
