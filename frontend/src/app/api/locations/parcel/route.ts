@@ -6,7 +6,7 @@
 //
 // Never fails because a source is down: that part comes back "unavailable".
 
-import { rateLimitAllow } from "../../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { resolveParcelFindings } from "../../../locations/parcelService";
 
@@ -16,8 +16,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 25;
 
 export async function GET(req: Request) {
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!rateLimitAllow(`parcel:${client}`, 60, 60_000)) return Response.json({ error: "rate_limited" }, { status: 429 });
+  if (!rateLimitAllow(getClientIpKey(req.headers, "parcel"), 60, 60_000)) return Response.json({ error: "rate_limited" }, { status: 429 });
   const u = new URL(req.url);
   const coords = validateCoordinates(u.searchParams.get("lat"), u.searchParams.get("lng"));
   if (!coords.ok) return Response.json({ error: "invalid_coordinates", details: coords.errors }, { status: 400 });

@@ -191,7 +191,7 @@ export const PR_ACT60_CATALOG: IncentiveProgram[] = [
     agency: OCIF,
   }),
   program({
-    id: "PR_ACT60_FOOD_MANUFACTURING", name: "Manufacturing Framework — Food & Beverage Export", industries: ["Food & Beverage", "Manufacturing"],
+    id: "PR_ACT60_FOOD_MANUFACTURING", name: "Manufacturing Framework — Food & Beverage Export", industry: "Manufacturing",
     description: "Companies that process, blend, or package food or beverages on the island for export qualify under the industrial tax decree. Local restaurants, bars, and cafes serving island customers operate under standard Puerto Rico corporate tax rates instead.",
     benefits: [
       benefit("b1", "Manufacturing corporate tax rate", "A 4% corporate tax rate on qualifying export food/beverage manufacturing income."),

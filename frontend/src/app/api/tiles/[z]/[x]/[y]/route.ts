@@ -18,7 +18,7 @@
 // long browser/CDN cache. Not an open tile proxy.
 // The `.png` suffix keeps tile requests out of the auth middleware matcher.
 
-import { rateLimitAllow } from "../../../../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../../../../lib/rateLimit";
 import { tileAllowed, upstreamUrl } from "../../../../../../lib/chatgpt/tiles";
 
 export const runtime = "nodejs";
@@ -41,8 +41,7 @@ export async function GET(request: Request, ctx: { params: Promise<{ z: string; 
   const p = await ctx.params;
   const z = Number(p.z), x = Number(p.x), y = Number(String(p.y).replace(/\.(png|jpg|jpeg)$/i, ""));
   if (!tileAllowed(z, x, y)) return new Response("tile outside Puerto Rico", { status: 404, headers: { "Cache-Control": "public, max-age=86400" } });
-  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "local";
-  if (!rateLimitAllow(`tiles:${ip}`, Number(process.env.CHATGPT_TILE_RATE_PER_MIN || 1200), 60_000)) return new Response("rate limited", { status: 429 });
+  if (!rateLimitAllow(getClientIpKey(request.headers, "tiles"), Number(process.env.CHATGPT_TILE_RATE_PER_MIN || 1200), 60_000)) return new Response("rate limited", { status: 429 });
   const style = new URL(request.url).searchParams.get("s") === "sat" ? "satellite" : "streets";
   const key = `${style}/${z}/${x}/${y}`;
   const hit = cache.get(key);

@@ -8,7 +8,7 @@
 //       designations: string[] }
 
 import { KB } from "../../../kb";
-import { rateLimitAllow } from "../../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { BOUNDARY_SOURCE, locateInPuertoRico } from "../../../locations/boundaries";
 import { normalizeMunicipio, validateCoordinates } from "../../../locations/geo";
 
@@ -16,8 +16,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!rateLimitAllow(`resolve:${client}`, 120, 60_000)) {
+  if (!rateLimitAllow(getClientIpKey(req.headers, "resolve"), 120, 60_000)) {
     return Response.json({ error: "rate_limited" }, { status: 429 });
   }
   const url = new URL(req.url);

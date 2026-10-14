@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 import { getPool, isEnabled } from "../../graph/db";
 import { ensureSchema } from "../../graph/store";
 import { getCurrentUser } from "../../../lib/supabase/server";
-import { rateLimitAllow } from "../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../lib/rateLimit";
 import { markLeadConverted, notifyFounder } from "../../../lib/leads";
 
 export const runtime = "nodejs";
@@ -31,14 +31,9 @@ function cleanUtm(value: unknown): Record<string, string> {
   return out;
 }
 
-function clientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return (forwarded?.split(",")[0] || "unknown").trim().slice(0, 64);
-}
-
 export async function POST(request: Request) {
   if (!isEnabled()) return Response.json({ error: "no_database" }, { status: 503 });
-  if (!rateLimitAllow(`leads:${clientIp(request)}`, 10, 60_000)) {
+  if (!rateLimitAllow(getClientIpKey(request.headers, "leads"), 10, 60_000)) {
     return Response.json({ error: "Too many requests. Try again in a minute." }, { status: 429 });
   }
   let body: Record<string, unknown>;

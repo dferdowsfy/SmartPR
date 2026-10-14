@@ -12,7 +12,7 @@
 // configured, answers are also persisted per pin (site_layer_cache) so a
 // government service outage never blanks a pin that was resolved before.
 
-import { rateLimitAllow } from "../../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { resolveSiteLayers } from "../../../locations/layerService";
 import { getLayerStore } from "../../../locations/layerStore";
@@ -24,8 +24,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
 export async function GET(req: Request) {
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!rateLimitAllow(`layers:${client}`, 60, 60_000)) {
+  if (!rateLimitAllow(getClientIpKey(req.headers, "layers"), 60, 60_000)) {
     return Response.json({ error: "rate_limited" }, { status: 429 });
   }
   const url = new URL(req.url);

@@ -39,26 +39,32 @@ app = FastAPI(
 )
 
 # CORS
-# Defaults to allowing all origins so the only required variables are the
-# xAI API key and model. Optionally restrict by setting
-# BACKEND_CORS_ORIGINS to a comma-separated list of allowed frontend URLs.
+# Only SmartPR's own frontends may call this API from a browser. Set
+# BACKEND_CORS_ORIGINS (comma-separated) to override the allowlist; a "*"
+# entry is ignored — a wildcard origin is never allowed.
+DEFAULT_ALLOWED_ORIGINS = [
+    "https://www.getsmartpr.com",
+    "https://getsmartpr.com",
+    "https://trust.getsmartpr.com",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 _cors_env = os.getenv("BACKEND_CORS_ORIGINS", "").strip()
-if _cors_env:
-    cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
-    allow_credentials = True
-else:
-    cors_origins = ["*"]
-    # Browsers forbid wildcard origins together with credentials, so disable
-    # credentials when allowing all origins (this app uses no cookies/auth).
-    allow_credentials = False
+cors_origins = [o.strip() for o in _cors_env.split(",") if o.strip() and o.strip() != "*"] if _cors_env else []
+if not cors_origins:
+    cors_origins = list(DEFAULT_ALLOWED_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
+
+# Longest user prompt sent to xAI; longer input is truncated (bounds cost and
+# the amount of user/document text that leaves this service).
+MAX_AI_USER_PROMPT_CHARS = 16_000
 
 # --- AI Helper Functions (using Grok via xAI's Responses API) ---
 
@@ -66,6 +72,7 @@ def _call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 1500) -> st
     """Central AI call - used for EVERYTHING as requested."""
     if not AI_CONFIGURED:
         return "AI client not configured. Using fallback."
+    user_prompt = (user_prompt or "")[:MAX_AI_USER_PROMPT_CHARS]
 
     try:
         payload = json.dumps({

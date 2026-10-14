@@ -19,7 +19,7 @@ import { attributionFor, geocoderFromEnv, GeocodingError, type SlotReserver } fr
 import { pgSlotReserver } from "../../../lib/geocoding/slots";
 import { getPool } from "../../graph/db";
 import { ensureSchema } from "../../graph/store";
-import { rateLimitAllow } from "../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../lib/rateLimit";
 import { validateCoordinates } from "../../locations/geo";
 
 export const runtime = "nodejs";
@@ -45,10 +45,9 @@ async function sharedReserver(): Promise<SlotReserver | undefined> {
 
 export async function GET(req: Request) {
   const user = await getCurrentUser().catch(() => null);
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
   const geocoder = geocoderFromEnv(process.env, { reserve: await sharedReserver() });
   if (!geocoder) return Response.json({ error: "geocoding_not_configured" }, { status: 503 });
-  if (!(user ? rateLimitAllow(`geocode:${user.id}`, 30, 60_000) : rateLimitAllow(`geocode:anon:${client}`, 20, 60_000))) {
+  if (!(user ? rateLimitAllow(`geocode:${user.id}`, 30, 60_000) : rateLimitAllow(getClientIpKey(req.headers, "geocode:anon"), 20, 60_000))) {
     return Response.json({ error: "rate_limited" }, { status: 429 });
   }
   const url = new URL(req.url);

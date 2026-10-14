@@ -5,7 +5,7 @@
 //   GET /api/locations/snap?lat=<n>&lng=<n>
 //   → { candidates: [{ catastro, distance_m, latitude, longitude }], reason }
 
-import { rateLimitAllow } from "../../../../lib/rateLimit";
+import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { findNearbyLots } from "../../../locations/layerService";
 
@@ -15,8 +15,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
 export async function GET(req: Request) {
-  const client = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (!rateLimitAllow(`snap:${client}`, 30, 60_000)) return Response.json({ error: "rate_limited" }, { status: 429 });
+  if (!rateLimitAllow(getClientIpKey(req.headers, "snap"), 30, 60_000)) return Response.json({ error: "rate_limited" }, { status: 429 });
   const u = new URL(req.url);
   const coords = validateCoordinates(u.searchParams.get("lat"), u.searchParams.get("lng"));
   if (!coords.ok) return Response.json({ error: "invalid_coordinates", details: coords.errors }, { status: 400 });

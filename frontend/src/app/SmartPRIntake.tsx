@@ -156,7 +156,7 @@ import { openSmartPRChat } from './components/chat/openChat';
 import { EnergyProcessesSection, energySummaryQuestions, type EnergyLegacyCard } from './components/energy/EnergyProcessesSection';
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
-import { bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
+import { applyMunicipalReviewExclusivity, bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft, takeHandoffDraft, matterKeyForSearch, draftMatchesUrl } from '../lib/guestDraft';
 import type { GuestDraft } from '../lib/guestDraft';
 import { useDeliverablesAccess } from '../lib/billing/useDeliverablesAccess';
@@ -3606,11 +3606,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     }
     setDiscoveryAnswers(answers);
     const baseRequirements = computeRequirements(profile, answers, potentialDecisions, requirementOptions());
-    const merged = mergeConfirmedPotentialRequirements(
+    const merged = applyMunicipalReviewExclusivity(mergeConfirmedPotentialRequirements(
       baseRequirements,
       potentialItemsForProfile(profile, baseRequirements),
       potentialDecisions
-    ) as Requirement[];
+    )) as Requirement[];
     const computed = merged.map((item) => {
       if (!item.code.startsWith('potential_')) return item;
       const flag = item.code.replace('potential_', '');

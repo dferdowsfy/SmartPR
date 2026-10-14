@@ -254,6 +254,38 @@ export function applyEntityFormationExclusivity<T extends { document_id?: string
   return requirements;
 }
 
+// Municipal reviews: a municipality's own review (San Juan's — the Municipio
+// Autónomo de San Juan) replaces the generic "Additional Municipal Review"; a
+// user must never see both. Matches the KB document ids, the municipality-flag
+// advisory codes (potential_capital / potential_metro) and their names, so it
+// holds however the review reached the list.
+const SPECIFIC_MUNICIPAL_REVIEW_IDS = new Set(["DOC_SAN_JUAN_MUNICIPAL_REVIEW", "potential_capital"]);
+const GENERIC_MUNICIPAL_REVIEW_IDS = new Set(["DOC_ADDITIONAL_MUNICIPAL_REVIEW", "potential_metro"]);
+
+type ReviewRow = { document_id?: string | null; code?: string | null; name?: string | null };
+
+function isSpecificMunicipalReview(row: ReviewRow): boolean {
+  return SPECIFIC_MUNICIPAL_REVIEW_IDS.has(row.document_id ?? "") || SPECIFIC_MUNICIPAL_REVIEW_IDS.has(row.code ?? "")
+    || /\bsan juan[- ]specific municipal review\b/i.test(row.name ?? "");
+}
+
+function isGenericMunicipalReview(row: ReviewRow): boolean {
+  return GENERIC_MUNICIPAL_REVIEW_IDS.has(row.document_id ?? "") || GENERIC_MUNICIPAL_REVIEW_IDS.has(row.code ?? "")
+    || /^additional municipal review$/i.test((row.name ?? "").trim());
+}
+
+/**
+ * Drop the generic "Additional Municipal Review" whenever a municipality-
+ * specific review is present (San Juan; `municipality` is accepted for
+ * callers that know it — a San Juan location with the generic review alone
+ * keeps it until the specific one is present).
+ */
+export function applyMunicipalReviewExclusivity<T extends ReviewRow>(requirements: T[], municipality?: string | null): T[] {
+  void municipality;
+  if (!requirements.some(isSpecificMunicipalReview)) return requirements;
+  return requirements.filter((row) => !isGenericMunicipalReview(row));
+}
+
 export function shouldAddLlcOrganization(
   existing: Array<{ document_id?: string }>,
   entityType: EntityType | string | null | undefined
@@ -322,7 +354,9 @@ export function classifyEngineRequirements(
   generated: GeneratedRequirement[],
   options: ClassifyOptions
 ): ClassifiedRequirement[] {
-  const exclusive = applyEntityFormationExclusivity(generated, options.entityType);
+  const exclusive = applyMunicipalReviewExclusivity(
+    applyEntityFormationExclusivity(generated, options.entityType)
+  );
   // One row per document: several rules can match the same document on
   // different bases (e.g. an EIN for every business AND for employers; an
   // environmental permit for hazardous materials AND a metro flag). The

@@ -28,8 +28,8 @@ test("cafes, bars and food trucks are not matched either, even when they say the
   }
 });
 
-test("a restaurant that explicitly manufactures packaged products for export can still qualify", () => {
-  assert.ok(shown({ industry: "Food & Beverage", business_type: "Restaurant", products_manufactured: true, import_export: true }, { exports_outside_pr: true }).opportunity);
+test("the decree is scoped to the Manufacturing industry: Food & Beverage (retail food service) never matches on industry, even when it also manufactures", () => {
+  assert.equal(shown({ industry: "Food & Beverage", business_type: "Restaurant", products_manufactured: true, import_export: true }, { exports_outside_pr: true }).opportunity, null);
 });
 
 test("a Bayamón hot sauce & beverage exporter (food manufacturing, exports) matches", () => {
@@ -61,7 +61,7 @@ test("the knowledge-graph copy of the program (authoritative when the graph stor
   const programs = (await import("../../kb/incentive_programs.json", { with: { type: "json" } })).default as Array<{ id: string; industry_ids: string[]; criterion_ids: string[] }>;
   const criteria = (await import("../../kb/eligibility_criteria.json", { with: { type: "json" } })).default as Array<{ id: string; fact_key: string; required: boolean }>;
   const p = programs.find((x) => x.id === ID)!;
-  assert.deepEqual(new Set(p.industry_ids), new Set(["IND_FOOD", "IND_MANUFACTURING"]));
+  assert.deepEqual(p.industry_ids, ["IND_MANUFACTURING"], "Manufacturing only — never matched on the Food & Beverage tag");
   const keys = p.criterion_ids.map((id) => criteria.find((c) => c.id === id));
   assert.ok(keys.every((c) => c && c.required), "every criterion id resolves and is required");
   assert.deepEqual(new Set(keys.map((c) => c!.fact_key)), new Set(["food_beverage_manufacturing", "exports_outside_pr"]));

@@ -4,6 +4,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { STATE_CHANGING_METHODS, isMachineApiRequest, isValidApiOrigin } from "./lib/apiOriginGuard";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/businesses", "/calendar", "/history", "/settings"];
 const TRUST_HOST = "trust.getsmartpr.com";
@@ -33,6 +34,14 @@ function forwardedHeaders(req: NextRequest, pathname?: string): Headers {
 }
 
 export async function middleware(req: NextRequest) {
+  if (
+    req.nextUrl.pathname.startsWith("/api/")
+    && STATE_CHANGING_METHODS.has(req.method)
+    && !isMachineApiRequest(req)
+    && !isValidApiOrigin(req)
+  ) {
+    return NextResponse.json({ error: "Forbidden: cross-origin API request rejected" }, { status: 403 });
+  }
   // Bare apex domain: canonicalize to www, preserving the full path.
   // (e.g. getsmartpr.com/es -> www.getsmartpr.com/es)
   if (isApexHost(req)) {
@@ -59,8 +68,17 @@ export async function middleware(req: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  // Auth not configured -> all routes are open, no-op middleware.
-  if (!url || !key) return NextResponse.next({ request: { headers: forwardedHeaders(req) } });
+  const path = req.nextUrl.pathname;
+  const needsAuth = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+  if (!url || !key) {
+    // Auth not configured: in production the protected areas fail CLOSED (a
+    // missing env var must never unlock them); elsewhere (local dev without
+    // Supabase) everything stays open as before.
+    if (needsAuth && process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Authentication service unavailable" }, { status: 503 });
+    }
+    return NextResponse.next({ request: { headers: forwardedHeaders(req) } });
+  }
 
   let res = NextResponse.next({ request: { headers: forwardedHeaders(req) } });
   const supabase = createServerClient(url, key, {
@@ -77,8 +95,6 @@ export async function middleware(req: NextRequest) {
   });
 
   const { data } = await supabase.auth.getUser();
-  const path = req.nextUrl.pathname;
-  const needsAuth = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
   if (needsAuth && !data?.user) {
     const login = new URL("/auth/login", req.url);
     login.searchParams.set("next", path + req.nextUrl.search);
