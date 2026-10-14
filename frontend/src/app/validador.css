@@ -3481,6 +3481,40 @@ html.nav-is-scrolled .appbar .spr-header-utilities {
 /* Missing answers: flagged beside the field with the sidebar's wording. */
 .spr-missing select, .spr-missing input { border-color: #c98a12 !important; box-shadow: 0 0 0 3px rgba(201, 138, 18, .14); }
 .spr-missing-note { margin: 2px 0 0; font-size: 13px; color: #8a5a00; font-weight: 600; }
+/* ---- Incomplete-submit banner: exactly what's missing, each item tappable
+   to jump straight to it. Spans the footer so it's impossible to miss. ---- */
+.spr-form-footer:has(.spr-incomplete-banner) { flex-wrap: wrap; }
+.spr-incomplete-banner {
+  flex: 1 1 100%;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  margin-bottom: 4px;
+  border: 1.5px solid #c98a12;
+  border-radius: 12px;
+  background: #fdf6e7;
+  color: #5c3f06;
+  animation: spr-pq-reveal 220ms ease-out;
+}
+.spr-incomplete-banner .i { flex: 0 0 auto; width: 20px; height: 20px; color: #b97a0c; margin-top: 2px; }
+.spr-incomplete-banner-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.spr-incomplete-banner-body > strong { font-size: 15px; line-height: 1.35; }
+.spr-incomplete-banner-items { display: flex; flex-wrap: wrap; gap: 8px; }
+.spr-incomplete-chip {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1.5px solid #c98a12;
+  border-radius: 999px;
+  background: #fff;
+  color: #7a5200;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.spr-incomplete-chip:hover { background: #fff8e8; }
+.spr-incomplete-chip:focus-visible { outline: 3px solid rgba(201, 138, 18, .4); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .spr-incomplete-banner { animation: none; } }
 
 /* What's still missing (replaces the generic "Add your business details") */
 .spr-still-needed-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 14px 16px; border: 1px solid #e3dcc8; border-radius: 10px; background: #fffaf0; }

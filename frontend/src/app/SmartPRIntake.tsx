@@ -3553,25 +3553,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 };
 
   // Step 1: Save profile + compute discovery requirements (client-side)
-  // "Continue" (requirements) is never a dead button: it only disables while a
-  // real submission is in flight. Tapped while incomplete, it plays a short
-  // loading pulse, expands the business-details block, and scrolls to the
-  // first thing missing — profile fields first, then the questions panel.
-  const handleSubmitTap = () => {
-    if (isLoading) return;
-    if (baseProfileReady && intakeQuestionsComplete) {
-      handleStartDiscovery();
-      return;
-    }
-    setSubmitAttempted(true);
-    setSubmitPulse(true);
-    if (submitPulseTimer.current) window.clearTimeout(submitPulseTimer.current);
-    submitPulseTimer.current = window.setTimeout(() => {
-      setSubmitPulse(false);
-      const target = !baseProfileReady ? profileFieldsRef.current : questionsPanelRef.current;
-      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 900);
-  };
+  // (handleSubmitTap lives next to the missing-field helpers below so an
+  // incomplete tap can jump straight to the first thing missing.)
 
   const handleStartDiscovery = async () => {
     // The user proceeds with the shown intent — the branch is settled.
@@ -6974,6 +6957,42 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     }, 0);
   };
 
+  // Step 1: Save profile + compute discovery requirements (client-side)
+  // "Continue" is never a dead button: it only disables while a real
+  // submission is in flight. Tapped while incomplete, it plays a short
+  // loading pulse, raises the "still needed" banner, and takes the user
+  // straight to the FIRST thing missing — the specific field, then the
+  // questions panel, then the profile fields — instead of leaving them to
+  // hunt for it.
+  const handleSubmitTap = () => {
+    if (isLoading) return;
+    if (baseProfileReady && intakeQuestionsComplete) {
+      handleStartDiscovery();
+      return;
+    }
+    setSubmitAttempted(true);
+    setSubmitPulse(true);
+    if (submitPulseTimer.current) window.clearTimeout(submitPulseTimer.current);
+    submitPulseTimer.current = window.setTimeout(() => {
+      setSubmitPulse(false);
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const behavior = reduce ? 'auto' : 'smooth';
+      if (!baseProfileReady) {
+        profileFieldsRef.current?.scrollIntoView({ behavior, block: 'center' });
+        return;
+      }
+      if (stillNeeded.length > 0) {
+        focusMissing(stillNeeded[0].key);
+        return;
+      }
+      questionsPanelRef.current?.scrollIntoView({ behavior, block: 'center' });
+    }, 900);
+  };
+  /** Incomplete submit: everything still blocking Continue, in tap order. */
+  const incompleteBlockers = submitAttempted && !(baseProfileReady && intakeQuestionsComplete)
+    ? stillNeeded.length > 0 || (baseProfileReady && missingQuestionCount > 0)
+    : false;
+
   const whyAsking = isProjectOnly
     ? (!profile.name
       ? (language === 'es' ? 'El nombre identifica el proyecto en la solicitud.' : 'A name gives the project a clear identity on the filing.')
@@ -7761,6 +7780,35 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             )}
 
             <div className="spr-form-footer">
+              {/* Incomplete submit: say exactly what's missing, with each
+                  item tappable to jump straight to it — nobody should have
+                  to hunt the page after tapping Continue. */}
+              {incompleteBlockers && (
+                <div className="spr-incomplete-banner" role="alert" data-testid="intake-incomplete-banner">
+                  <AlertTriangle className="i" aria-hidden="true" />
+                  <div className="spr-incomplete-banner-body">
+                    <strong>{language === 'es' ? 'Aún falta para continuar' : 'Still needed to continue'}</strong>
+                    <div className="spr-incomplete-banner-items">
+                      {stillNeeded.map((item) => (
+                        <button key={item.key} type="button" className="spr-incomplete-chip" onClick={() => focusMissing(item.key)}>
+                          {item.label}
+                        </button>
+                      ))}
+                      {baseProfileReady && missingQuestionCount > 0 && (
+                        <button
+                          type="button"
+                          className="spr-incomplete-chip"
+                          onClick={() => questionsPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                        >
+                          {language === 'es'
+                            ? `${missingQuestionCount} pregunta${missingQuestionCount === 1 ? '' : 's'}`
+                            : `${missingQuestionCount} question${missingQuestionCount === 1 ? '' : 's'}`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               <span data-testid="intake-footer-status">{footerStatus}</span>
               <div className="spr-form-actions">
                 {canGoBackInIntake && (

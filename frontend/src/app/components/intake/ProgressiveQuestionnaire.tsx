@@ -14,7 +14,7 @@
  * Every row is keyed by the question's stable id, never an index.
  */
 import { CheckCircle2 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 type Language = "en" | "es";
 
@@ -66,6 +66,26 @@ export function ProgressiveQuestionnaire({
   const foldBefore = showOlder ? 0 : Math.max(0, anchor - RECENT);
   const older = path.slice(0, foldBefore);
 
+  // The active question stays put for the user: whenever a new question
+  // becomes active (an answer moved the interview forward, or "Change"
+  // reopened one), bring it into view so nobody has to scroll the page
+  // hunting for where they are. Skipped on first mount — the section just
+  // rendered where the user already is.
+  const activeRef = useRef<HTMLLIElement>(null);
+  const prevActiveId = useRef<string | null>(null);
+  useEffect(() => {
+    const id = active?.id ?? null;
+    const changed = prevActiveId.current !== null && prevActiveId.current !== id;
+    prevActiveId.current = id;
+    if (!changed || !id || !activeRef.current) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    // Defer a tick so the newly revealed card has laid out before measuring.
+    const t = window.setTimeout(() => {
+      activeRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest" });
+    }, 60);
+    return () => window.clearTimeout(t);
+  }, [active?.id]);
+
   return (
     <section className="spr-pq" aria-labelledby="spr-pq-title" data-testid="progressive-questionnaire">
       <header className="spr-pq-head">
@@ -90,7 +110,7 @@ export function ProgressiveQuestionnaire({
         {path.slice(foldBefore).map((id) => {
           if (id === active?.id) {
             return (
-              <li key={id} className="spr-pq-item spr-pq-active" data-state={everAnswered.includes(id) ? "editing" : "active"} data-qid={id}>
+              <li key={id} ref={activeRef} className="spr-pq-item spr-pq-active" data-state={everAnswered.includes(id) ? "editing" : "active"} data-qid={id}>
                 {active.node}
               </li>
             );
