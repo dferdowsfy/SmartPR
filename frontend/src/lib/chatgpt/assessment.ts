@@ -151,7 +151,33 @@ export function matchName<T extends { name: string }>(items: T[], raw: string):
   const tokens = n.split(" ").filter((t) => t.length > 3);
   const overlap = items.filter((i) => tokens.some((t) => norm(i.name).split(" ").includes(t)));
   if (overlap.length === 1) return { kind: "fuzzy", value: overlap[0] };
-  return { kind: "candidates", candidates: overlap.map((i) => i.name).slice(0, 12) };
+  if (overlap.length > 1) return { kind: "candidates", candidates: overlap.map((i) => i.name).slice(0, 12) };
+  // Typo tolerance ("resturant" → "Restaurant"): closest name within a
+  // conservative edit budget. Short names get a tighter budget so "bar"
+  // never becomes "car" — and this runs last, only when every cheaper
+  // signal found nothing.
+  const scored = items
+    .map((i) => ({ item: i, d: editDistance(n, norm(i.name)) }))
+    .filter((s) => s.d > 0 && s.d <= Math.min(2, Math.max(1, Math.floor(norm(s.item.name).length / 4))));
+  scored.sort((a, b) => a.d - b.d || a.item.name.localeCompare(b.item.name));
+  if (scored.length) return { kind: "fuzzy", value: scored[0].item };
+  return { kind: "candidates", candidates: [] };
+}
+
+/** Levenshtein edit distance over a normalized string. */
+function editDistance(a: string, b: string): number {
+  const m = a.length, n = b.length;
+  if (!m) return n;
+  if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = cur;
+  }
+  return prev[n];
 }
 
 const str = (v: unknown, max = 200): string | null => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);

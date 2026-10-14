@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- JSON-RPC test payloads */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite, describeAnswers } from "./assessment";
+import { normalizeScenario, assessScenario, FREE_PREVIEW_LIMIT, resolveSite, describeAnswers, matchName } from "./assessment";
 import { createHandoffToken, verifyHandoffToken, HANDOFF_TTL_SECONDS } from "./handoff";
 import { handleChatgptMcp, TOOLS, widgetResourceMeta } from "./mcp";
 import { WIDGET_URI, WIDGET_URI_ALIASES, WIDGET_MIME, widgetHtml, MAP_MAX_ZOOM, SVG_MAP_MAX_ZOOM, TILE_TIMEOUT_MS } from "./widget";
@@ -491,4 +491,24 @@ test("refine_scenario keeps site lat/lng and place labels after pin", async () =
   assert.equal(r2.structuredContent.scenario.site.latitude, site.latitude);
   assert.equal(r2.structuredContent.scenario.site.municipality, "Orocovis");
   assert.ok(r2.structuredContent.requirements.length >= 5);
+});
+
+test("matchName tolerates typos ('resturant' -> Restaurant) but stays strict on junk", () => {
+  const items = [{ name: "Restaurant" }, { name: "Bar" }, { name: "Cafe" }];
+  const typo = matchName(items, "resturant");
+  assert.equal(typo.kind, "fuzzy");
+  if (typo.kind === "fuzzy") assert.equal(typo.value.name, "Restaurant");
+  const exact = matchName(items, "bar");
+  assert.equal(exact.kind, "exact");
+  const junk = matchName(items, "xyzqqq");
+  assert.equal(junk.kind, "candidates");
+  if (junk.kind === "candidates") assert.deepEqual(junk.candidates, []);
+});
+
+test("assess_scenario recovers from a typo'd business_type instead of unsupported", () => {
+  const { scenario } = normalizeScenario({ business_type: "resturant", activity_description: "open a resturant in bayamon", municipality: "Bayam\u00f3n", business_status: "unknown" });
+  assert.equal(scenario.business_type, "Restaurant");
+  const r = assessScenario(scenario);
+  assert.notEqual(r.status, "unsupported");
+  assert.ok(r.requirements.length > 0);
 });
