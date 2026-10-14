@@ -150,6 +150,7 @@ import { prefillFromPassport } from './components/passport/passportSummary';
 import { usePendingAction } from './components/checklist/usePendingAction';
 import { shortAgencyName } from './components/checklist/agencyShort';
 import { activityFamilies } from './ai/intake/scenario/graph';
+import { evaluationAsShown } from './ai/intake/scenario/openFacts';
 import { ReadinessControl } from './components/filing/ReadinessControl';
 import { iconToneFor, primaryStartLabelFor, secondaryUploadCopy, uploadOnlyCopy } from './components/filing/requirementCopy';
 import { SmartPRChatbot } from './components/chat/SmartPRChatbot';
@@ -2304,6 +2305,9 @@ export default function SmartPRIntake() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
     [mergedScenario, scenarioActive, scenarioPassport, scenarioSkipped, kbReady]
   );
+  // What the user is told is still needed: the Project choice already answers
+  // "existing business or a new one being formed?" (display only).
+  const scenarioEvalShown = useMemo(() => evaluationAsShown(scenarioEval, { projectIntent }), [scenarioEval, projectIntent]);
   // Scenario-based permit reasoning (knowledge graph): recomputed whenever
   // intake answers change. Display only — requirement generation unchanged.
   const permitReasoning = useMemo(
@@ -7231,7 +7235,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       { value: describeScenario(mergedScenario).understood.length, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: true },
       { value: scenarioEval.likely.length, label: language === 'es' ? 'Probablemente aplican' : 'Likely paths', emphasis: scenarioEval.likely.length > 0 },
       { value: scenarioEval.potential.length, label: language === 'es' ? 'Por verificar' : 'Need more information' },
-      { value: scenarioEval.controlling.length, label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
+      { value: scenarioEvalShown?.controlling.length ?? 0, label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
     ] : [
       { value: liveBlank ? 0 : liveFacts, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: !liveBlank && liveFacts > 0 },
       { value: liveBlank ? 0 : liveRequired, label: language === 'es' ? 'Requisitos por reglas' : 'Determined by rules', emphasis: !liveBlank && liveRequired > 0 },
@@ -7250,7 +7254,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // keyword matches in the description.
     scenario: scenarioEval && mergedScenario ? {
       facts: liveFactLines(mergedScenario),
-      stillNeeds: scenarioEval.controlling.map((c) => c.label),
+      stillNeeds: (scenarioEvalShown?.controlling ?? []).map((c) => c.label),
       likely: scenarioEval.likely.map((p) => ({ name: p.name, agency: p.agency })),
       potential: scenarioEval.potential.map((p) => ({ name: p.name, agency: p.agency, needs: p.needs })),
     } : null,
@@ -7697,11 +7701,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                           />
                         ),
                       }
-                      : topQuestionKind === 'scenario' && scenarioEval ? {
+                      : topQuestionKind === 'scenario' && scenarioEvalShown ? {
                         id: `scenario:${scenarioNextQuestion?.id ?? 'idle'}`,
                         node: (
                           <ScenarioQuestions
-                            evaluation={scenarioEval}
+                            evaluation={scenarioEvalShown}
                             lang={language}
                             onAnswer={answerScenarioQuestion}
                             onSkip={skipScenarioQuestion}
