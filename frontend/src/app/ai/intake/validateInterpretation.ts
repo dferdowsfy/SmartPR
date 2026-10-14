@@ -233,7 +233,14 @@ export interface ValidateOptions {
   allowedIndustries?: string[];
   /** Location types the app offers. */
   allowedLocationTypes?: string[];
+  /** The user's description — used to drop over-eager Yes answers (SAM). */
+  description?: string;
 }
+
+/** Federal contracts/grants must be stated — never inferred for SAM.gov. */
+const FEDERAL_CONTRACTS_STATED_RE =
+  /\b(?:federal\s+contracts?|federal\s+grants?|federal\s+awards?|sam\.gov|gsa\b|far\b|contratos?\s+federales?|fondos?\s+federales?|subvenci(?:ón|ones)\s+federales?)\b/i;
+
 
 /**
  * Validate a raw model interpretation against the active KB.
@@ -471,6 +478,20 @@ export function validateInterpretation(
     if (value === undefined) {
       drop(`answers.${questionId}`, `value does not match question type "${question.type}"`);
       continue;
+    }
+    // SAM.gov (Run 2): leave Q_FEDERAL_CONTRACTS_GRANTS unanswered unless the
+    // description (or the model's evidence quote) states federal contracts/grants.
+    // RULE_0641 itself is unchanged — only the default Yes is blocked.
+    if (
+      questionId === "Q_FEDERAL_CONTRACTS_GRANTS"
+      && value === true
+    ) {
+      const evidenceText = extractEvidence(entry) ?? "";
+      const desc = options.description ?? "";
+      if (!FEDERAL_CONTRACTS_STATED_RE.test(desc) && !FEDERAL_CONTRACTS_STATED_RE.test(evidenceText)) {
+        drop(`answers.${questionId}`, "federal contracts/grants not stated in the description");
+        continue;
+      }
     }
     seen.add(questionId);
     const band = classifyConfidence(confidence);

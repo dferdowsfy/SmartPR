@@ -302,8 +302,7 @@ export function NaturalLanguageIntake({
         window.clearTimeout(deadline);
 
         // Never trust returned ids — validate against the active KB.
-        const raw = validateInterpretation(data?.interpretation, kb, {
-          allowedIndustries,
+        const raw = validateInterpretation(data?.interpretation, kb, { description, allowedIndustries,
           allowedLocationTypes,
         });
         attachProjectContext(raw, data, description);
@@ -466,8 +465,7 @@ export function NaturalLanguageIntake({
         });
         if (!res.ok) throw new Error(`interpret ${res.status}`);
         const data = await res.json();
-        const raw = validateInterpretation(data?.interpretation, kb, {
-          allowedIndustries,
+        const raw = validateInterpretation(data?.interpretation, kb, { description: transcript, allowedIndustries,
           allowedLocationTypes,
         });
         attachProjectContext(raw, data, transcript);

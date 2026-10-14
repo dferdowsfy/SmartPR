@@ -140,7 +140,7 @@ import type { LocationEngineFacts } from './locations/locationContext';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
 import { claraSupportFor, groupRequirements, orderByPrerequisites, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
-import { isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
+import { gateUtilityScaleDgCards, isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
 import { requirementRowActions } from './components/checklist/rowActionModel';
@@ -294,6 +294,27 @@ const REQUIREMENT_GROUP_COPY: Record<RequirementGroupId, { title: string; sub: s
 };
 
 /** Environmental review: undetermined until the operation's equipment and waste facts are known. */
+/** Land-use KB gap note (Run 2): when zoning district or use permission is
+ * missing from the land-use table, surface it on Requirements instead of silence. */
+function ZoningCoverageNote({ language, detail }: { language: 'en' | 'es'; detail?: string }) {
+  return (
+    <div className="rq-card rq-open-item" data-testid="zoning-coverage-note">
+      <div className="rq-card-row">
+        <div className="rq-card-center">
+          <div className="rq-card-title-row">
+            <h3>{L('Zoning compatibility', language)}</h3>
+            <span className="rq-badge rq-badge-gray">{L('Under expert review', language)}</span>
+          </div>
+          <p className="rq-card-desc">
+            {L('Zoning compatibility not yet verified for this district/use — under expert review', language)}
+            {detail ? ` (${detail})` : ''}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EnvironmentalOpenItem({ language }: { language: 'en' | 'es' }) {
   return (
     <div className="rq-card rq-open-item" data-testid="env-open-item">
@@ -1149,12 +1170,15 @@ export const LOCATION_TYPES_BY_BUSINESS_TYPE: Record<string, string[]> = {
   "Sports Facility": ["Commercial Facility"],
   "Recreation Facility": ["Commercial Facility"],
   "Entertainment Venue": ["Entertainment Venue"],
-  "Solar Installer": ["Commercial Office", "Warehouse"],
+  // F6 (live 2026-10-14): a ground-mounted solar farm only offered
+  // Commercial Office / Warehouse. Land / vacant / outdoor / agricultural
+  // options match what the land-use KB already allows for utility solar.
+  "Solar Installer": ["Commercial Office", "Warehouse", "Agricultural Property", "Vacant Land", "Outdoor / Open Land"],
   "Energy Consulting": ["Professional Office", "Home-Based Business"],
-  "Utility Contractor": ["Commercial Office", "Warehouse"],
-  "Battery Storage Installer": ["Commercial Office", "Warehouse"],
+  "Utility Contractor": ["Commercial Office", "Warehouse", "Industrial Facility", "Vacant Land", "Outdoor / Open Land"],
+  "Battery Storage Installer": ["Commercial Office", "Warehouse", "Industrial Facility", "Vacant Land", "Outdoor / Open Land"],
   "Electrical Services": ["Commercial Office", "Warehouse"],
-  "Renewable Energy Company": ["Commercial Office", "Warehouse"],
+  "Renewable Energy Company": ["Agricultural Property", "Vacant Land", "Outdoor / Open Land", "Industrial Facility", "Commercial Office", "Warehouse"],
   "Wholesale Food Distributor": ["Warehouse", "Industrial Facility"],
   "Wholesale Goods Distributor": ["Warehouse", "Industrial Facility"],
   "Import / Export Business": ["Warehouse", "Commercial Office"],
@@ -1185,7 +1209,11 @@ const LOCATION_TYPES = [
   "Online / Remote Only",
   "Shared Workspace / Coworking",
   "Warehouse",
-  "Mixed Use Property"
+  "Mixed Use Property",
+  // F6: land / vacant / outdoor for utility solar and similar (KB-allowed).
+  "Agricultural Property",
+  "Vacant Land",
+  "Outdoor / Open Land",
 ];
 
 // Geographic subdivisions come from the active jurisdiction's knowledge base.
@@ -3504,6 +3532,15 @@ export default function SmartPRIntake() {
       // unconfirmed so the user settles it explicitly.
       if (appliedIntent && (prev === null || prev === incomingIntent)) {
         setProjectIntentConfirmed(true);
+        // F1: a settled high-confidence read must clear the badge — otherwise
+        // a prior suggested read left "Needs confirmation" on Project Type
+        // even when the description clearly said new.
+        setConfirmationsNeeded((prev) => {
+          if (!prev.project_intent) return prev;
+          const next = { ...prev };
+          delete next.project_intent;
+          return next;
+        });
       }
       if (suggestedIntent && !appliedIntent) {
         setConfirmationsNeeded((prev) => ({ ...prev, project_intent: true }));
@@ -3673,7 +3710,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       if (!item.code.startsWith('potential_')) return item;
       const flag = item.code.replace('potential_', '');
       const def = POTENTIAL_BY_FLAG[flag];
-      const meta = classifyPotentialItem(item.name, flag, def ? effectivePotentialDecision(def, potentialDecisions) : potentialDecisions[flag]);
+      const meta = classifyPotentialItem(item.name, flag, def ? effectivePotentialDecision(def, potentialDecisions) : potentialDecisions[flag], { businessType: profile.business_type });
       return {
         ...item,
         applicability: meta.applicability,
@@ -4016,6 +4053,27 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // as Passport → Property / Location) once a persisted business exists.
   // Moving the pin later updates the location this intake created instead
   // of adding another one.
+
+  // Run 2 land-use: when a non-residential use sits on residential calificación,
+  // prompt/derive change_of_use so RULE_0699 / RULE_0710 can evaluate (they stay
+  // as-is). No new zoning permissions content.
+  useEffect(() => {
+    if (!intakeSite || !profile.business_type) return;
+    const facts = siteEngineFacts(intakeSite, businessId).projectFacts;
+    if (facts["location.zoning.residential"] !== true) return;
+    const bt = profile.business_type.toLowerCase();
+    const residentialBt = /\b(home|residential|daycare|childcare|airbnb|short-term|guest house|hotel|apartment)\b/.test(bt);
+    if (residentialBt) return;
+    if (projectContextRef.current.change_of_use?.value === true) return;
+    setProjectContext((prev) => mergeProjectContext(prev, {
+      change_of_use: {
+        value: true,
+        confidence: 0.8,
+        evidence: `Non-residential business type "${profile.business_type}" on residential zoning`,
+      },
+    }));
+  }, [intakeSite, profile.business_type, businessId]);
+
   const intakeSiteSavingRef = useRef<string | null>(null);
   useEffect(() => {
     const site = intakeSite;
@@ -6344,9 +6402,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   };
 
   const viewRequirements = useMemo(
-    () => withoutEnergyVerifyExisting(energyGraph, energyProposed, requirements),
+    () => gateUtilityScaleDgCards(
+      withoutEnergyVerifyExisting(energyGraph, energyProposed, requirements),
+      {
+        solarSize: discoveryAnswers.Q_SOLAR_SIZE ?? discoveryAnswers.solar_size,
+        generationCapacityKw: projectContext?.generation_capacity_kw?.value ?? energyAssessment?.facts?.generation_capacity_kw,
+        energyMarketSegment: energyAssessment?.facts?.energy_market_segment,
+        powerOfftaker: energyAssessment?.facts?.power_offtaker ?? discoveryAnswers.Q_POWER_OFFTAKER ?? discoveryAnswers.power_offtaker,
+      },
+    ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [requirements, energyProposed]
+    [requirements, energyProposed, discoveryAnswers, projectContext, energyAssessment]
   );
   const processOwnedReqs = useMemo(
     () => processOwnedDocs.flatMap(({ doc, state, mandatory, reason }) => {
@@ -6409,7 +6475,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // come from the KB's depends_on_document_ids among the present requirements.
   const kbDocs = KB.documents as unknown as Array<{ id: string; depends_on_document_ids?: string[] | null }>;
   const grouping = groupRequirements(
-    visibleReqCards.map((c) => ({ documentId: c.req.document_id, applicability: c.req.applicability, stage: c.req.stage, mandatory: c.req.mandatory, done: c.state === 'done', awaitingAnswer: c.awaitingAnswer })),
+    visibleReqCards.map((c) => ({ documentId: c.req.document_id, applicability: c.req.applicability, stage: c.req.stage, kind: c.req.kind, mandatory: c.req.mandatory, done: c.state === 'done', awaitingAnswer: c.awaitingAnswer })),
     kbDocs
   );
   // A developer company with a proposed energy project already exists: its
@@ -6483,7 +6549,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     .map((a) => ({ id: a.key, text: a.text, valueLabel: a.valueLabel, onChange: () => clearEnergyAnswer(a.key as ProjectContextKey) }));
   // Steps = energy process steps + required business items shown open.
   const mainCardCount = openStepCount(mainGroups);
-  const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
+  // Energy steps are added once showEnergySection is known (below).
+  let summaryStepCount = mainCardCount;
   // The energy project IS the matter when it is utility-scale or a proposed
   // installation: the line names it ("Rooftop solar, Guaynabo").
   // The business name the user typed is the headline; SmartPR's own label
@@ -6650,7 +6717,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     </>
   ) : null;
   const summaryLine = `${summaryHeadline ? `${capitalizeFirst(summaryHeadline)}. ` : ''}${countsLine(summaryStepCount, 0, language)}`;
-  const energySection = energyAssessment && energyChecklist ? (
+  // F8: only show the Energy process section for a real energy project.
+  const showEnergySection = !!(energyAssessment && energyChecklist && (energyPrimary || energyProposed
+    || energyAssessment.processes.some((pr) => pr.state !== 'NOT_REQUIRED')));
+  const energySection = showEnergySection ? (
     <EnergyProcessesSection
       assessment={energyAssessment}
       graph={energyGraph}
@@ -6660,9 +6730,18 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       language={language}
     />
   ) : null;
+  summaryStepCount = mainCardCount + (showEnergySection ? (energyChecklist?.item_count ?? 0) : 0);
+  // F3 (live 2026-10-14): headline "N identified", readiness denominator, and
+  // listed open steps were three different numbers. One open-step count
+  // (REQUIRED NOW + WAITING ON PREREQUISITES, plus energy steps when shown).
   const summaryReadiness = (() => {
-    const done = visibleReqCards.filter((c) => c.state === 'done').length + (energyAssessment?.readiness?.satisfied ?? 0);
-    const total = visibleReqCards.filter((c) => c.req.mandatory).length + (energyAssessment?.readiness?.total ?? 0);
+    const stepCards = mainGroups
+      .filter((g) => g.id === 'required_now' || g.id === 'prerequisites')
+      .flatMap((g) => g.cards);
+    const energyTotal = showEnergySection ? (energyAssessment?.readiness?.total ?? 0) : 0;
+    const energyDone = showEnergySection ? (energyAssessment?.readiness?.satisfied ?? 0) : 0;
+    const done = stepCards.filter((c) => c.state === 'done').length + energyDone;
+    const total = stepCards.length + energyTotal;
     return total > 0 ? { satisfied: Math.min(done, total), total } : null;
   })();
 
@@ -6674,6 +6753,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     if ([o.generator, o.fuelStorage, o.emissionsEquipment, o.hazardousMaterials, o.wastewaterDischarge].every((f) => f !== undefined)) return false;
     return !reqCards.some((c) => /air|emission|hazard|wastewater|stormwater|npdes|used-oil|environment/i.test(`${c.req.document_id} ${c.name}`));
   })();
+
+  // Land-use KB gaps (Run 2 contractor yard R-B, farm R-I, accounting I-L):
+  // surface an explicit Requirements note instead of silence.
+  const zoningGapDetail = (() => {
+    const gaps = landUse?.coverageGaps ?? [];
+    const hit = gaps.find((g) => g.kind === 'zoning_district' || g.kind === 'use_permission');
+    return hit?.detail ?? null;
+  })();
+  const zoningCoverageNote = !!zoningGapDetail;
+
 
   // Contradictions only the user can settle. Clashes SmartPR resolved itself
   // (a derivation losing to a user answer) are deliberately not shown.
@@ -6930,14 +7019,27 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // shop, "vacant land" for a car rental lot) is not the project scope and
   // only mislabels it. Only the project work (new construction, renovation,
   // expansion) is shown then. Display only — the facts are unchanged.
-  const coarseUsePart = typeof proposedUseValue === 'string' && proposedUseValue
-    ? proposedUseValue
-    : typeof projectTypeValue === 'string' ? projectTypeValue : null;
-  const sidebarScopeParts = !isProjectOnly && profile.business_type && coarseUsePart
-    ? dedupedParts.filter((part) => part !== coarseUsePart)
-    : dedupedParts;
+  // F2 (live 2026-10-14): Scope sat next to "Project: New business" as
+  // "Project: renovation / new construction", then appeared/disappeared and
+  // displaced Location. The dt is already "Scope", so drop the "Project:"
+  // prefix. For a new-business intake, only show construction work the user
+  // (or a high-confidence read) actually confirmed — not an unverified
+  // interpreter guess that flickers as confidence changes.
+  const constructionConfirmed = (key: "new_construction" | "renovation" | "expansion") => {
+    const f = projectContext?.[key];
+    if (!f || f.value !== true) return false;
+    return (f.confidence ?? 0) >= 0.85;
+  };
+  const workParts = [
+    ...(constructionConfirmed("new_construction") ? [language === 'es' ? 'construcción nueva' : 'new construction'] : []),
+    ...(constructionConfirmed("renovation") ? [language === 'es' ? 'renovación' : 'renovation'] : []),
+    ...(constructionConfirmed("expansion") ? [language === 'es' ? 'ampliación' : 'expansion'] : []),
+  ];
+  const sidebarScopeParts = isProjectOnly
+    ? dedupedParts
+    : workParts;
   const sidebarScopeLabel = sidebarScopeParts.length > 0
-    ? `${language === 'es' ? 'Proyecto' : 'Project'}: ${sidebarScopeParts.map((p) => p.replace(/_/g, ' ')).join(', ')}`
+    ? sidebarScopeParts.map((p) => p.replace(/_/g, ' ')).join(', ')
     : null;
   const projectTypeSignal = dedupedParts.length > 0
     ? { label: `${language === 'es' ? 'Proyecto' : 'Project'}: ${dedupedParts.join(', ')}`, state: 'confirmed' as const }
@@ -7040,9 +7142,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const questionsLeftLabel = (n: number) => language === 'es'
     ? `${n} pregunta${n === 1 ? '' : 's'}`
     : `${n} question${n === 1 ? '' : 's'}`;
+  // F5 (live 2026-10-14): energy/project questions (who buys the power, sell
+  // to others, land zoning) stayed open while the sidebar said "Nothing —
+  // you can see your requirements". Count them in the same still-needed list.
+  const energyStillNeeded = energyIntakeQuestions.map((q) => ({
+    key: `energy:${q.id}`,
+    label: q.text,
+  }));
   const stillNeeded = [
     ...(projectIntent === null ? [{ key: 'project_intent', label: language === 'es' ? 'Tipo de Proyecto' : 'Project Type' }] : []),
     ...intakePlan.missingRequired.map((key) => ({ key, label: missingFieldLabel[key] ?? key })),
+    ...energyStillNeeded,
   ];
   const footerStatus = stillNeeded.length
     ? `${language === 'es' ? 'Aún falta' : 'Still needed'}: ${stillNeeded.map((i) => i.label).join(', ')}${missingQuestionCount ? (language === 'es' ? `, y ${questionsLeftLabel(missingQuestionCount)}` : `, plus ${questionsLeftLabel(missingQuestionCount)}`) : ''}`
@@ -8097,6 +8207,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     />
                   ))}
                   {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
+                  {group.id === 'conditional' && zoningCoverageNote && <ZoningCoverageNote language={language} detail={zoningGapDetail ?? undefined} />}
                 </div>
               </section>
             );
@@ -8106,6 +8217,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
               <div className="rq-group-head">{L(REQUIREMENT_GROUP_COPY.conditional.title, language)}</div>
               <p className="rq-group-sub">{L(REQUIREMENT_GROUP_COPY.conditional.sub, language)}</p>
               <div className="rq-list"><EnvironmentalOpenItem language={language} /></div>
+            </section>
+          )}
+          {zoningCoverageNote && !groupedCards.some((g) => g.id === 'conditional') && (
+            <section className="rq-group ck-group rq-group-conditional" data-testid="req-group-zoning-gap">
+              <div className="rq-group-head">{L('CONDITIONAL / NEEDS INFORMATION', language)}</div>
+              <div className="rq-list"><ZoningCoverageNote language={language} detail={zoningGapDetail ?? undefined} /></div>
             </section>
           )}
 

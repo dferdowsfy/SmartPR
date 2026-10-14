@@ -754,7 +754,29 @@ export function classifyEngineRequirements(
   return [...merged.values()];
 }
 
-export function classifyPotentialItem(name: string, flag: string, decision: PotentialDecision | undefined): {
+
+/** Lodging business types that may need PRTC Innkeeper/Hotelier registration.
+ * Municipality-wide tourism advisories reuse that display name — for every
+ * other business type they stay a review condition (Q5), not Required Now. */
+const LODGING_BUSINESS_TYPES = new Set([
+  "hotel", "resort", "guest house", "guesthouse", "airbnb", "short-term rental",
+  "airbnb / short-term rental", "short-term rental operator", "vacation rental manager",
+  "bed and breakfast", "bed & breakfast", "hostel",
+].map((s) => s.toLowerCase()));
+
+export function isLodgingBusinessType(businessType: string | null | undefined): boolean {
+  if (!businessType) return false;
+  const n = businessType.trim().toLowerCase();
+  if (LODGING_BUSINESS_TYPES.has(n)) return true;
+  return /\b(hotel|resort|hostel|inn|airbnb|short[\s-]?term\s+rental|guest\s*house|bed\s*(?:and|&)\s*breakfast)\b/.test(n);
+}
+
+export function classifyPotentialItem(
+  name: string,
+  flag: string,
+  decision: PotentialDecision | undefined,
+  opts?: { businessType?: string | null },
+): {
   applicability: Applicability;
   kind: RequirementKind;
   acceptsOfficialUpload: boolean;
@@ -764,6 +786,17 @@ export function classifyPotentialItem(name: string, flag: string, decision: Pote
   let applicability: Applicability = "conditional";
   if (decision === "applies") applicability = "required";
   if (decision === "not_applies") applicability = "not_applicable";
+  // Tourism advisory (Run 2): non-lodging BTs must not get Required Now for
+  // the municipality-wide "Tourism Registration" card — keep as review
+  // condition pending expert Q5. Lodging DOC_TOURISM_REGISTRATION rules unchanged.
+  if (flag === "tourism" && decision === "applies" && !isLodgingBusinessType(opts?.businessType)) {
+    return {
+      applicability: "conditional",
+      kind: "review_condition",
+      acceptsOfficialUpload: false,
+      stage: "conditional_reviews",
+    };
+  }
   return {
     applicability,
     kind,
