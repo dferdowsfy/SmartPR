@@ -23,6 +23,7 @@ const MACHINE_API_PREFIXES = [
   "/api/voice/xai-webhook",
   "/api/scim/",
   "/api/mcp/",
+  "/api/chatgpt/",
   "/api/voice/v1/",
   "/api/voice/phone/",
   "/api/voice/session/",
