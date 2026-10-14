@@ -6914,6 +6914,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     seenParts.add(norm);
     return true;
   });
+  // Sidebar "Scope": with a known business type, the business type already
+  // says what the place is; the interpreter's coarse property category
+  // (proposed_use / project_type, e.g. "retail" for a motorcycle repair
+  // shop, "vacant land" for a car rental lot) is not the project scope and
+  // only mislabels it. Only the project work (new construction, renovation,
+  // expansion) is shown then. Display only — the facts are unchanged.
+  const coarseUsePart = typeof proposedUseValue === 'string' && proposedUseValue
+    ? proposedUseValue
+    : typeof projectTypeValue === 'string' ? projectTypeValue : null;
+  const sidebarScopeParts = !isProjectOnly && profile.business_type && coarseUsePart
+    ? dedupedParts.filter((part) => part !== coarseUsePart)
+    : dedupedParts;
+  const sidebarScopeLabel = sidebarScopeParts.length > 0
+    ? `${language === 'es' ? 'Proyecto' : 'Project'}: ${sidebarScopeParts.map((p) => p.replace(/_/g, ' ')).join(', ')}`
+    : null;
   const projectTypeSignal = dedupedParts.length > 0
     ? { label: `${language === 'es' ? 'Proyecto' : 'Project'}: ${dedupedParts.join(', ')}`, state: 'confirmed' as const }
     : { label: language === 'es' ? 'Se necesita el tipo de proyecto' : 'Project type needed', state: 'needs-info' as const };
@@ -6994,7 +7009,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         ? L(currentQuestion.text, language)
         : currentPotentialQuestion
           ? L(currentPotentialQuestion.followUp, language)
-          : (language === 'es' ? 'Revisa tu proyecto y genera los requisitos.' : 'Review your project and generate the requirements.');
+          : intakeRuleQuestions[0]
+            ? L(intakeRuleQuestions[0].text, language)
+            : (language === 'es' ? 'Revisa tu proyecto y genera los requisitos.' : 'Review your project and generate the requirements.');
 
   // ---- What's still missing (required-now only; same source as the sidebar)
   const missingFieldLabel: Record<string, string> = {
@@ -7004,13 +7021,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     industry: t('industry'),
     business_structure: t('businessStructure'),
   };
-  const missingQuestionCount = Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialQuestionItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
+  // ONE source of truth for "how many questions are left": the same count
+  // the questionnaire shows and the Continue gate uses (questionsRemaining).
+  // The old separate tally counted guided answers by question id only, so a
+  // finished intake could still read "18 questions left" while the sidebar
+  // said "Nothing — you can see your requirements" (live 2026-10-14, E3).
+  const missingQuestionCount = intakeQuestionsComplete ? 0 : questionsRemaining;
+  const questionsLeftLabel = (n: number) => language === 'es'
+    ? `${n} pregunta${n === 1 ? '' : 's'}`
+    : `${n} question${n === 1 ? '' : 's'}`;
   const stillNeeded = [
     ...(projectIntent === null ? [{ key: 'project_intent', label: language === 'es' ? 'Tipo de Proyecto' : 'Project Type' }] : []),
     ...intakePlan.missingRequired.map((key) => ({ key, label: missingFieldLabel[key] ?? key })),
   ];
   const footerStatus = stillNeeded.length
-    ? `${language === 'es' ? 'Aún falta' : 'Still needed'}: ${stillNeeded.map((i) => i.label).join(', ')}${missingQuestionCount ? (language === 'es' ? ` · ${missingQuestionCount} pregunta${missingQuestionCount === 1 ? '' : 's'}` : ` · ${missingQuestionCount} question${missingQuestionCount === 1 ? '' : 's'}`) : ''}`
+    ? `${language === 'es' ? 'Aún falta' : 'Still needed'}: ${stillNeeded.map((i) => i.label).join(', ')}${missingQuestionCount ? (language === 'es' ? `, y ${questionsLeftLabel(missingQuestionCount)}` : `, plus ${questionsLeftLabel(missingQuestionCount)}`) : ''}`
     : missingQuestionCount
       ? (language === 'es' ? `Faltan ${missingQuestionCount} pregunta${missingQuestionCount === 1 ? '' : 's'}` : `${missingQuestionCount} question${missingQuestionCount === 1 ? '' : 's'} left`)
       : (language === 'es' ? 'Listo para ver tus requisitos' : 'Ready to see your requirements');
@@ -7155,11 +7180,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         projectContext,
         scenario: mergedScenario,
       })],
-      title: profile.name.trim() || (mergedScenario && scenarioActive ? scenarioTitle(mergedScenario) : null) || profile.business_type || (language === 'es' ? 'Nuevo proyecto' : 'New project'),
+      // The summary follows the business: its name, else its business type
+      // ("Motorcycle Repair Shop in Caguas"). The scenario's coarse property
+      // reading ("Caguas retail") only titles a project with no business
+      // type (live 2026-10-14, E5).
+      title: profile.name.trim()
+        || (!isProjectOnly && profile.business_type
+          ? (profile.municipality
+              ? `${profile.business_type} ${language === 'es' ? 'en' : 'in'} ${profile.municipality}`
+              : profile.business_type)
+          : null)
+        || (mergedScenario && scenarioActive ? scenarioTitle(mergedScenario) : null)
+        || (language === 'es' ? 'Nuevo proyecto' : 'New project'),
       businessType: profile.business_type,
       municipality: profile.municipality,
       locationType: profile.location_type,
-      scope: projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null,
+      scope: sidebarScopeLabel,
       // Same show/hide rule as the inline "Where is it?" card.
       site: intakeSite || locationNeed.needed ? (
         <LocationStepCard
@@ -7172,7 +7208,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           onOpenInline={() => focusMissing('municipality')}
         />
       ) : null,
-      stillNeeded: stillNeeded.map((i) => i.label),
+      // Same list as the footer: fields AND remaining questions, so the
+      // sidebar can never say "Nothing" while questions are still open.
+      stillNeeded: [
+        ...stillNeeded.map((i) => i.label),
+        ...(missingQuestionCount > 0 ? [questionsLeftLabel(missingQuestionCount)] : []),
+      ],
     },
     statusText: scenarioEval
       ? (scenarioEval.questions.length
@@ -7195,7 +7236,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       { value: liveBlank ? 0 : liveFacts, label: language === 'es' ? 'Hechos confirmados' : 'Facts understood', emphasis: !liveBlank && liveFacts > 0 },
       { value: liveBlank ? 0 : liveRequired, label: language === 'es' ? 'Requisitos por reglas' : 'Determined by rules', emphasis: !liveBlank && liveRequired > 0 },
       { value: liveBlank ? 0 : liveConditional, label: language === 'es' ? 'Por verificar' : 'Need verification' },
-      { value: liveBlank ? 0 : Math.max(0, intakeQuestionTotal - guidedQuestionsAnswered - answeredPotentialCount), label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
+      { value: liveBlank ? 0 : missingQuestionCount, label: language === 'es' ? 'Hechos pendientes' : 'Facts still needed' },
     ],
     agencies: liveBlank ? [] : liveAgencies,
     signals: intelligenceSignals,
@@ -7398,7 +7439,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       { label: language === 'es' ? 'Proyecto' : 'Project', value: projectIntent ? projectIntentLabel(projectIntent, language) : null },
                       { label: t('businessType'), value: profile.business_type },
                       { label: t('municipality'), value: profile.municipality },
-                      { label: language === 'es' ? 'Alcance' : 'Scope', value: (projectTypeSignal.state === 'confirmed' ? projectTypeSignal.label : null) || profile.location_type },
+                      { label: language === 'es' ? 'Alcance' : 'Scope', value: sidebarScopeLabel || profile.location_type },
                     ].filter((item) => item.value).map((item) => (
                       <div key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>
                     ))}
