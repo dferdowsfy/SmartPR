@@ -12,6 +12,8 @@ export interface GuestDraft {
   intakeSite?: unknown;
   currentStep: number;
   language: string;
+  /** The free-text project description, restored into the description box. */
+  intakeDescription?: string;
   savedAt: number;
   /**
    * Matter identity (`business|matter`) of the URL this draft was saved

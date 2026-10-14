@@ -2608,6 +2608,7 @@ export default function SmartPRIntake() {
     }
     if (draft.currentStep) setCurrentStep(draft.currentStep as Step);
     if (draft.language === 'es' || draft.language === 'en') setLanguage(draft.language);
+    if (typeof draft.intakeDescription === 'string' && draft.intakeDescription.trim()) setIntakeDescription(draft.intakeDescription);
   };
   useEffect(() => {
     if (me === undefined || guestRestoredRef.current) return;
@@ -2680,11 +2681,12 @@ export default function SmartPRIntake() {
         intakeSite,
         currentStep,
         language,
+        intakeDescription,
         matterKey: matterKeyForSearch(window.location.search),
       });
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [me, profile, discoveryAnswers, potentialDecisions, requirements, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives, intakeSite, currentStep, language]);
+  }, [me, profile, discoveryAnswers, potentialDecisions, requirements, incentiveFacts, incentiveAssessmentHistory, pursuedIncentives, intakeSite, currentStep, language, intakeDescription]);
 
   // Hidden debug mode for the rules engine (enable with ?debug=1 in the URL).
   const [debugMode, setDebugMode] = useState(false);
@@ -7332,6 +7334,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                   onEdit={handleNarrativeEdit}
                   scenarioSummary={scenarioSummary}
                   compact={hasProjectRequest}
+                  restoredDescription={intakeDescription}
                   passport={passportModeActive ? {
                     canonical: canonicalApplication,
                     unconfirmedDefaults: canonicalOverride ? [] : ['formationStatus', ...(profile.business_structure ? [] : ['entityType'])],

@@ -34,7 +34,6 @@ import {
 import { projectIntentLabel } from "../ai/intake/projectIntent";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
 import {
-  clearDescriptionDraft,
   currentMatterKey,
   readDescriptionDraft,
   restorableDescription,
@@ -69,6 +68,11 @@ export interface NaturalLanguageIntakeProps {
   scenarioSummary?: ScenarioSummary | null;
   /** Minimize a successful description while keeping voice and corrections available. */
   compact?: boolean;
+  /**
+   * The description the intake restored (workflow snapshot or guest draft).
+   * Fills an empty description box after a reload; never overwrites typing.
+   */
+  restoredDescription?: string;
 }
 
 type Status = "idle" | "loading" | "done" | "error";
@@ -139,6 +143,7 @@ export function NaturalLanguageIntake({
   passport,
   scenarioSummary,
   compact = false,
+  restoredDescription,
 }: NaturalLanguageIntakeProps) {
   const passportReview = usePassportVoiceInput(passport, lang);
   const receivePassport = passportReview.receive;
@@ -167,9 +172,6 @@ export function NaturalLanguageIntake({
     const reset = window.setTimeout(() => setElapsed(0), 0);
     const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
     return () => { window.clearTimeout(reset); window.clearInterval(id); };
-  }, [status]);
-  useEffect(() => {
-    if (status === "done") clearDescriptionDraft();
   }, [status]);
 
   // Grow with the text so a long description wraps into view instead of
@@ -352,6 +354,20 @@ export function NaturalLanguageIntake({
     // Mount-once restore; interpretDescription is read at mount time on purpose.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reload recovery from the intake's own saved state: the snapshot or guest
+  // draft carries the description even when the URL (and so the local
+  // draft's matter key) changed after the business record was created.
+  useEffect(() => {
+    const restored = (restoredDescription ?? "").trim();
+    if (!restored || textRef.current.trim()) return;
+    const id = window.setTimeout(() => {
+      if (textRef.current.trim()) return;
+      textRef.current = restoredDescription as string;
+      setText(restoredDescription as string);
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [restoredDescription]);
 
   // The parent's live summary (Passport merged, questions answered) wins;
   // business-level chips from this reading stay alongside it.
