@@ -6613,7 +6613,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     .filter((q) => discoveryAnswers[q.id] !== undefined)
     .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }))
     .concat(UNANSWERED_TRIGGER_QUESTIONS
-      .filter((q) => !questionList.some((guided) => guided.id === q.questionId) && discoveryAnswers[q.writeKey] !== undefined)
+      // Trigger rows exist for questions the guided list never asks. A
+      // guided question can share the trigger's answer key under its own
+      // id (e.g. guided `existing_lease` vs trigger Q_EXISTING_LEASE → the
+      // same writeKey), so exclude by writeKey too — otherwise the same
+      // answered question renders twice.
+      .filter((q) => !questionList.some((guided) => guided.id === q.questionId || guided.id === q.writeKey) && discoveryAnswers[q.writeKey] !== undefined)
       .map((q) => ({ id: q.questionId, text: (KB.questions as Array<{ id: string; question?: string }>).find((item) => item.id === q.questionId)?.question ?? q.questionId, value: discoveryAnswers[q.writeKey] as boolean | string, writeKey: q.writeKey })));
 
   // After "Change": once the reopened question is answered again, answers to
