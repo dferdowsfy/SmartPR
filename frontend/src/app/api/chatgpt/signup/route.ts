@@ -12,13 +12,30 @@ import { getSiteUrl } from "../../../../lib/siteUrl";
  *         handoffPath?, intent? }
  * handoffPath: e.g. "/chatgpt/handoff?t=<token>" — embedded in the
  * verification email redirect so the scenario loads after email confirm.
+ *
+ * CORS: the widget runs in ChatGPT's web-sandbox iframe (cross-origin), so
+ * we handle the preflight and allow the POST. No cookies/auth are involved.
  */
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "content-type",
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 200, headers: CORS });
+}
+
+function cjson(data: Record<string, unknown>, status = 200) {
+  return NextResponse.json(data, { status, headers: CORS });
+}
+
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    return cjson({ error: "Invalid request body." }, 400);
   }
 
   const firstName = String(body.firstName || "").trim();
@@ -33,22 +50,22 @@ export async function POST(req: NextRequest) {
 
   // Mirror /signup page validation.
   if (!firstName || !lastName) {
-    return NextResponse.json({ error: "First and last name are required." }, { status: 400 });
+    return cjson({ error: "First and last name are required." }, 400);
   }
   if (!/\S+@\S+\.\S+/.test(email)) {
-    return NextResponse.json({ error: "Enter a valid work email." }, { status: 400 });
+    return cjson({ error: "Enter a valid work email." }, 400);
   }
   if (password.length < 8) {
-    return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
+    return cjson({ error: "Password must be at least 8 characters." }, 400);
   }
   if (!agreed) {
-    return NextResponse.json({ error: "Please accept the Terms of Service and Privacy Policy." }, { status: 400 });
+    return cjson({ error: "Please accept the Terms of Service and Privacy Policy." }, 400);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnon) {
-    return NextResponse.json({ error: "Account creation is unavailable right now." }, { status: 503 });
+    return cjson({ error: "Account creation is unavailable right now." }, 503);
   }
 
   // Build the verification redirect carrying the handoff, mirroring
@@ -76,10 +93,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return cjson({ error: error.message }, 400);
   }
 
-  return NextResponse.json({
+  return cjson({
     ok: true,
     needsConfirmation: !data.session,
     email,

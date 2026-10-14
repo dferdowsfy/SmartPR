@@ -26,13 +26,13 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./vendor/leaflet.generated";
 import { tileTemplates } from "./tiles";
 import { PORTAL_DEFAULT } from "./portalUrl";
 
-// Canonical URI is v12 (embedded signup form; password via direct fetch).
+// Canonical URI is v13 (progressive signup: teaser first, form after engagement; CORS fix).
 // v8 rather than v7: ChatGPT caches templates (and their CSP) per URI, so every
 // production, and ChatGPT caches templates (and their CSP) per URI, so the
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v12.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v13.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -45,6 +45,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v9.html",
   "ui://smartpr/requirements-v10.html",
   "ui://smartpr/requirements-v11.html",
+  "ui://smartpr/requirements-v12.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -121,7 +122,7 @@ const JS = String.raw`
 (function(){
 var CFG=__CFG__;
 var root=document.getElementById("root"),pending={},nextId=1,lastSizeH=0,callSeq=0,lastTO=null,restored=false,lastPersist="";
-var state={result:null,resultAt:0,input:null,answers:{},busy:false,siteBusy:false,error:null,note:null,lastAction:null,pin:null,confirmed:null,details:null,signup:{},signupBusy:false,signupError:null,signupDone:false,signupEmail:null};
+var state={result:null,resultAt:0,input:null,answers:{},busy:false,siteBusy:false,error:null,note:null,lastAction:null,pin:null,confirmed:null,details:null,signup:{},signupBusy:false,signupError:null,signupDone:false,signupEmail:null,signupExpanded:false};
 var DBG=window.__smartpr={events:[],mode:null,tiles:{loaded:0,errors:0},state:state};
 function trace(s){DBG.events.push(s);if(DBG.events.length>300)DBG.events.shift()}
 function post(m){try{window.parent.postMessage(m,"*")}catch(_){}}
@@ -349,6 +350,17 @@ function updateCard(r){var box=el("div","card");add(box,el("h2",null,"Your answe
 // directly to /api/chatgpt/signup via fetch — never through an MCP tool call.
 function signupForm(r){
  var box=el("div","cta signup");
+ // Progressive disclosure: on the first assessment the user gets a compact
+ // teaser (experience before commitment). The full form appears once they
+ // tap through, or automatically after they've refined (engaged).
+ // r.refined is true for model-initiated refine results.
+ var expanded = state.signupExpanded || r.refined || state.signupDone;
+ if(!expanded){
+  add(box,el("b",null,"Your assessment carries into your account"),el("span",null,"Create a free SmartPR account to complete the required forms — your ChatGPT assessment loads in automatically."));
+  var tb=el("button","btn p full","Create your SmartPR account \u2192");tb.type="button";
+  tb.onclick=function(){state.signupExpanded=true;render()};
+  add(box,tb);return box;
+ }
  add(box,el("b",null,"Create your SmartPR account"),el("span",null,"Your ChatGPT assessment carries into your new account. Takes about 2 minutes."));
  if(state.signupDone){add(box,el("div","signup-ok","Account created! Check "+state.signupEmail+" for a verification email — click the link to confirm and your assessment will load into your new account."));return box}
  var fields=el("div","signup-fields");
