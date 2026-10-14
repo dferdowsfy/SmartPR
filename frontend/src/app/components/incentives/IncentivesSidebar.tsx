@@ -12,6 +12,8 @@ import { relevantIncentiveOpportunities } from "../../incentives/relevance";
 type Language = "en" | "es";
 
 const NO_VERIFIED_EVIDENCE: string[] = [];
+/** Incentive matching is optional context; it never holds a spinner open past this. */
+export const INCENTIVES_TIMEOUT_MS = 15_000;
 
 /** Same four honest tiers as the drawer/workflow — kept in one place would
  * be nicer, but this file and OpportunitiesDrawer both need it and neither
@@ -65,12 +67,25 @@ export function IncentivesSidebar({
   const normalizedProfile = useMemo(() => normalizeProjectProfileForIncentives(profile, facts), [profile, facts]);
   const [assessment, setAssessment] = useState<IncentiveAssessment | null>(initialAssessment);
   const [loading, setLoading] = useState(true);
+  // Set when the last evaluation failed or timed out (live 2026-10-14:
+  // "Incentives · Evaluating…" never settled). The panel then shows a final
+  // state with a retry instead of an endless spinner.
+  const [failed, setFailed] = useState(false);
+  const [retryToken, setRetryToken] = useState(0);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
+    // Our own deadline, distinct from the cleanup abort: a slow or hung
+    // request must end in a final state, never leave "Evaluating…" up.
+    let timedOut = false;
+    const deadline = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, INCENTIVES_TIMEOUT_MS);
     const timer = window.setTimeout(() => {
       setLoading(true);
+      setFailed(false);
       void fetch("/api/incentives/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,19 +100,32 @@ export function IncentivesSidebar({
           setAssessment(data);
           onAssessmentChange?.(data);
         })
-        .catch((reason) => {
-          if (reason instanceof DOMException && reason.name === "AbortError") return;
+        .catch(() => {
+          // A cleanup abort (profile changed / unmounted) is not a failure:
+          // the next evaluation owns the state.
+          if (controller.signal.aborted && !timedOut) return;
+          setFailed(true);
         })
         .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
+          window.clearTimeout(deadline);
+          if (!controller.signal.aborted || timedOut) setLoading(false);
         });
     }, 180);
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(deadline);
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [normalizedProfile]);
+  }, [normalizedProfile, retryToken]);
+  const failedNote = failed && !loading ? (
+    <p className="rq-group-sub inc-failed" role="status" data-testid="incentives-unavailable">
+      {es
+        ? "No pudimos revisar los incentivos en este momento. Tus requisitos no cambian."
+        : "We couldn't check incentives right now. Your requirements are not affected."}{" "}
+      <button type="button" className="inc-retry" onClick={() => setRetryToken((n) => n + 1)}>{es ? "Reintentar" : "Try again"}</button>
+    </p>
+  ) : null;
 
   // On mobile the trigger is position:fixed below the sticky stepper bar.
   // The bar's height varies by breakpoint, so measure it and expose the
@@ -148,13 +176,15 @@ export function IncentivesSidebar({
           .rq-group-incentives .inc-pursuing-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0}
           .rq-group-incentives .inc-pursuing-remove{background:none;border:none;padding:0;cursor:pointer;color:var(--muted,#69665f);font-size:var(--rq-text-sm,14px);text-decoration:underline}
           .rq-group-incentives .ck-rows{margin-top:8px}
+          .inc-retry{background:none;border:none;padding:0;font:inherit;color:var(--accent,#0f766e);text-decoration:underline;cursor:pointer}
         `}</style>
         <summary className="rq-group-head">
           <Lightbulb size={14} aria-hidden="true" /> {es ? "Posibles incentivos (opcional)" : "Possible incentives (optional)"}
           <span className="rq-critical-count">{loading && count === 0 ? "…" : count}</span>
         </summary>
         <p className="rq-group-sub">{es ? "No son requisitos. Revisa si te interesan." : "Not requirements. Review them if you are interested."}</p>
-        {!loading && count === 0 && <p className="rq-group-sub">{es ? "Aún no hay coincidencias publicadas para este perfil." : "No published matches for this profile yet."}</p>}
+        {failedNote}
+        {!loading && !failed && count === 0 && <p className="rq-group-sub">{es ? "Aún no hay coincidencias publicadas para este perfil." : "No published matches for this profile yet."}</p>}
         <div role="list" className="ck-rows">
           {relevant.map((item) => {
             const status = statusPresentation(item, language);
@@ -222,6 +252,7 @@ export function IncentivesSidebar({
         .inc-head-title{display:flex;align-items:center;gap:6px;font-family:var(--font-display,Georgia,serif);font-size:16px;color:var(--ink,#171714)}
         .inc-count{white-space:nowrap;border:1px solid color-mix(in srgb,var(--accent,#0f766e) 55%,transparent);border-radius:999px;padding:3px 9px;color:var(--accent,#0f766e);font-size:11px;font-weight:700}
         .inc-loading{font-size:12.5px;color:var(--muted,#69665f)}
+        .inc-retry{background:none;border:none;padding:0;font:inherit;color:var(--accent,#0f766e);text-decoration:underline;cursor:pointer}
         .inc-empty{font-size:12.5px;color:var(--muted,#69665f);line-height:1.5}
         .inc-match{border:1px solid var(--border,#d9d4ca);border-radius:12px;padding:12px;margin-bottom:10px}
         .inc-match:last-child{margin-bottom:0}
@@ -271,8 +302,9 @@ export function IncentivesSidebar({
         </div>
 
         {loading && <div className="inc-loading">{es ? "Evaluando…" : "Evaluating…"}</div>}
+        {failedNote}
 
-        {!loading && count === 0 && (
+        {!loading && !failed && count === 0 && (
           <div className="inc-empty">{es
             ? "Aún no hay coincidencias publicadas para este perfil."
             : "No published matches for this profile yet."}</div>

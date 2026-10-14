@@ -34,11 +34,14 @@ import {
 import { projectIntentLabel } from "../ai/intake/projectIntent";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
 import {
+  clearDescriptionDraft,
   currentMatterKey,
   readDescriptionDraft,
   restorableDescription,
   writeDescriptionDraft,
 } from "../../lib/descriptionDraft";
+import { isReloadNavigation } from "../../lib/newBusinessDraft";
+import { INTERPRET_TIMEOUT_MS, analysisElapsedSeconds, remainingInterpretBudget } from "../../lib/analysisBudget";
 import { PassportVoiceReview, usePassportVoiceInput, type PassportInputTarget } from "./voice/PassportVoiceReview";
 
 export interface NaturalLanguageIntakeProps {
@@ -77,14 +80,9 @@ export interface NaturalLanguageIntakeProps {
 
 type Status = "idle" | "loading" | "done" | "error";
 
-/**
- * The interpret call must never leave the spinner up indefinitely (live
- * 2026-10-14: "Analyzing your description…" hung for over a minute). Past
- * this deadline the request is aborted and the deterministic reading below
- * takes over, exactly like any other interpret failure.
- */
-export const INTERPRET_TIMEOUT_MS = 35_000;
-
+// INTERPRET_TIMEOUT_MS and the shared analysis budget live in
+// lib/analysisBudget so the timing rules are unit-tested.
+export { INTERPRET_TIMEOUT_MS };
 
 /**
  * Attach validated project-context facts to a validated interpretation.
@@ -164,14 +162,22 @@ export function NaturalLanguageIntake({
   // voice input becomes the description while later follow-ups are treated
   // as incremental facts (never appended to the box).
   const textRef = useRef("");
-  // Seconds since the current interpretation started (visible progress).
+  // Seconds since the current analysis started (visible progress). The start
+  // time belongs to the analysis, not to a render: re-renders, a resumed
+  // analysis after reload, or a superseding submission never restart it
+  // from zero unless a genuinely new analysis begins.
+  const analysisStartedAtRef = useRef<number | null>(null);
+  // Each analysis gets an id; a superseded one never applies its result.
+  const analysisIdRef = useRef(0);
+  const analysisAbortRef = useRef<AbortController | null>(null);
+  const inflightDescriptionRef = useRef<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (status !== "loading") return;
-    const started = Date.now();
-    const reset = window.setTimeout(() => setElapsed(0), 0);
-    const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
-    return () => { window.clearTimeout(reset); window.clearInterval(id); };
+    const tick = () => setElapsed(analysisElapsedSeconds(analysisStartedAtRef.current, Date.now()));
+    const first = window.setTimeout(tick, 0);
+    const id = window.setInterval(tick, 1000);
+    return () => { window.clearTimeout(first); window.clearInterval(id); };
   }, [status]);
 
   // Grow with the text so a long description wraps into view instead of
@@ -228,22 +234,44 @@ export function NaturalLanguageIntake({
   };
 
   const interpretDescription = useCallback(
-    async (descriptionRaw: string) => {
+    async (descriptionRaw: string, opts?: { startedAt?: number }) => {
       const description = descriptionRaw.trim();
-      if (!description || loadingRef.current) return;
+      if (!description) return;
+      if (loadingRef.current) {
+        // The same text is already being analyzed: keep that analysis (and
+        // its counter). A DIFFERENT text replaces it — the user's latest
+        // description must never be silently dropped behind an older one.
+        if (inflightDescriptionRef.current === description) return;
+        analysisAbortRef.current?.abort();
+      }
+      const analysisId = ++analysisIdRef.current;
+      const isCurrent = () => analysisIdRef.current === analysisId;
+      const startedAt = opts?.startedAt ?? Date.now();
+      analysisStartedAtRef.current = startedAt;
+      setElapsed(analysisElapsedSeconds(startedAt, Date.now()));
+      inflightDescriptionRef.current = description;
       loadingRef.current = true;
       setStatus("loading");
       setChips([]);
-      writeDescriptionDraft(description, true);
+      writeDescriptionDraft(description, true, startedAt);
+      // ONE deadline for the whole analysis: request + body. A resumed
+      // analysis only gets what is left of the original budget.
+      const controller = new AbortController();
+      analysisAbortRef.current = controller;
+      const budget = remainingInterpretBudget(startedAt, Date.now());
+      const deadline = window.setTimeout(() => controller.abort(), budget);
       try {
+        if (budget <= 0) throw new Error("interpret budget exhausted");
         if (passport && !replacingDescriptionRef.current) {
           const res = await fetch("/api/intake/interpret", {
-            signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
+            signal: controller.signal,
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ description, mode: "passport", lang, candidates: buildKbCandidates(kb, description), allowedIndustries, allowedLocationTypes }),
           });
           if (!res.ok) throw new Error(`interpret ${res.status}`);
           const data = await res.json();
+          if (!isCurrent()) return;
+          window.clearTimeout(deadline);
           await receivePassport(data.proposals, description);
           // Discovery is already complete when Passport mode is enabled. Do
           // not replay the model's parallel discovery interpretation here: a
@@ -257,7 +285,7 @@ export function NaturalLanguageIntake({
         // Candidates come from the ACTIVE KB — the same one the rules engine uses.
         const candidates = buildKbCandidates(kb, description);
         const res = await fetch("/api/intake/interpret", {
-            signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
+          signal: controller.signal,
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -270,6 +298,8 @@ export function NaturalLanguageIntake({
         });
         if (!res.ok) throw new Error(`interpret ${res.status}`);
         const data = await res.json();
+        if (!isCurrent()) return;
+        window.clearTimeout(deadline);
 
         // Never trust returned ids — validate against the active KB.
         const raw = validateInterpretation(data?.interpretation, kb, {
@@ -307,9 +337,11 @@ export function NaturalLanguageIntake({
         setBusinessNeeds(suggestedChips);
         setStatus("done");
       } catch {
-        // The AI reading failed — the deterministic scenario reading still
-        // understands the situation; only the KB-id fields wait for the
-        // guided questions.
+        // Superseded by a newer description: that analysis owns the UI.
+        if (!isCurrent()) return;
+        // The AI reading failed or ran past the budget — the deterministic
+        // scenario reading still understands the situation; only the KB-id
+        // fields wait for the guided questions.
         const offline = applyScenarioToInterpretation(
           validateInterpretation(null, kb, { allowedIndustries, allowedLocationTypes }),
           scenarioFor(description, null)
@@ -328,11 +360,16 @@ export function NaturalLanguageIntake({
           setStatus("error");
         }
       } finally {
-        loadingRef.current = false;
-        // Settled either way: a reload must not re-run it. A successful read
-        // lives on in the intake's own draft/snapshot, so drop the copy;
-        // a failed one keeps the text so the user can retry.
-        if (textRef.current.trim() === description) writeDescriptionDraft(description, false);
+        window.clearTimeout(deadline);
+        if (isCurrent()) {
+          loadingRef.current = false;
+          inflightDescriptionRef.current = null;
+          analysisAbortRef.current = null;
+          analysisStartedAtRef.current = null;
+          // Settled either way: a reload must not re-run it. The text stays
+          // so a reload of this same in-progress intake restores it.
+          if (textRef.current.trim() === description) writeDescriptionDraft(description, false);
+        }
       }
     },
     [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips, scenarioChips]
@@ -340,15 +377,23 @@ export function NaturalLanguageIntake({
 
   // Reload recovery: put the typed description back, and re-run an
   // interpretation that was still in flight when the page went away.
+  // A fresh "New Business" entry (not a reload) always starts empty: the
+  // stale copy is dropped so it can never resurface in a later intake.
   useEffect(() => {
     if (textRef.current.trim()) return;
-    const draft = restorableDescription(readDescriptionDraft(), currentMatterKey(), Date.now());
-    if (!draft) return;
+    const stored = readDescriptionDraft();
+    const draft = restorableDescription(stored, currentMatterKey(), Date.now(), isReloadNavigation());
+    if (!draft) {
+      if (stored) clearDescriptionDraft();
+      return;
+    }
     const id = window.setTimeout(() => {
       if (textRef.current.trim()) return;
       textRef.current = draft.text;
       setText(draft.text);
-      if (draft.pending) void interpretDescription(draft.text);
+      // Resume on the ORIGINAL budget: a reload mid-analysis does not buy
+      // another full wait (past the budget it goes straight to the fallback).
+      if (draft.pending) void interpretDescription(draft.text, { startedAt: draft.startedAt ?? draft.savedAt });
     }, 0);
     return () => window.clearTimeout(id);
     // Mount-once restore; interpretDescription is read at mount time on purpose.
@@ -402,11 +447,13 @@ export function NaturalLanguageIntake({
     async (transcript: string) => {
       if (loadingRef.current) return;
       loadingRef.current = true;
+      analysisStartedAtRef.current = Date.now();
+      setElapsed(0);
       setStatus("loading");
       try {
         const candidates = buildKbCandidates(kb, transcript);
         const res = await fetch("/api/intake/interpret", {
-            signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
+          signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -443,6 +490,7 @@ export function NaturalLanguageIntake({
         setStatus("error");
       } finally {
         loadingRef.current = false;
+        analysisStartedAtRef.current = null;
       }
     },
     [kb, lang, allowedIndustries, allowedLocationTypes, onApply, mergeChips, buildSuggestedChips, scenarioChips]
