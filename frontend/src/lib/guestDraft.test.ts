@@ -91,3 +91,10 @@ test("takeHandoffDraft returns null when empty and on malformed data", () => {
   );
   assert.equal(takeHandoffDraft(), null);
 });
+
+test("guest draft keeps the project description across a reload", () => {
+  clearGuestDraft();
+  saveGuestDraft(blankDraft({ intakeDescription: "warehouse with rooftop solar in Carolina" }));
+  assert.equal(loadGuestDraft()?.intakeDescription, "warehouse with rooftop solar in Carolina");
+  clearGuestDraft();
+});
