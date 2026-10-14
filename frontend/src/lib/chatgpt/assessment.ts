@@ -124,6 +124,15 @@ export interface AssessmentResult {
   site_details?: import("./siteLookup").SiteDetails | null;
   versions: { generated_at: string; server: string; engine: string; kb: string; rules: number };
   message: string;
+  /**
+   * Set by the MCP layer on refine_scenario results (never on the initial
+   * assess_scenario). The widget renders the compact "update" view for these:
+   * the applied answers plus updated requirements, instead of re-rendering the
+   * full assessment card.
+   */
+  refined?: boolean;
+  /** Human-readable answers applied by this refine call (question → answer). */
+  applied_answers?: { question: string; answer: string }[];
 }
 
 const kb = puertoRicoPack.kb as KnowledgeBase;

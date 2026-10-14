@@ -91,7 +91,7 @@ test("MCP: initialize, tools/list, resources, tools/call", async () => {
   assert.deepEqual(tools.map((t: any) => t.name), ["assess_scenario", "refine_scenario", "create_portal_handoff"]);
   assert.equal((TOOLS[0]._meta as { ui: { resourceUri: string } }).ui.resourceUri, WIDGET_URI);
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v7.html");
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v8.html");
   const listed = ((await rpc("resources/list")).body as Body).result.resources.map((r: any) => r.uri);
   assert.deepEqual(listed, [...WIDGET_URI_ALIASES]);
   const res = ((await rpc("resources/read", { uri: WIDGET_URI })).body as Body).result.contents[0];
@@ -245,7 +245,7 @@ test("map pin: resolved server-side, authoritative for municipality, carried to 
   assert.equal(Math.round(restored!.latitude * 1e5), Math.round(g.latitude * 1e5));
 });
 
-test("widget CSP v7: only the portal origin, declared in resource + connect (+redirect) and as widget domain", async () => {
+test("widget CSP v8: only the portal origin, declared in resource + connect (+redirect) and as widget domain", async () => {
   const portal = "https://www.getsmartpr.com";
   const meta = widgetResourceMeta(portal);
   assert.deepEqual(meta.ui.csp, { connectDomains: [portal], resourceDomains: [portal] });
@@ -299,8 +299,8 @@ test("widget map data: 78 municipios, decodable polyline rings inside Puerto Ric
   }
 });
 
-test("widget v7: map visible after assess, auto-pin for a named municipality (approximate), map_focus in schema", async () => {
-  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v7.html");
+test("widget v8: map visible after assess, auto-pin for a named municipality (approximate), map_focus in schema", async () => {
+  assert.equal(WIDGET_URI, "ui://smartpr/requirements-v8.html");
   assert.equal((TOOLS[0]._meta as Record<string, unknown>)["openai/outputTemplate"], WIDGET_URI);
   assert.equal(MAP_MAX_ZOOM, 19);
   assert.equal(SVG_MAP_MAX_ZOOM, 14);
@@ -328,8 +328,8 @@ test("widget v7: map visible after assess, auto-pin for a named municipality (ap
   const withMuni = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "San Juan" } })).body as Body).result;
   assert.equal(withMuni.structuredContent.map_focus.zoom, 13);
 });
-test("widget URI aliases: resources/read serves current HTML + v7 CSP for v1–v7; tools advertise v7 only", async () => {
-  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7].map((n) => `ui://smartpr/requirements-v${n}.html`));
+test("widget URI aliases: resources/read serves current HTML + v8 CSP for v1–v8; tools advertise v8 only", async () => {
+  assert.deepEqual([...WIDGET_URI_ALIASES], [1, 2, 3, 4, 5, 6, 7, 8].map((n) => `ui://smartpr/requirements-v${n}.html`));
   assert.equal(WIDGET_URI, WIDGET_URI_ALIASES[WIDGET_URI_ALIASES.length - 1]);
   for (const t of TOOLS.slice(0, 2)) {
     const meta = t._meta as Record<string, unknown>;
@@ -352,7 +352,7 @@ test("widget URI aliases: resources/read serves current HTML + v7 CSP for v1–v
     assert.equal(c._meta["openai/widgetDomain"], SITE.siteUrl);
   }
   assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v0.html" })).body as Body).error?.code, -32602);
-  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v8.html" })).body as Body).error?.code, -32602);
+  assert.equal(((await rpc("resources/read", { uri: "ui://smartpr/requirements-v9.html" })).body as Body).error?.code, -32602);
 });
 
 test("free preview surfaces at least 5 requirements for a typical restaurant scenario", async () => {
@@ -365,7 +365,7 @@ test("free preview surfaces at least 5 requirements for a typical restaurant sce
   assert.equal(FREE_PREVIEW_LIMIT >= 5, true);
 });
 
-test("widget v7 state model: forward-only results, pin/answers survive host globals, persisted via setWidgetState", async () => {
+test("widget v8 state model: forward-only results, pin/answers survive host globals, persisted via setWidgetState", async () => {
   const html = widgetHtml();
   // Root cause of "tap doesn't stick": v5 re-applied the ORIGINAL toolOutput on every openai:set_globals.
   assert.match(html, /function rTime\(/);
@@ -386,6 +386,24 @@ test("widget v7 state model: forward-only results, pin/answers survive host glob
   assert.match(html, /function svgInit\(/);
   // Refine with nothing selected must say so instead of silently doing nothing (v5 bug).
   assert.ok(!/if\(!Object\.keys\(ans\)\.length\)return;/.test(html));
+});
+
+test("refine_scenario marks results for the compact update view; assess_scenario does not", async () => {
+  const a = ((await rpc("tools/call", { name: "assess_scenario", arguments: { business_type: "restaurant", municipality: "Bayamón" } })).body as Body).result;
+  assert.equal(a.structuredContent.refined, undefined);
+  assert.equal(a.structuredContent.applied_answers, undefined);
+  const r = ((await rpc("tools/call", { name: "refine_scenario", arguments: { scenario: a.structuredContent.scenario, answers: { business_status: "existing", structural: "none" } } })).body as Body).result;
+  assert.equal(r.structuredContent.refined, true);
+  assert.deepEqual(r.structuredContent.applied_answers, [
+    { question: "Business registration", answer: "Already registered" },
+    { question: "Renovation", answer: "No renovation" },
+  ]);
+  // Widget HTML carries the compact update view + scrollable reqs pane + sticky refine panel.
+  const html = widgetHtml({ assetOrigin: SITE.siteUrl });
+  assert.match(html, /Your requirements, updated/);
+  assert.match(html, /class\\"\\s*:\\s*\\"card reqs\\"|"card reqs"/);
+  assert.match(html, /\.reqs\{max-height/);
+  assert.match(html, /\.refine\{position:sticky/);
 });
 
 test("refine_scenario with a pin returns site_details from the portal layer lookups (never invented)", async () => {

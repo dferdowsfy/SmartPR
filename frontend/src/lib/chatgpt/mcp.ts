@@ -63,6 +63,8 @@ const resultSchema = {
     approximate_site: { type: ["object", "null"], description: "Display-only starting pin (downtown of the stated municipality) when no exact site is pinned. Not a site — never pass it as scenario.site." },
     site_details: { type: ["object", "null"], description: "For scenario.site: street/address and official-map chips (zoning, FEMA flood, landslide, coastal). A chip with value null was not available — say 'see the full report', never guess." },
     dropped_answers: { type: "array" }, tier: { type: "string" },
+    refined: { type: "boolean", description: "True on refine_scenario results: the widget shows the compact update view." },
+    applied_answers: { type: "array", description: "Human-readable answers applied by this refine call.", items: { type: "object", properties: { question: { type: "string" }, answer: { type: "string" } } } },
   },
   required: ["status", "scenario", "requirements", "versions", "map_focus"],
 };
@@ -126,6 +128,28 @@ const ok = (id: Rpc["id"], result: unknown): McpResult => ({ status: 200, body: 
 const err = (id: Rpc["id"], code: number, message: string, status = 200): McpResult => ({ status, body: { jsonrpc: "2.0", id: id ?? null, error: { code, message } } });
 const toolError = (text: string) => ({ isError: true, content: [{ type: "text", text }] });
 
+/** Human-readable labels for refine answers, for the widget's compact update view. */
+const ANSWER_LABELS: Record<string, { question: string; values: Record<string, string> }> = {
+  business_status: { question: "Business registration", values: { new: "New business, not yet registered", existing: "Already registered" } },
+  structural: { question: "Renovation", values: { none: "No renovation", interior: "Interior / non-structural", structural: "Structural changes" } },
+  municipality: { question: "Municipality", values: {} },
+  activity: { question: "Activity", values: {} },
+};
+function appliedAnswerLabels(answers: unknown): { question: string; answer: string }[] {
+  if (!answers || typeof answers !== "object" || Array.isArray(answers)) return [];
+  const out: { question: string; answer: string }[] = [];
+  for (const [k, v] of Object.entries(answers as Record<string, unknown>)) {
+    if (v === "" || v == null) continue;
+    const known = ANSWER_LABELS[k];
+    const sval = String(v);
+    out.push({
+      question: known ? known.question : k.replace(/^Q_/, "").replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase()),
+      answer: known ? (known.values[sval] ?? sval) : sval === "yes" ? "Yes" : sval === "no" ? "No" : sval,
+    });
+  }
+  return out;
+}
+
 function asScenario(v: unknown): Partial<NormalizedScenario> | null {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Partial<NormalizedScenario>) : null;
 }
@@ -142,6 +166,12 @@ export async function callTool(name: string, args: Record<string, unknown>, opts
     if (name === "refine_scenario" && !prior) return toolError("refine_scenario needs the previous result's `scenario` object.");
     const { scenario, dropped } = normalizeScenario(args as ScenarioInput, prior);
     const result = assessScenario(scenario, dropped);
+    if (name === "refine_scenario") {
+      // Mark refinement results so the widget renders the compact update view
+      // (applied answers + updated requirements) instead of the full card.
+      result.refined = true;
+      result.applied_answers = appliedAnswerLabels((args as Record<string, unknown>).answers);
+    }
     if (scenario.site && opts.siteLookups) {
       result.site_details = await siteDetailsFor(scenario.site.latitude, scenario.site.longitude, opts.siteLookups);
     } else result.site_details = null;

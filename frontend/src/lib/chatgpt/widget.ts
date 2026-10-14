@@ -26,13 +26,13 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./vendor/leaflet.generated";
 import { tileTemplates } from "./tiles";
 import { PORTAL_DEFAULT } from "./portalUrl";
 
-// Canonical URI is v7 (Leaflet basemap + draggable pin + forward-only state).
-// v7 rather than v6: an interim SVG-only "v6" (empty CSP) was briefly live in
+// Canonical URI is v8 (compact refine-update view + scrollable reqs pane + sticky refine panel).
+// v8 rather than v7: ChatGPT caches templates (and their CSP) per URI, so every
 // production, and ChatGPT caches templates (and their CSP) per URI, so the
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v7.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v8.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -40,6 +40,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v4.html",
   "ui://smartpr/requirements-v5.html",
   "ui://smartpr/requirements-v6.html",
+  "ui://smartpr/requirements-v7.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -58,7 +59,7 @@ const CSS = `
 h1{font-size:22px;margin:16px 0 2px}.sub{color:var(--mut);margin:0 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.chip{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 12px;font-weight:500}
 .chip.unk{border-style:dashed;color:var(--mut)}
-.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start}@media(max-width:640px){.grid{grid-template-columns:1fr}}.reqs{max-height:560px;overflow-y:auto;overscroll-behavior:contain}.refine{position:sticky;top:12px}.ans{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.ans .a{border:1px solid var(--line);background:var(--tealbg);border-radius:10px;padding:8px 12px}.ans .a b{display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.ans .a span{font-weight:600;color:var(--teal2)}
 .card{border:1px solid var(--line);border-radius:12px;padding:14px}.card h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
 .badge{margin-left:auto;font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--tealbg);color:var(--teal2)}
 .grp{border-top:1px solid var(--line)}.grp:first-of-type{border-top:0}.grow{display:flex;gap:10px;align-items:center;padding:10px 0;cursor:pointer;width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}
@@ -319,27 +320,7 @@ function locPanel(r){var p=state.pin,c=state.confirmed,d=state.details,panel=el(
  var vr=el("button","btn p full cta-loc",state.busy?"Opening\u2026":"View full property report");vr.type="button";vr.disabled=state.busy;vr.onclick=function(){act("continue")};add(panel,vr);
  add(panel,el("div","hint",c?"Opens SmartPR with this pin for parcel, zoning, flood-zone and the full site report.":"Opens SmartPR to pin the exact property and get the full site report."));
  return panel}
-function render(){
- // Keep the persistent map node out of the teardown so Leaflet survives.
- if(MAP&&MAP.wrap.parentNode)MAP.wrap.parentNode.removeChild(MAP.wrap);
- root.textContent="";var w=el("div","wrap");add(root,w);add(w,header());var r=state.result;
- if(!r){if(state.error){add(w,el("h1",null,"Something went wrong"));add(w,el("div","note err",state.error));reportSize();return}
-  if(state.input||state.busy){add(w,el("h1",null,"Checking requirements\u2026"));for(var i=0;i<5;i++)add(w,el("div","sk"));reportSize();return}
-  add(w,el("h1",null,"Your requirements, explained"));add(w,el("p","sub","Describe a business in Puerto Rico \u2014 activity, municipality, size, employees, renovations \u2014 to get a preliminary requirements preview."));reportSize();return}
- add(w,el("h1",null,r.status==="unsupported"?"We can't assess this yet":"Your requirements, explained"));
- add(w,el("p","sub",r.status==="unsupported"?r.message:"Based on your scenario. Confirm missing details to refine the assessment."));
- var s=r.scenario,chips=el("div","chips");
- function chip(v,unk){add(chips,el("span","chip"+(v?"":" unk"),v||unk))}
- chip(s.business_type||(s.business_type_input?s.business_type_input+" (confirm)":null),"Activity?");chip(s.municipality,"Municipality?");
- if(s.square_feet!=null)chip(Number(s.square_feet).toLocaleString("en-US")+" sq ft");if(s.employees!=null)chip(s.employees+" employees");
- chip(s.renovation==="interior"?"Interior renovations":s.renovation==="structural"?"Structural renovations":s.renovation==="none"?"No renovations":null,"Renovation scope?");
- add(w,chips);
- if(state.error){var e=el("div","note err");add(e,el("span",null,state.error+" "));var rb=el("button","btn o","Dismiss");rb.type="button";rb.onclick=function(){state.error=null;render()};add(e,rb);add(w,e)}
- if(r.status==="unsupported"){add(w,el("div","foot",(r.coverage_limits||[]).join(" ")));reportSize();return}
- // Location: map + production-style "Project location" panel once a pin exists.
- if(state.pin){var loc=el("div","loc-grid");add(loc,mapCard(r),locPanel(r));add(w,loc)}else add(w,mapCard(r));
- if(r.status==="partial")add(w,el("div","note warn","Preliminary \u2014 "+(r.unresolved_facts||[]).length+" detail(s) unresolved. Unknown facts are shown as \"Needs details\", never assumed \"no\"."));
- var g=el("div","grid"),left=el("div","card");add(g,left);var h2=el("h2",null,"Preliminary requirements");add(h2,el("span","badge",r.counts.total+" identified"));add(left,h2);
+ function reqsCard(r){var left=el("div","card reqs");var h2=el("h2",null,"Preliminary requirements");add(h2,el("span","badge",r.counts.total+" identified"));add(left,h2);
  var groups=["Business registrations","Construction & site authorization","Operating permits"],idx=0;
  if(!r.requirements.length)add(left,el("p","sub","No requirements were generated for this scenario yet. Answer the questions to refine."));
  groups.forEach(function(name){var items=r.requirements.filter(function(q){return q.group===name});if(!items.length)return;idx++;
@@ -350,7 +331,8 @@ function render(){
    var ul=el("ul");(q.next_steps||[]).forEach(function(x){add(ul,el("li",null,x))});(q.citations||[]).forEach(function(c){var li=el("li");if(c.url&&/^https:\/\//.test(c.url)){var a=el("a",null,c.label);a.href=c.url;a.target="_blank";a.rel="noopener";a.onclick=function(ev){ev.preventDefault();openLink(c.url)};add(li,el("span",null,"Source: "),a)}else add(li,el("span",null,"Source: "+c.label));add(ul,li)});add(it,ul);add(list,it)});
   add(grp,row,list);add(left,grp)});
  var lk=el("div","lock");add(lk,el("span",null,"\ud83d\udd12"));var lt=el("div");add(lt,el("b",null,"Additional requirements & sequencing"),el("div",null,(r.gated.hidden_requirement_count?r.gated.hidden_requirement_count+" more requirement(s), ":"")+"dependencies and a downloadable report are in the full assessment."));add(lk,lt);add(left,lk);
- var right=el("div","card");add(right,el("h2",null,"Refine your scenario"));var qs=r.clarifying_questions||[];
+return left}
+ function refineCard(r){var right=el("div","card refine");add(right,el("h2",null,"Refine your scenario"));var qs=r.clarifying_questions||[];
  add(right,el("p","sub",qs.length?qs.length+" detail(s) need clarification.":"No open questions \u2014 change a fact in chat to re-run."));
  qs.forEach(function(q){var id="q_"+q.id;var l=el("label",null,q.question);l.htmlFor=id;add(right,l);var inp;
   if(q.id==="municipality")add(right,el("div","muni-or","Tap the map above to drop a pin \u2014 or type a municipality:"));
@@ -358,7 +340,42 @@ function render(){
   inp.value=state.answers[q.id]||"";inp.onchange=inp.oninput=function(){state.answers[q.id]=inp.value;state.note=null;persist()};add(right,inp)});
  if(qs.length){var ub=el("button","btn o full",state.busy?"Updating\u2026":"Update preview");ub.type="button";ub.disabled=state.busy;ub.onclick=function(){act("refine")};add(right,ub)}
  if(state.note)add(right,el("div","hint",state.note));
- add(right,el("div","hint","Hypothetical scenarios welcome. No project is saved."));add(g,right);add(w,g);
+ add(right,el("div","hint","Hypothetical scenarios welcome. No project is saved."));
+return right}
+function updateCard(r){var box=el("div","card");add(box,el("h2",null,"Your answers"));var aa=r.applied_answers||[];
+ if(aa.length){var ans=el("div","ans");aa.forEach(function(a){var d=el("div","a");add(d,el("b",null,a.question),el("span",null,a.answer));add(ans,d)});add(box,ans)}
+ else add(box,el("p","sub","Scenario updated with your answers."));
+ var sh=el("button","btn o full","Show full assessment");sh.type="button";sh.onclick=function(){state.view="full";render()};add(box,sh);return box}
+function render(){
+ // Keep the persistent map node out of the teardown so Leaflet survives.
+ if(MAP&&MAP.wrap.parentNode)MAP.wrap.parentNode.removeChild(MAP.wrap);
+ root.textContent="";var w=el("div","wrap");add(root,w);add(w,header());var r=state.result;
+ if(!r){if(state.error){add(w,el("h1",null,"Something went wrong"));add(w,el("div","note err",state.error));reportSize();return}
+  if(state.input||state.busy){add(w,el("h1",null,"Checking requirements\u2026"));for(var i=0;i<5;i++)add(w,el("div","sk"));reportSize();return}
+  add(w,el("h1",null,"Your requirements, explained"));add(w,el("p","sub","Describe a business in Puerto Rico \u2014 activity, municipality, size, employees, renovations \u2014 to get a preliminary requirements preview."));reportSize();return}
+ // View: model-initiated refine_scenario cards open in the compact update view
+ // (applied answers + updated requirements); in-widget interaction switches to full.
+ if(state.view==null)state.view=r.refined?"update":"full";
+ if(state.error){var e=el("div","note err");add(e,el("span",null,state.error+" "));var rb=el("button","btn o","Dismiss");rb.type="button";rb.onclick=function(){state.error=null;render()};add(e,rb);add(w,e)}
+ if(state.view==="update"&&r.status!=="unsupported"){
+  add(w,el("h1",null,"Your requirements, updated"));
+  add(w,el("p","sub","Based on your answers. Requirements updated below."));
+  add(w,updateCard(r));
+ } else {
+ add(w,el("h1",null,r.status==="unsupported"?"We can't assess this yet":"Your requirements, explained"));
+ add(w,el("p","sub",r.status==="unsupported"?r.message:"Based on your scenario. Confirm missing details to refine the assessment."));
+ var s=r.scenario,chips=el("div","chips");
+ function chip(v,unk){add(chips,el("span","chip"+(v?"":" unk"),v||unk))}
+ chip(s.business_type||(s.business_type_input?s.business_type_input+" (confirm)":null),"Activity?");chip(s.municipality,"Municipality?");
+ if(s.square_feet!=null)chip(Number(s.square_feet).toLocaleString("en-US")+" sq ft");if(s.employees!=null)chip(s.employees+" employees");
+ chip(s.renovation==="interior"?"Interior renovations":s.renovation==="structural"?"Structural renovations":s.renovation==="none"?"No renovations":null,"Renovation scope?");
+ add(w,chips);
+ if(r.status==="unsupported"){add(w,el("div","foot",(r.coverage_limits||[]).join(" ")));reportSize();return}
+ // Location: map + production-style "Project location" panel once a pin exists.
+ if(state.pin){var loc=el("div","loc-grid");add(loc,mapCard(r),locPanel(r));add(w,loc)}else add(w,mapCard(r));
+ if(r.status==="partial")add(w,el("div","note warn","Preliminary \u2014 "+(r.unresolved_facts||[]).length+" detail(s) unresolved. Unknown facts are shown as \"Needs details\", never assumed \"no\"."));
+ } // end full-view branch; update view rejoins here
+ var g=el("div","grid");add(g,reqsCard(r),refineCard(r));add(w,g);
  var cta=el("div","cta"),ct=el("div");add(ct,el("b",null,"Turn this preview into a complete assessment"),el("span",null,"Requirement-by-requirement reasoning, official sources, dependencies, and a downloadable report."));
  var u1=el("button","btn p","Unlock full assessment");u1.type="button";u1.disabled=state.busy;u1.onclick=function(){act("unlock")};var u2=el("button","btn o","Use my SmartPR plan");u2.type="button";u2.disabled=state.busy;u2.onclick=function(){act("use_plan")};add(cta,ct,u1,u2);add(w,cta);
  var cont=el("button","cont");cont.type="button";cont.disabled=state.busy;add(cont,el("span",null,"\u2197"));var cc=el("div");add(cc,el("b",null,"Continue in SmartPR"),el("div","hint","Review your scenario in the portal before anything is saved."));add(cont,cc);cont.onclick=function(){act("continue")};add(w,cont);
