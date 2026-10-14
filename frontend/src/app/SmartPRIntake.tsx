@@ -9,6 +9,7 @@ import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
 import { buildRequirementGuidance, legalBasisFor, sourceRowValue, newPremisesContextLabel, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
 import { shouldApplyNewBusinessEntryReset } from './entryReset';
+import { saveNewBusinessDraft, loadNewBusinessDraft, clearNewBusinessDraft, isReloadNavigation } from '../lib/newBusinessDraft';
 import { captureEvent, newSubmissionId } from './graph/client';
 import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
@@ -1730,6 +1731,7 @@ export default function SmartPRIntake() {
   // matter remain valid; new portfolio entry points always provide one.
   const matterIdRef = useRef<string | null>(null);
   const formationStartAttemptedRef = useRef(false);
+  const newBusinessRestorePendingRef = useRef(false);
   const formationResetDoneRef = useRef(false);
   // Signed-in user (null when anonymous, undefined while loading).
   const [me, setMe] = useState<{
@@ -1933,6 +1935,7 @@ export default function SmartPRIntake() {
     // move the session to another branch afterwards.
     setProjectIntent("new_business");
     setProjectPassport(null);
+    newBusinessRestorePendingRef.current = true;
   }, [me]);
 
   // Business/matter creation, gated on the settled project-first branch. Only
@@ -2082,6 +2085,23 @@ export default function SmartPRIntake() {
 
   // Resume a prior submission from History (?resume=<submissionId>): restore
   // the core profile and jump back to the requirements step.
+
+  // Runs right after the ?entry=new-business reset (same commit, declared
+  // later so its state wins). A reload of this page before any business
+  // exists brings back the interpreted facts and answers without re-running
+  // the AI; a fresh "New Business" entry drops the old draft.
+  useEffect(() => {
+    if (!me || !newBusinessRestorePendingRef.current) return;
+    const nbDraft = isReloadNavigation() ? loadNewBusinessDraft(me.id) : null;
+    if (!nbDraft) { newBusinessRestorePendingRef.current = false; clearNewBusinessDraft(me.id); return; }
+    const timer = window.setTimeout(() => {
+      newBusinessRestorePendingRef.current = false;
+      hydrateFromSnapshot(nbDraft.state, {});
+      const keys = (nbDraft.state as { aiPrefilledKeys?: unknown }).aiPrefilledKeys;
+      if (Array.isArray(keys)) setAiPrefilledKeys(keys.filter((k): k is string => typeof k === 'string'));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [me, hydrateFromSnapshot]);
   useEffect(() => {
     const resumeId = new URLSearchParams(window.location.search).get('resume');
     if (!resumeId) return;
@@ -2236,6 +2256,24 @@ export default function SmartPRIntake() {
   // Linked existing business's Passport (identity + registration facts).
   const [passportSnapshot, setPassportSnapshot] = useState<PassportSnapshot | null>(null);
   const passportSnapshotRef = useRef<PassportSnapshot | null>(null);
+  // Save the signed-in New Business intake on this device until a business
+  // record exists (after that the server snapshot autosave takes over).
+  useEffect(() => {
+    if (!me || !formationResetDoneRef.current) return;
+    if (!shouldApplyNewBusinessEntryReset(window.location.search)) {
+      clearNewBusinessDraft(me.id);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      saveNewBusinessDraft(me.id, {
+        profile, discoveryAnswers, potentialDecisions, requirements,
+        incentiveFacts, currentStep, projectContext, scenario,
+        intakeSite, intakeDescription, aiPrefilledKeys,
+      });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [me, profile, discoveryAnswers, potentialDecisions, requirements, incentiveFacts, currentStep, projectContext, scenario, intakeSite, intakeDescription, aiPrefilledKeys, businessId]);
+
   useEffect(() => { passportSnapshotRef.current = passportSnapshot; }, [passportSnapshot]);
   const scenarioActive = !!scenario && Object.values(scenario).some((section) => Object.keys(section).length > 0);
   // The Passport only counts for the existing-business branch.
