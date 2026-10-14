@@ -207,7 +207,7 @@ export const PR_ACT60_CATALOG: IncentiveProgram[] = [
         description: "The decree covers industrial processing, blending, or packaging of food or beverages. Restaurants, cafes, bars, and food trucks preparing food for local customers do not qualify.",
       }),
       factCriterion({
-        id: "food_beverage_export_fact", factKey: "export_activity",
+        id: "food_beverage_export_fact", factKey: "exports_outside_pr",
         label: "Exports products outside Puerto Rico",
         question: "Does the business sell or ship its food or beverage products to markets outside Puerto Rico?",
         description: "The 4% rate applies to income from qualifying export manufacturing.",

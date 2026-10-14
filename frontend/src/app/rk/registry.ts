@@ -116,6 +116,7 @@ export const PROJECT_FACT_KEYS = [
   "capital_investment",
   "property_tenure",
   "export_activity",
+  "exports_outside_pr",
   "outside_pr_revenue_percentage",
   "tourism_activity",
   "manufacturing_activity",

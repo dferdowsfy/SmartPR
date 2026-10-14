@@ -8,8 +8,8 @@ import { relevantIncentiveOpportunities } from "./relevance.ts";
 import { PR_ACT60_CATALOG } from "./prCatalog.ts";
 
 const ID = "PR_ACT60_FOOD_MANUFACTURING";
-const shown = (profile: Parameters<typeof normalizeProjectProfileForIncentives>[0]) => {
-  const assessment = evaluateIncentives(normalizeProjectProfileForIncentives(profile), PR_ACT60_CATALOG);
+const shown = (profile: Parameters<typeof normalizeProjectProfileForIncentives>[0], facts: Record<string, boolean> = {}) => {
+  const assessment = evaluateIncentives(normalizeProjectProfileForIncentives(profile, facts), PR_ACT60_CATALOG);
   return {
     opportunity: assessment.opportunities.find((o) => o.programId === ID) ?? null,
     onPage: relevantIncentiveOpportunities(assessment.opportunities).some((o) => o.programId === ID),
@@ -29,20 +29,28 @@ test("cafes, bars and food trucks are not matched either, even when they say the
 });
 
 test("a restaurant that explicitly manufactures packaged products for export can still qualify", () => {
-  assert.ok(shown({ industry: "Food & Beverage", business_type: "Restaurant", products_manufactured: true, import_export: true }).opportunity);
+  assert.ok(shown({ industry: "Food & Beverage", business_type: "Restaurant", products_manufactured: true, import_export: true }, { exports_outside_pr: true }).opportunity);
 });
 
 test("a Bayamón hot sauce & beverage exporter (food manufacturing, exports) matches", () => {
-  const r = shown({ business_stage: "new", industry: "Manufacturing", business_type: "Food Manufacturing", municipality: "Bayamón", business_structure: "corporation", import_export: true });
+  const r = shown({ business_stage: "new", industry: "Manufacturing", business_type: "Food Manufacturing", municipality: "Bayamón", business_structure: "corporation", import_export: true }, { exports_outside_pr: true });
   assert.ok(r.opportunity, "surfaced");
   assert.equal(r.opportunity!.eligibility, "likely_eligible");
   assert.ok(r.onPage);
 });
 
+test("import/export = Yes is not proof of exports: an import-only manufacturer is asked, never 'likely eligible'", () => {
+  const r = shown({ industry: "Manufacturing", business_type: "Food Manufacturing", import_export: true });
+  assert.equal(r.opportunity?.eligibility, "potentially_eligible");
+  assert.ok(r.opportunity!.missingInformation.some((m) => m.factKey === "exports_outside_pr"));
+  assert.equal(shown({ industry: "Manufacturing", business_type: "Food Manufacturing", import_export: true }, { exports_outside_pr: false }).opportunity, null, "imports only: not eligible");
+  assert.equal(shown({ industry: "Manufacturing", business_type: "Food Manufacturing", import_export: false }).opportunity, null, "no import/export at all: not eligible");
+});
+
 test("a food manufacturer that has not said whether it exports is asked, not assumed", () => {
   const r = shown({ industry: "Manufacturing", business_type: "Beverage Manufacturing" });
   assert.equal(r.opportunity?.eligibility, "potentially_eligible");
-  assert.ok(r.opportunity!.missingInformation.some((m) => m.factKey === "export_activity"));
+  assert.ok(r.opportunity!.missingInformation.some((m) => m.factKey === "exports_outside_pr"));
 });
 
 test("a non-food manufacturer (furniture exporter) is not matched with the food decree", () => {
@@ -56,5 +64,5 @@ test("the knowledge-graph copy of the program (authoritative when the graph stor
   assert.deepEqual(new Set(p.industry_ids), new Set(["IND_FOOD", "IND_MANUFACTURING"]));
   const keys = p.criterion_ids.map((id) => criteria.find((c) => c.id === id));
   assert.ok(keys.every((c) => c && c.required), "every criterion id resolves and is required");
-  assert.deepEqual(new Set(keys.map((c) => c!.fact_key)), new Set(["food_beverage_manufacturing", "export_activity"]));
+  assert.deepEqual(new Set(keys.map((c) => c!.fact_key)), new Set(["food_beverage_manufacturing", "exports_outside_pr"]));
 });

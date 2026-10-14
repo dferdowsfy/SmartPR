@@ -13,14 +13,15 @@ import { PR_ACT60_CATALOG } from "../incentives/prCatalog.ts";
 import { confirmedPotentialRequirements, potentialItemsForFlags, potentialQuestionsFor } from "../potentialRequirements.ts";
 import { resolveIntakeFacts } from "../ai/intake/relationships.ts";
 import { KB, INTAKE_INDUSTRIES } from "../kb.ts";
+import { ENTITY_REGISTRATION_DOC, normalizeEntityFormationRequirements } from "../forms/engine/requirementAugment.ts";
 
 const scenario = (s: Partial<KgScenario> & Pick<KgScenario, "profile" | "answers" | "description">): KgScenario =>
   ({ id: "ACC", title: "acceptance", matrix: {}, projectIntent: "new_business", expect: { mustInclude: [], mustNotInclude: [] }, ...s }) as unknown as KgScenario;
 
 const visible = (s: KgScenario) => runKgScenario(s).items;
 const keys = (s: KgScenario) => new Set(visible(s).map((i) => i.key));
-const decreeFor = (profile: Record<string, unknown>) =>
-  evaluateIncentives(normalizeProjectProfileForIncentives(profile), PR_ACT60_CATALOG).opportunities.find((o) => o.programId === "PR_ACT60_FOOD_MANUFACTURING") ?? null;
+const decreeFor = (profile: Record<string, unknown>, facts: Record<string, boolean> = {}) =>
+  evaluateIncentives(normalizeProjectProfileForIncentives(profile, facts), PR_ACT60_CATALOG).opportunities.find((o) => o.programId === "PR_ACT60_FOOD_MANUFACTURING") ?? null;
 const sanJuanFlags = () => (KB.municipalities.find((m) => m.name === "San Juan")!.flags as string[]);
 
 // ---------------------------------------------------------------------------
@@ -88,7 +89,9 @@ test("2. Bayamón exporter (corp.): only the Certificate of Incorporation", () =
 });
 
 test("2. Bayamón exporter: the F&B export decree (4%) triggers", () => {
-  const d = decreeFor(exporterProfile);
+  // "Exports outside PR: Yes" (the incentive follow-up; the intake's
+  // import/export question alone does not establish exports).
+  const d = decreeFor(exporterProfile, { exports_outside_pr: true });
   assert.ok(d);
   assert.equal(d!.eligibility, "likely_eligible");
 });
@@ -119,4 +122,14 @@ test("3. Undecided entity: one consolidated Business Entity Registration under C
 test("3. Undecided entity, no employees: no employer-only items", () => {
   const k = keys(retail);
   for (const id of ["DOC_WORKERS_COMP", "DOC_DTRH_EMPLOYER_REG", "DOC_HACIENDA_EMPLOYER_WITHHOLDING"]) assert.ok(!k.has(id), id);
+});
+
+test("3. Picking the entity after an undecided checklist replaces the placeholder (no duplicate formation step)", () => {
+  const placeholder = { document_id: ENTITY_REGISTRATION_DOC, code: "business_entity_registration", name: "Business Entity Registration" };
+  const make = (d: { document_id: string; code: string; name: string }) => ({ document_id: d.document_id, code: d.code, name: d.name });
+  const formation = (rows: { document_id?: string }[]) => rows.map((r) => r.document_id).filter((id) => /CERT_|ORGANIZATION|ENTITY_REGISTRATION/.test(id ?? ""));
+  assert.deepEqual(formation(normalizeEntityFormationRequirements("limited_liability_company", [placeholder], make)), ["DOC_ARTICLES_ORGANIZATION"]);
+  assert.deepEqual(formation(normalizeEntityFormationRequirements("stock_corporation", [placeholder], make)), ["DOC_CERT_INCORPORATION"]);
+  assert.deepEqual(formation(normalizeEntityFormationRequirements("sole_proprietorship", [placeholder], make)), []);
+  assert.deepEqual(formation(normalizeEntityFormationRequirements("other", [placeholder], make)), [ENTITY_REGISTRATION_DOC], "still undecided: placeholder stays");
 });

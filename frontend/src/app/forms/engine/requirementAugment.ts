@@ -132,7 +132,13 @@ export function normalizeEntityFormationRequirements<T extends MinimalRequiremen
   const canonical = {
     business: { entityType: (entityType || "other") as CanonicalApplicationData["business"]["entityType"] },
   } as CanonicalApplicationData;
-  const withoutWrongFormation = exclusiveFormationRequirements(canonical, existing);
+  // Once a real entity type is chosen, the "not sure yet" placeholder step
+  // gives way to that type's certificate (or to none, for a sole
+  // proprietorship) — it must never sit beside it.
+  const current = canonical.business.entityType === "other"
+    ? existing
+    : existing.filter((r) => r.document_id !== ENTITY_REGISTRATION_DOC);
+  const withoutWrongFormation = exclusiveFormationRequirements(canonical, current);
   const augments = entityTypeRequirements(canonical, withoutWrongFormation, (def) =>
     make(def, canonical.business.entityType)
   );

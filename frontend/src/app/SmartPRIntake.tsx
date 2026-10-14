@@ -3068,6 +3068,14 @@ export default function SmartPRIntake() {
   const guidedQuestions = questionList.filter(
     (q) => !isQuestionPreAnswered(q.id) && !isQuestionSuppressedByAnswers(q.id, discoveryAnswers)
   );
+  // "Change" on a settled answer: stop treating it as settled AND move the
+  // guided flow back to it — the flow only looks forward from the current
+  // index, so a question already passed would otherwise never be shown.
+  const reopenDerivedQuestion = (key: string) => {
+    setReopenedDerivedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    const index = questionList.findIndex((q) => q.id === key);
+    if (index >= 0) setCurrentQuestionIndex((current) => Math.min(current, index));
+  };
   const derivedSettledQuestions = questionList
     .filter((q) => !aiPrefilledKeys.includes(q.id) && derivedSettled(q.id))
     .map((q) => ({ id: q.id, text: q.text, value: intakeFacts.questionValues[questionIdForAnswerKey(q.id) ?? ''] === true }));
@@ -7711,7 +7719,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                       <li key={q.id} data-testid="intake-settled-item">
                         <CheckCircle className="i" style={{ width: 14, height: 14 }} />
                         <span className="spr-answered-text">{L(q.text, language)} — <strong>{q.value ? L('Yes', language) : L('No', language)}</strong></span>
-                        <button type="button" className="spr-answered-change" onClick={() => setReopenedDerivedKeys((prev) => [...prev, q.id])}>{L('Change', language)}</button>
+                        <button type="button" className="spr-answered-change" onClick={() => reopenDerivedQuestion(q.id)}>{L('Change', language)}</button>
                       </li>
                     ))}
                   </ul>

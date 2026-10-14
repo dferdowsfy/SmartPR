@@ -57,6 +57,10 @@ export function normalizeProjectProfileForIncentives(
     // Already answered during discovery (Q_IMPORT_EXPORT) — reuse it rather
     // than asking the International Trading Company follow-up question again.
     export_activity: profile.import_export ?? null,
+    // The intake question is combined ("import/export activity"): a No rules
+    // out exports, but a Yes may be imports only, so exports stay unknown and
+    // an export-only program asks its own question.
+    exports_outside_pr: profile.import_export === false ? false : null,
     // The industry itself, already confirmed in intake, already implies these —
     // asking a separate yes/no would just restate a fact SmartPR already has.
     tourism_activity: profile.industry === "Accommodation & Tourism" ? true : null,
