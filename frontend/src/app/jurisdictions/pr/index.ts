@@ -275,6 +275,11 @@ export const puertoRicoPack: JurisdictionPack = {
           "San Juan applies city-specific ordinances on top of the standard metro requirements (Old San Juan facade preservation, stricter noise ordinance, dedicated loading zones, San Juan Municipal Use Permit).",
         followUp:
           "Will this business operate in San Juan? It may need additional San Juan-specific permits beyond the standard metro requirements.",
+        // Only San Juan carries the capital flag, so the location already
+        // answers the follow-up; and as the Municipio Autónomo's own review
+        // it replaces the generic metro review rather than sitting beside it.
+        autoApplies: true,
+        supersedes: ["metro"],
       },
       industrial_port: {
         flag: "industrial_port",

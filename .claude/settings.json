@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push --force-with-lease=claude/*)",
+      "Bash(git merge origin/*)"
+    ]
+  },
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Force-pushing with --force-with-lease to a claude/* branch of this repository (never main or any other branch), after its earlier commits were already merged into main.",
+      "Merging a remote branch (git merge origin/...) into the current claude/* working branch."
+    ]
+  }
+}

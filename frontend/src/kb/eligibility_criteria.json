@@ -73,5 +73,35 @@
     "evidence_type_ids": [],
     "evidence_can_satisfy": false,
     "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "food_beverage_manufacturing_fact",
+    "name": "Commercial food or beverage manufacturing",
+    "description": "The decree covers industrial processing, blending, or packaging of food or beverages. Restaurants, cafes, bars, and food trucks preparing food for local customers do not qualify.",
+    "project_fact_id": "FACT_FOOD_BEVERAGE_MANUFACTURING",
+    "fact_key": "food_beverage_manufacturing",
+    "operator": "truthy",
+    "required": true,
+    "material": true,
+    "question": "Does the business manufacture, process, or package food or beverage products commercially (not prepared to order for its own customers)?",
+    "answer_type": "boolean",
+    "evidence_type_ids": [],
+    "evidence_can_satisfy": false,
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
+  },
+  {
+    "id": "food_beverage_export_fact",
+    "name": "Exports products outside Puerto Rico",
+    "description": "The 4% rate applies to income from qualifying export manufacturing.",
+    "project_fact_id": "FACT_EXPORTS_OUTSIDE_PR",
+    "fact_key": "exports_outside_pr",
+    "operator": "truthy",
+    "required": true,
+    "material": true,
+    "question": "Does the business sell or ship its food or beverage products to markets outside Puerto Rico?",
+    "answer_type": "boolean",
+    "evidence_type_ids": [],
+    "evidence_can_satisfy": false,
+    "citation": "Ley Núm. 60-2019, según enmendada, Código de Incentivos de Puerto Rico"
   }
 ]

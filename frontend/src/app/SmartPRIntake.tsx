@@ -14,6 +14,9 @@ import type { CapturedAnswer, CapturedRequirement } from './graph/types';
 import {
   mergeConfirmedPotentialRequirements,
   potentialItemsForFlags,
+  potentialQuestionsFor,
+  effectivePotentialDecision,
+  POTENTIAL_BY_FLAG,
   type PotentialDecision,
   type PotentialDef,
 } from './potentialRequirements';
@@ -1331,15 +1334,18 @@ function computeRequirements(
   } = {}
 ): Requirement[] {
   const entityType = entityTypeFromLegacyStructure(profile.business_structure);
+  const resolvedFacts = resolveFactsFor(profile, answers);
   const deferredQuestions = project.deferUnanswered && profile.business_type
     ? getQuestionsForBusinessType(profile.business_type)
-        .filter((q) => answers[q.id] == null)
+        // Unanswered — and not settled by a deterministic implication either
+        // (a restaurant's "customers eat on site" is known, not pending).
+        .filter((q) => answers[q.id] == null && resolvedFacts.resolvedQuestionOrigins?.[kbQuestionIdFor(q.id, KB.questions) ?? ''] !== 'derived')
         .map((q) => ({ questionId: kbQuestionIdFor(q.id, KB.questions), writeKey: q.id }))
     : undefined;
   const fromKb = computeRequirementsFromKB(
     profile as any,
     answers,
-    resolveFactsFor(profile, answers).questionValues,
+    resolvedFacts.questionValues,
     {
       entityType,
       potentialDecisions,
@@ -2303,8 +2309,12 @@ export default function SmartPRIntake() {
       return mergedScenario && scenarioActive ? { municipality: mergedScenario.property.municipality?.value ?? null } : null;
     }
     const businessType = businessTypeFromScenario(mergedScenario, KB);
+    // The entity type the description states ("an LLC", "Inc.", "CRL", "sole
+    // proprietor") answers the entity question; an inferred one never does.
+    const entity = mergedScenario.business.entityType;
     return {
       municipality: mergedScenario.property.municipality?.value ?? null,
+      business_structure: entity && entity.source !== 'inferred' ? entity.value : null,
       business_type: businessType,
       location_type: locationTypeFromScenario(mergedScenario, LOCATION_TYPES_BY_BUSINESS_TYPE[businessType ?? profile.business_type] || LOCATION_TYPES),
     };
@@ -2317,7 +2327,7 @@ export default function SmartPRIntake() {
     setProfile((prev) => {
       const next = { ...prev };
       let changed = false;
-      const fill = (key: 'municipality' | 'business_type' | 'location_type', value: string | null | undefined) => {
+      const fill = (key: 'municipality' | 'business_type' | 'location_type' | 'business_structure', value: string | null | undefined) => {
         if (!value || edited.has(key)) return;
         const current = next[key];
         // A location type the business type does not offer (the property's
@@ -2330,6 +2340,7 @@ export default function SmartPRIntake() {
         changed = true;
       };
       fill('municipality', scenarioProfileFill.municipality);
+      if ('business_structure' in scenarioProfileFill) fill('business_structure', scenarioProfileFill.business_structure);
       if ('business_type' in scenarioProfileFill) {
         fill('business_type', scenarioProfileFill.business_type);
         fill('location_type', scenarioProfileFill.location_type);
@@ -2345,7 +2356,7 @@ export default function SmartPRIntake() {
     });
     // Re-applied when a later profile update (e.g. the interpreter's patch)
     // clears a field the description had already answered.
-  }, [scenarioProfileFill, profile.municipality, profile.business_type, profile.location_type, profile.industry]);
+  }, [scenarioProfileFill, profile.municipality, profile.business_type, profile.location_type, profile.industry, profile.business_structure]);
 
   // Guided questions the description already answers (stated facts only —
   // "12 employees" answers "Will employees be hired?").
@@ -3006,20 +3017,33 @@ export default function SmartPRIntake() {
   // navigation skips them. Back explicitly removes the prior answer before
   // reopening that question, so recorded answers are never asked twice.
   // ==========================================================================
+  // Questions whose answer a DETERMINISTIC implication settles ("a
+  // restaurant" ⇒ customers eat on site; eating on site ⇒ food is sold and
+  // customers visit) are skipped and listed on one reviewable card instead.
+  // Inferred ("likely") facts never skip a question. "Change" puts the
+  // question back so the user can answer it themselves.
+  const [reopenedDerivedKeys, setReopenedDerivedKeys] = useState<string[]>([]);
+  const derivedSettled = React.useCallback(
+    (wizardKey: string): boolean => {
+      if (reopenedDerivedKeys.includes(wizardKey) || discoveryAnswers[wizardKey] !== undefined) return false;
+      const questionId = questionIdForAnswerKey(wizardKey);
+      return questionId !== null && intakeFacts.resolvedQuestionOrigins?.[questionId] === "derived";
+    },
+    [reopenedDerivedKeys, discoveryAnswers, intakeFacts]
+  );
   const isQuestionPreAnswered = React.useCallback(
     (wizardKey: string): boolean => {
       if (aiPrefilledKeys.includes(wizardKey)) return true;
       if (discoveryAnswers[wizardKey] !== undefined) return false;
       const questionId = questionIdForAnswerKey(wizardKey);
       if (questionId === null || !intakeFacts.resolvedQuestionIds.has(questionId)) return false;
-      // Only user/explicit facts suppress: derived/inferred facts mean the
-      // question genuinely has not been answered yet, and presenting an
-      // engine-derived value as the user's answer is how invented answers
-      // end up on requirement cards.
+      // User/explicit facts suppress, and so do deterministic implications
+      // (shown on the "already settled" card). Inferred facts never do: a
+      // guess is not an answer.
       const origin = intakeFacts.resolvedQuestionOrigins?.[questionId];
-      return origin === "user" || origin === "explicit";
+      return origin === "user" || origin === "explicit" || derivedSettled(wizardKey);
     },
-    [aiPrefilledKeys, discoveryAnswers, intakeFacts]
+    [aiPrefilledKeys, discoveryAnswers, intakeFacts, derivedSettled]
   );
 
   /** First eligible, unanswered question at or after `start`. */
@@ -3044,6 +3068,17 @@ export default function SmartPRIntake() {
   const guidedQuestions = questionList.filter(
     (q) => !isQuestionPreAnswered(q.id) && !isQuestionSuppressedByAnswers(q.id, discoveryAnswers)
   );
+  // "Change" on a settled answer: stop treating it as settled AND move the
+  // guided flow back to it — the flow only looks forward from the current
+  // index, so a question already passed would otherwise never be shown.
+  const reopenDerivedQuestion = (key: string) => {
+    setReopenedDerivedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]));
+    const index = questionList.findIndex((q) => q.id === key);
+    if (index >= 0) setCurrentQuestionIndex((current) => Math.min(current, index));
+  };
+  const derivedSettledQuestions = questionList
+    .filter((q) => !aiPrefilledKeys.includes(q.id) && derivedSettled(q.id))
+    .map((q) => ({ id: q.id, text: q.text, value: intakeFacts.questionValues[questionIdForAnswerKey(q.id) ?? ''] === true }));
   // project_only asks zero business-formation questions: the visible profile
   // keeps only the project name and the project municipality; industry,
   // business type, location type, entity type, and headcount never appear.
@@ -3596,7 +3631,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     const computed = merged.map((item) => {
       if (!item.code.startsWith('potential_')) return item;
       const flag = item.code.replace('potential_', '');
-      const meta = classifyPotentialItem(item.name, flag, potentialDecisions[flag]);
+      const def = POTENTIAL_BY_FLAG[flag];
+      const meta = classifyPotentialItem(item.name, flag, def ? effectivePotentialDecision(def, potentialDecisions) : potentialDecisions[flag]);
       return {
         ...item,
         applicability: meta.applicability,
@@ -5319,6 +5355,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     profile,
     computeRequirements(profile, discoveryAnswers, potentialDecisions, requirementOptions({ deferUnanswered: false }))
   );
+  // The ones the user is actually asked: an auto-applying advisory (San
+  // Juan's own review) is settled by the location and never asked.
+  const potentialQuestionItems = potentialQuestionsFor(potentialItems);
 
   // Render one requirement row (shared by Mandatory + Recommended sections).
   // Pick a contextual document icon based on the requirement name/agency.
@@ -5374,7 +5413,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   }, []);
 
   const liveConfirmedPotentialItems = potentialItems.filter(
-    (item) => potentialDecisions[item.flag] === 'applies'
+    (item) => effectivePotentialDecision(item, potentialDecisions) === 'applies'
   );
 
   const liveAgencies = Array.from(new Set([
@@ -5391,11 +5430,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // filing-specific details never hold back the requirements.
   const requiredNowFields = intakePlan.fields.filter((f) => f.tier === 'required_now');
   const intakeFieldsDone = requiredNowFields.filter((f) => f.known).length;
-  const answeredPotentialCount = potentialItems.filter((item) => potentialDecisions[item.flag]).length;
+  const answeredPotentialCount = potentialQuestionItems.filter((item) => potentialDecisions[item.flag]).length;
   // Totals count only questions SmartPR still needs. A question it can already
   // answer is not work the user has to do, so it must not inflate the progress
   // denominator either.
-  const intakeQuestionTotal = guidedQuestions.length + potentialItems.length + intakeRuleQuestions.length;
+  const intakeQuestionTotal = guidedQuestions.length + potentialQuestionItems.length + intakeRuleQuestions.length;
   const intakeTotal = requiredNowFields.length + intakeQuestionTotal;
   const intakeDone = intakeFieldsDone + guidedQuestionsAnswered + answeredPotentialCount;
   const intakePct = Math.round((intakeDone / Math.max(1, intakeTotal)) * 100);
@@ -5418,6 +5457,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     sole_proprietorship: 'Sole prop.',
     partnership: 'Partnership',
     other: 'Other',
+    undecided: 'Entity: not sure yet',
   };
   const profileSummaryParts = [
     profile.name || null,
@@ -6629,11 +6669,11 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : null;
   const currentPotentialQuestion = !baseProfileReady || currentQuestion
     ? null
-    : potentialItems.find((item) => !potentialDecisions[item.flag]) ?? null;
+    : potentialQuestionItems.find((item) => !potentialDecisions[item.flag]) ?? null;
   // A description can prefill discovery answers, but unanswered questions
   // still belong to Intake. Requirements only presents the resulting path.
   const intakeQuestionsComplete = activeQuestionIndex >= questionList.length
-    && answeredPotentialCount === potentialItems.length
+    && answeredPotentialCount === potentialQuestionItems.length
     && intakeRuleQuestions.length === 0
     && (scenarioEval?.questions.length ?? 0) === 0;
   // One question UI at a time in the consolidated top area: the knowledge
@@ -6651,7 +6691,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     : null;
   const questionsRemaining =
     questionList.slice(activeQuestionIndex).filter((q) => discoveryAnswers[q.id] === undefined && !isQuestionPreAnswered(q.id) && !isQuestionSuppressedByAnswers(q.id, discoveryAnswers)).length
-    + Math.max(0, potentialItems.length - answeredPotentialCount)
+    + Math.max(0, potentialQuestionItems.length - answeredPotentialCount)
     + intakeRuleQuestions.length
     + (scenarioEval?.questions.length ?? 0);
   // Attention target after an incomplete submit tap (questions half).
@@ -6696,7 +6736,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       return;
     }
 
-    const lastAnsweredPotential = [...potentialItems]
+    const lastAnsweredPotential = [...potentialQuestionItems]
       .reverse()
       .find((item) => potentialDecisions[item.flag]);
     if (lastAnsweredPotential) {
@@ -6865,7 +6905,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const liveRequired = liveReqs.filter((r) => bucketForApplicability(r.applicability ?? 'conditional') === 'required').length;
   const liveConditional = liveReqs.filter((r) => bucketForApplicability(r.applicability ?? 'conditional') === 'attention').length;
   const liveFacts = intelligenceSignals.filter((s) => s.state === 'confirmed').length;
-  const notApplicableDecision = potentialItems.find((item) => potentialDecisions[item.flag] === 'not_applies');
+  const notApplicableDecision = potentialQuestionItems.find((item) => potentialDecisions[item.flag] === 'not_applies');
   if (notApplicableDecision) {
     intelligenceSignals.push({
       label: language === 'es' ? `${notApplicableDecision.document}: no aplica` : `${notApplicableDecision.document}: not applicable`,
@@ -6882,6 +6922,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     industry: language === 'es' ? 'Selecciona la industria del negocio.' : 'Select the business industry.',
     business_type: language === 'es' ? 'Selecciona el tipo de negocio.' : 'Select the business type.',
     location_type: language === 'es' ? 'Indica el tipo de ubicación.' : 'Tell us the location type.',
+    business_structure: language === 'es' ? '¿Cuál será la estructura legal del negocio? (LLC, corporación, negocio propio o aún no lo sabes)' : "What will the business's legal structure be? (LLC, corporation, sole proprietorship, or not sure yet)",
     filing_intent: language === 'es' ? 'Confirma qué quieres hacer.' : 'Confirm what you want to do.',
   };
   const nextIntakeAction = nextProfileField
@@ -6900,8 +6941,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     location_type: t('locationType'),
     business_type: t('businessType'),
     industry: t('industry'),
+    business_structure: t('businessStructure'),
   };
-  const missingQuestionCount = Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
+  const missingQuestionCount = Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialQuestionItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
   const stillNeeded = [
     ...(projectIntent === null ? [{ key: 'project_intent', label: language === 'es' ? 'Tipo de Proyecto' : 'Project Type' }] : []),
     ...intakePlan.missingRequired.map((key) => ({ key, label: missingFieldLabel[key] ?? key })),
@@ -7116,7 +7158,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       : (language === 'es' ? 'En progreso' : 'In Progress');
 
   const hasProjectRequest = scenarioActive || anyProfileValue;
-  const remainingIntakeItems = intakePlan.missingRequired.length + Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
+  const remainingIntakeItems = intakePlan.missingRequired.length + Math.max(0, guidedQuestions.length - guidedQuestionsAnswered) + Math.max(0, potentialQuestionItems.length - answeredPotentialCount) + intakeRuleQuestions.length + (scenarioEval?.questions.length ?? 0);
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -7621,16 +7663,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     setCanonicalOverride((current) => current ? { ...current, business: { ...current.business, entityType: entityTypeFromLegacyStructure(structure) } } : current);
                   }}>
                     <option value="">{L('Select entity type', language)}</option>
+                    <option value="llc">{L('Limited liability company (LLC)', language)}</option>
                     <option value="corporation">{L('Stock corporation', language)}</option>
+                    <option value="sole_proprietorship">{L('Sole proprietorship', language)}</option>
+                    <option value="undecided">{L('Not sure yet', language)}</option>
                     <option value="nonprofit_nonstock_corporation">{L('Nonprofit non-stock corporation', language)}</option>
                     <option value="close_corporation">{L('Close / intimate corporation', language)}</option>
                     <option value="professional_corporation">{L('Professional corporation', language)}</option>
                     <option value="foreign_corporation">{L('Foreign corporation seeking authorization in Puerto Rico', language)}</option>
                     <option value="limited_liability_partnership">{L('Limited liability partnership', language)}</option>
-                    <option value="llc">{L('Limited liability company (LLC)', language)}</option>
-                    <option value="sole_proprietorship">{L('Sole proprietorship', language)}</option>
                     <option value="partnership">{L('Partnership', language)}</option>
-                    <option value="other">{L('Other / not sure', language)}</option>
+                    <option value="other">{L('Other', language)}</option>
                   </select>
                 </div>
                 )}
@@ -7663,6 +7706,25 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                 </>)}
                 </div>
               </div>
+
+              {/* Answers SmartPR did not ask because the user's other answers
+                  settle them — one card to review instead of one screen each. */}
+              {derivedSettledQuestions.length > 0 && (
+                <div className="spr-conflicts spr-settled" data-testid="intake-settled">
+                  <div className="spr-kicker">
+                    {L('Already settled by your answers', language)} · {derivedSettledQuestions.length}
+                  </div>
+                  <ul className="spr-conflicts-list">
+                    {derivedSettledQuestions.map((q) => (
+                      <li key={q.id} data-testid="intake-settled-item">
+                        <CheckCircle className="i" style={{ width: 14, height: 14 }} />
+                        <span className="spr-answered-text">{L(q.text, language)} — <strong>{q.value ? L('Yes', language) : L('No', language)}</strong></span>
+                        <button type="button" className="spr-answered-change" onClick={() => reopenDerivedQuestion(q.id)}>{L('Change', language)}</button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Two things the user told us cannot both be true. SmartPR never
                   picks a winner between explicit answers — it says what clashes

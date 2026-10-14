@@ -132,9 +132,56 @@ export function normalizeEntityFormationRequirements<T extends MinimalRequiremen
   const canonical = {
     business: { entityType: (entityType || "other") as CanonicalApplicationData["business"]["entityType"] },
   } as CanonicalApplicationData;
-  const withoutWrongFormation = exclusiveFormationRequirements(canonical, existing);
+  // Once a real entity type is chosen, the "not sure yet" placeholder step
+  // gives way to that type's certificate (or to none, for a sole
+  // proprietorship) — it must never sit beside it.
+  const current = canonical.business.entityType === "other"
+    ? existing
+    : existing.filter((r) => r.document_id !== ENTITY_REGISTRATION_DOC);
+  const withoutWrongFormation = exclusiveFormationRequirements(canonical, current);
   const augments = entityTypeRequirements(canonical, withoutWrongFormation, (def) =>
     make(def, canonical.business.entityType)
   );
-  return exclusiveFormationRequirements(canonical, [...withoutWrongFormation, ...augments]);
+  return consolidateUndecidedFormation(
+    canonical.business.entityType,
+    exclusiveFormationRequirements(canonical, [...withoutWrongFormation, ...augments])
+  );
+}
+
+/** The single formation step shown while the entity type is still open. */
+export const ENTITY_REGISTRATION_DOC = "DOC_BUSINESS_ENTITY_REGISTRATION";
+export const ENTITY_REGISTRATION_NAME =
+  "Business Entity Registration (Certificate of Organization for LLC or Certificate of Incorporation for Corp.)";
+const CORP_FORMATION_DOC = "DOC_CERT_INCORPORATION";
+const LLC_FORMATION_IDS = new Set(["DOC_CERT_ORGANIZATION", "DOC_ARTICLES_ORGANIZATION"]);
+
+/**
+ * Entity type not chosen yet ("Not sure yet", or never answered): the engine
+ * cannot tell an LLC from a corporation, so it emits both formation
+ * certificates — two conflicting cards. Show one consolidated step instead,
+ * keeping the first certificate's position and applicability. Once the user
+ * picks LLC or corporation, exclusivity above leaves the right certificate.
+ */
+export function consolidateUndecidedFormation<T extends MinimalRequirement>(
+  entityType: string | null | undefined,
+  rows: T[]
+): T[] {
+  const type = entityType || "other";
+  if (type !== "other") return rows;
+  const corp = rows.findIndex((r) => r.document_id === CORP_FORMATION_DOC);
+  const llc = rows.findIndex((r) => LLC_FORMATION_IDS.has(r.document_id ?? ""));
+  if (corp === -1 || llc === -1) return rows;
+  const first = Math.min(corp, llc);
+  const merged = {
+    ...rows[first],
+    document_id: ENTITY_REGISTRATION_DOC,
+    code: "business_entity_registration",
+    name: ENTITY_REGISTRATION_NAME,
+    agency: "Department of State",
+    reason:
+      "Your business entity type is not chosen yet. An LLC files a Certificate of Organization and a corporation files a Certificate of Incorporation with the Department of State; a sole proprietorship files neither. Choose the structure to see the exact filing.",
+  } as T;
+  return rows
+    .map((r, i) => (i === first ? merged : r))
+    .filter((r, i) => i === first || !(r.document_id === CORP_FORMATION_DOC || LLC_FORMATION_IDS.has(r.document_id ?? "")));
 }

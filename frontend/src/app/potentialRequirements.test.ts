@@ -101,3 +101,26 @@ test("REG-LIVE-COASTAL-SOURCE-001: PR coastal flag advisory carries an authorita
   const requirements = confirmedPotentialRequirements([coastal], { coastal: "applies" });
   assert.equal(requirements[0].citation, coastal.citation);
 });
+
+test("San Juan: its own municipal review replaces the generic metro review and is never asked", async () => {
+  const { potentialItemsForFlags, potentialQuestionsFor } = await import("./potentialRequirements.ts");
+  const sanJuan = potentialItemsForFlags(["tourism", "coastal", "historic", "metro", "capital"]);
+  const docs = sanJuan.map((d) => d.document);
+  assert.ok(docs.includes("San Juan-Specific Municipal Review"));
+  assert.ok(!docs.includes("Additional Municipal Review"), "generic metro review superseded");
+  const asked = potentialQuestionsFor(sanJuan).map((d) => d.flag);
+  assert.ok(!asked.includes("capital"), "no 'Will this business operate in San Juan?' question");
+  assert.ok(asked.includes("historic") && asked.includes("coastal"), "other advisories are still asked");
+  // Applied without any decision from the user.
+  const required = confirmedPotentialRequirements(sanJuan, {});
+  assert.deepEqual(required.map((r) => r.name), ["San Juan-Specific Municipal Review"]);
+  assert.equal(required[0].agency, "Municipio Autónomo de San Juan");
+});
+
+test("other metro municipalities keep the generic review as a question", async () => {
+  const { potentialItemsForFlags, potentialQuestionsFor } = await import("./potentialRequirements.ts");
+  const bayamon = potentialItemsForFlags(["metro"]);
+  assert.deepEqual(bayamon.map((d) => d.document), ["Additional Municipal Review"]);
+  assert.deepEqual(potentialQuestionsFor(bayamon).map((d) => d.flag), ["metro"]);
+  assert.deepEqual(confirmedPotentialRequirements(bayamon, {}), [], "not added until the user says it applies");
+});

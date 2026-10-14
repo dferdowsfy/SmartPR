@@ -28,6 +28,16 @@ export interface FlagAdvisory {
   citation?: string;
   /** Official URL for the cited basis (optional). */
   citation_url?: string;
+  /** The flag itself settles applicability — no follow-up question. Used
+   * for a jurisdiction-specific review whose only condition is operating in
+   * that municipality (e.g. San Juan's: the flag exists only for San Juan,
+   * so "Will this business operate in San Juan?" is already answered by the
+   * location). */
+  autoApplies?: boolean;
+  /** Generic advisories this one replaces when both flags are present (e.g.
+   * an Autonomous Municipality's own review replaces the generic metro
+   * "Additional Municipal Review"), so the user never sees both. */
+  supersedes?: string[];
 }
 
 // A document-intelligence extraction hint. When the requirement code matches

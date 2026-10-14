@@ -185,8 +185,9 @@ test("F09 old snapshot profile questions stay excluded and custom select questio
 });
 
 const incomplete = PR_ACT60_CATALOG.filter(p => !p.criteria.length);
-test("F06 all 23 industry-only programs need substantive review, with zero eligibility confidence", () => {
-  assert.equal(incomplete.length, 23);
+// 22 since the Food & Beverage Export decree gained its manufacturing + export criteria.
+test("F06 all 22 industry-only programs need substantive review, with zero eligibility confidence", () => {
+  assert.equal(incomplete.length, 22);
   for (const p of incomplete) {
     const result = evaluateIncentives({ industry: p.applicableIndustries.names[0] }, [p], { now: new Date("2026-09-12") }).results[0];
     assert.equal(result.eligibility, "potentially_eligible", p.id);

@@ -733,7 +733,46 @@
     "derive_kind": "literal",
     "certainty": "deterministic",
     "relationship": "IMPLIES",
-    "note": "Customers eating on-site are being served food."
+    "note": "Customers eating on-site are being served food they bought, at the location."
+  },
+  {
+    "id": "REL_ON_SITE_CONSUMPTION_IMPLIES_FOOD_SERVED__e1",
+    "relationship_id": "REL_ON_SITE_CONSUMPTION_IMPLIES_FOOD_SERVED",
+    "source_fact_id": "IF_question__Q_ON_SITE_CONSUMPTION",
+    "condition_operator": "equals",
+    "condition_value": "true",
+    "target_fact_id": "IF_question__Q_FOOD_SOLD",
+    "target_value": "true",
+    "derive_kind": "literal",
+    "certainty": "deterministic",
+    "relationship": "IMPLIES",
+    "note": "Customers eating on-site are being served food they bought, at the location."
+  },
+  {
+    "id": "REL_ON_SITE_CONSUMPTION_IMPLIES_FOOD_SERVED__e2",
+    "relationship_id": "REL_ON_SITE_CONSUMPTION_IMPLIES_FOOD_SERVED",
+    "source_fact_id": "IF_question__Q_ON_SITE_CONSUMPTION",
+    "condition_operator": "equals",
+    "condition_value": "true",
+    "target_fact_id": "IF_question__Q_CUSTOMERS_VISIT",
+    "target_value": "true",
+    "derive_kind": "literal",
+    "certainty": "deterministic",
+    "relationship": "IMPLIES",
+    "note": "Customers eating on-site are being served food they bought, at the location."
+  },
+  {
+    "id": "REL_FOOD_SERVED_IMPLIES_FOOD_SOLD__e0",
+    "relationship_id": "REL_FOOD_SERVED_IMPLIES_FOOD_SOLD",
+    "source_fact_id": "IF_question__Q_FOOD_SERVED",
+    "condition_operator": "equals",
+    "condition_value": "true",
+    "target_fact_id": "IF_question__Q_FOOD_SOLD",
+    "target_value": "true",
+    "derive_kind": "literal",
+    "certainty": "deterministic",
+    "relationship": "IMPLIES",
+    "note": "Serving food to customers is selling it (a free meal service answers No explicitly, which overrides this)."
   },
   {
     "id": "REL_COMMERCIAL_KITCHEN_IMPLIES_FOOD_PREPARED__e0",
@@ -1077,7 +1116,7 @@
     "derive_kind": "literal",
     "certainty": "deterministic",
     "relationship": "IMPLIES",
-    "note": "A restaurant serves and sells food. It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
+    "note": "A restaurant prepares, serves and sells food that customers come in to eat (a ghost kitchen / delivery-only operation answers No explicitly, which overrides this). It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
   },
   {
     "id": "REL_BT_RESTAURANT__e1",
@@ -1089,7 +1128,7 @@
     "derive_kind": "literal",
     "certainty": "deterministic",
     "relationship": "IMPLIES",
-    "note": "A restaurant serves and sells food. It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
+    "note": "A restaurant prepares, serves and sells food that customers come in to eat (a ghost kitchen / delivery-only operation answers No explicitly, which overrides this). It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
   },
   {
     "id": "REL_BT_RESTAURANT__e2",
@@ -1099,9 +1138,33 @@
     "target_fact_id": "IF_question__Q_FOOD_PREPARED",
     "target_value": "true",
     "derive_kind": "literal",
-    "certainty": "strong_inference",
+    "certainty": "deterministic",
     "relationship": "IMPLIES",
-    "note": "A restaurant serves and sells food. It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
+    "note": "A restaurant prepares, serves and sells food that customers come in to eat (a ghost kitchen / delivery-only operation answers No explicitly, which overrides this). It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
+  },
+  {
+    "id": "REL_BT_RESTAURANT__e3",
+    "relationship_id": "REL_BT_RESTAURANT",
+    "source_fact_id": "IF_business_type__BT_RESTAURANT",
+    "condition_operator": "truthy",
+    "target_fact_id": "IF_question__Q_ON_SITE_CONSUMPTION",
+    "target_value": "true",
+    "derive_kind": "literal",
+    "certainty": "deterministic",
+    "relationship": "IMPLIES",
+    "note": "A restaurant prepares, serves and sells food that customers come in to eat (a ghost kitchen / delivery-only operation answers No explicitly, which overrides this). It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
+  },
+  {
+    "id": "REL_BT_RESTAURANT__e4",
+    "relationship_id": "REL_BT_RESTAURANT",
+    "source_fact_id": "IF_business_type__BT_RESTAURANT",
+    "condition_operator": "truthy",
+    "target_fact_id": "IF_question__Q_CUSTOMERS_VISIT",
+    "target_value": "true",
+    "derive_kind": "literal",
+    "certainty": "deterministic",
+    "relationship": "IMPLIES",
+    "note": "A restaurant prepares, serves and sells food that customers come in to eat (a ghost kitchen / delivery-only operation answers No explicitly, which overrides this). It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."
   },
   {
     "id": "REL_BT_FAST_FOOD__e0",

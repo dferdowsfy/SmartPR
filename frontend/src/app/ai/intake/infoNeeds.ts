@@ -74,8 +74,12 @@ export function tierOf(key: IntakeFieldKey, intent: ProjectIntent | null): InfoT
     case "number_of_employees":
       return projectOnly && key === "number_of_employees" ? null : "useful_later";
     case "business_structure":
-      // Needed by the formation filing (Dept. of State), not to find the path.
-      return projectOnly ? null : "filing_specific";
+      // A new business's entity type decides its formation filing (LLC vs
+      // corporation vs none) on the checklist itself, so it is asked once
+      // up front — "Not sure yet" is an answer and yields one consolidated
+      // formation step. For any other branch it only matters to a filing.
+      if (projectOnly) return null;
+      return intent === "new_business" ? "required_now" : "filing_specific";
   }
 }
 

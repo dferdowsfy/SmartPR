@@ -271,11 +271,15 @@
       "SRC_ACT60"
     ],
     "industry_ids": [
-      "IND_FOOD"
+      "IND_FOOD",
+      "IND_MANUFACTURING"
     ],
     "municipality_ids": [],
     "geography_level": "Puerto Rico",
-    "criterion_ids": [],
+    "criterion_ids": [
+      "food_beverage_manufacturing_fact",
+      "food_beverage_export_fact"
+    ],
     "benefit_ids": [
       "PR_ACT60_FOOD_MANUFACTURING_b1"
     ],

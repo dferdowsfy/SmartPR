@@ -35,9 +35,13 @@ export interface NormalizedProjectProfile {
   capital_investment?: number | null;
   property_tenure?: "owned" | "leased" | "other" | null;
   export_activity?: boolean | null;
+  /** Sells or ships products outside Puerto Rico (export only — not imports). */
+  exports_outside_pr?: boolean | null;
   outside_pr_revenue_percentage?: number | null;
   tourism_activity?: boolean | null;
   manufacturing_activity?: boolean | null;
+  /** Commercial/industrial food or beverage manufacturing (not food service). */
+  food_beverage_manufacturing?: boolean | null;
   research_and_development_activity?: boolean | null;
   renewable_energy_investment?: number | boolean | null;
   green_energy_decree?: boolean | null;
