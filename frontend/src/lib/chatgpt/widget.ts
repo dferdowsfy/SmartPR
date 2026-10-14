@@ -26,13 +26,13 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./vendor/leaflet.generated";
 import { tileTemplates } from "./tiles";
 import { PORTAL_DEFAULT } from "./portalUrl";
 
-// Canonical URI is v10 (signup routes via handoff so the scenario lands in the new account).
+// Canonical URI is v11 (refine panel removed; requirements full width).
 // v8 rather than v7: ChatGPT caches templates (and their CSP) per URI, so every
 // production, and ChatGPT caches templates (and their CSP) per URI, so the
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v10.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v11.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -43,6 +43,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v7.html",
   "ui://smartpr/requirements-v8.html",
   "ui://smartpr/requirements-v9.html",
+  "ui://smartpr/requirements-v10.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -61,7 +62,7 @@ const CSS = `
 h1{font-size:22px;margin:16px 0 2px}.sub{color:var(--mut);margin:0 0 12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}.chip{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 12px;font-weight:500}
 .chip.unk{border-style:dashed;color:var(--mut)}
-.grid{display:grid;grid-template-columns:1.6fr 1fr;gap:12px;align-items:start}@media(max-width:640px){.grid{grid-template-columns:1fr}}.reqs{max-height:560px;overflow-y:auto;overscroll-behavior:contain}.refine{position:sticky;top:12px}.ans{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.ans .a{border:1px solid var(--line);background:var(--tealbg);border-radius:10px;padding:8px 12px}.ans .a b{display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.ans .a span{font-weight:600;color:var(--teal2)}
+.reqs{max-height:560px;overflow-y:auto;overscroll-behavior:contain}.ans{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.ans .a{border:1px solid var(--line);background:var(--tealbg);border-radius:10px;padding:8px 12px}.ans .a b{display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.05em}.ans .a span{font-weight:600;color:var(--teal2)}
 .card{border:1px solid var(--line);border-radius:12px;padding:14px}.card h2{font-size:16px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
 .badge{margin-left:auto;font-size:11px;font-weight:600;border-radius:999px;padding:2px 9px;background:var(--tealbg);color:var(--teal2)}
 .grp{border-top:1px solid var(--line)}.grp:first-of-type{border-top:0}.grow{display:flex;gap:10px;align-items:center;padding:10px 0;cursor:pointer;width:100%;background:none;border:0;text-align:left;font:inherit;color:inherit}
@@ -337,16 +338,7 @@ function locPanel(r){var p=state.pin,c=state.confirmed,d=state.details,panel=el(
   add(grp,row,list);add(left,grp)});
  var lk=el("div","lock");add(lk,el("span",null,"\ud83d\udd12"));var lt=el("div");add(lt,el("b",null,"Additional requirements & sequencing"),el("div",null,(r.gated.hidden_requirement_count?r.gated.hidden_requirement_count+" more requirement(s), ":"")+"dependencies and a downloadable report are in the full assessment."));add(lk,lt);add(left,lk);
 return left}
- function refineCard(r){var right=el("div","card refine");add(right,el("h2",null,"Refine your scenario"));var qs=r.clarifying_questions||[];
- add(right,el("p","sub",qs.length?qs.length+" detail(s) need clarification.":"No open questions \u2014 change a fact in chat to re-run."));
- qs.forEach(function(q){var id="q_"+q.id;var l=el("label",null,q.question);l.htmlFor=id;add(right,l);var inp;
-  if(q.id==="municipality")add(right,el("div","muni-or","Tap the map above to drop a pin \u2014 or type a municipality:"));
-  if(q.options&&q.options.length){inp=el("select");inp.id=id;var ph=el("option",null,"Select\u2026");ph.value="";add(inp,ph);q.options.forEach(function(o){var op=el("option",null,o.label);op.value=o.value;add(inp,op)})}else{inp=el("input");inp.id=id;inp.placeholder=q.id==="municipality"?"e.g. Bayam\u00f3n":"Type your answer"}
-  inp.value=state.answers[q.id]||"";inp.onchange=inp.oninput=function(){state.answers[q.id]=inp.value;state.note=null;persist()};add(right,inp)});
- if(qs.length){var ub=el("button","btn o full",state.busy?"Updating\u2026":"Update preview");ub.type="button";ub.disabled=state.busy;ub.onclick=function(){act("refine")};add(right,ub)}
- if(state.note)add(right,el("div","hint",state.note));
- add(right,el("div","hint","Hypothetical scenarios welcome. No project is saved."));
-return right}
+
 function updateCard(r){var box=el("div","card");add(box,el("h2",null,"Your answers"));var aa=r.applied_answers||[];
  if(aa.length){var ans=el("div","ans");aa.forEach(function(a){var d=el("div","a");add(d,el("b",null,a.question),el("span",null,a.answer));add(ans,d)});add(box,ans)}
  else add(box,el("p","sub","Scenario updated with your answers."));
@@ -380,7 +372,10 @@ function render(){
  if(state.pin){var loc=el("div","loc-grid");add(loc,mapCard(r),locPanel(r));add(w,loc)}else add(w,mapCard(r));
  if(r.status==="partial")add(w,el("div","note warn","Preliminary \u2014 "+(r.unresolved_facts||[]).length+" detail(s) unresolved. Unknown facts are shown as \"Needs details\", never assumed \"no\"."));
  } // end full-view branch; update view rejoins here
- var g=el("div","grid");add(g,reqsCard(r),refineCard(r));add(w,g);
+ // Requirements take the full width — the model already asks the clarifying
+ // questions in its text below the widget, so the in-widget question panel
+ // was pure duplication. Refinement still flows through the model.
+ add(w,reqsCard(r));
  var cta=el("div","cta"),ct=el("div");add(ct,el("b",null,"Turn this preview into a complete assessment"),el("span",null,"Requirement-by-requirement reasoning, official sources, dependencies, and a downloadable report."));
  var u1=el("button","btn p","Unlock full assessment");u1.type="button";u1.disabled=state.busy;u1.onclick=function(){act("unlock")};var u2=el("button","btn o","Use my SmartPR plan");u2.type="button";u2.disabled=state.busy;u2.onclick=function(){act("use_plan")};add(cta,ct,u1,u2);add(w,cta);
  // Signup CTA: drive users to getsmartpr.com — ChatGPT previews, SmartPR completes.
