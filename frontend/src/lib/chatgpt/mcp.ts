@@ -184,7 +184,7 @@ export async function callTool(name: string, args: Record<string, unknown>, opts
       : result.approximate_site ? `\nMap shows an approximate pin in downtown ${result.approximate_site.municipality}; the user can drag it to the exact site.` : "";
     return {
       structuredContent: result,
-      content: [{ type: "text", text: `${result.message}${siteLine}${dropped.includes("site") ? "\nThe pin is outside Puerto Rico and was ignored." : ""}\n${top}${qs ? `\nClarifying questions:\n${qs}` : ""}\n(Free preview from SmartPR's rules engine — not legal advice.)` }],
+      content: [{ type: "text", text: `${result.message}${siteLine}${dropped.includes("site") ? "\nThe pin is outside Puerto Rico and was ignored." : ""}\n${top}${qs ? `\nClarifying questions:\n${qs}` : ""}\nTo complete the required forms and file them with Clara, our browser agent, continue at https://www.getsmartpr.com.\n(Free preview from SmartPR's rules engine — not legal advice.)` }],
     };
   }
   if (name === "create_portal_handoff") {

@@ -26,13 +26,13 @@ import { LEAFLET_CSS, LEAFLET_JS } from "./vendor/leaflet.generated";
 import { tileTemplates } from "./tiles";
 import { PORTAL_DEFAULT } from "./portalUrl";
 
-// Canonical URI is v8 (compact refine-update view + scrollable reqs pane + sticky refine panel).
+// Canonical URI is v9 (signup CTA driving to getsmartpr.com).
 // v8 rather than v7: ChatGPT caches templates (and their CSP) per URI, so every
 // production, and ChatGPT caches templates (and their CSP) per URI, so the
 // tile-enabled widget needs a URI ChatGPT has never fetched.
 // ChatGPT may still request older template_pointer URIs (v1–v6) from a cached
 // connector; serve the same HTML for every alias so a bump never 404s.
-export const WIDGET_URI = "ui://smartpr/requirements-v8.html";
+export const WIDGET_URI = "ui://smartpr/requirements-v9.html";
 export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v1.html",
   "ui://smartpr/requirements-v2.html",
@@ -41,6 +41,7 @@ export const WIDGET_URI_ALIASES = [
   "ui://smartpr/requirements-v5.html",
   "ui://smartpr/requirements-v6.html",
   "ui://smartpr/requirements-v7.html",
+  "ui://smartpr/requirements-v8.html",
   WIDGET_URI,
 ] as const;
 /** Basemap zoom range (tiles). The SVG fallback caps at 14 (1:500k outlines). */
@@ -72,7 +73,7 @@ h1{font-size:22px;margin:16px 0 2px}.sub{color:var(--mut);margin:0 0 12px}
 label{display:block;font-weight:600;font-size:13px;margin:10px 0 4px}select,input{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
 .btn{display:inline-block;border-radius:8px;padding:9px 14px;cursor:pointer;font:inherit;font-weight:600;touch-action:manipulation}.btn.p{background:var(--teal);color:#fff;border:1px solid var(--teal)}.btn.o{background:#fff;color:var(--teal2);border:1px solid var(--teal)}
 .btn[disabled]{opacity:.55;cursor:default}.full{width:100%;margin-top:12px}.hint{color:var(--mut);font-size:12px;margin-top:6px}
-.cta{margin-top:12px;background:var(--tealbg);border:1px solid #b7e1da;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.cta div{flex:1;min-width:220px}.cta b{display:block}
+.cta{margin-top:12px;background:var(--tealbg);border:1px solid #b7e1da;border-radius:12px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}.cta.signup{background:#0f172a;border-color:#0f172a;color:#fff}.cta.signup b{color:#fff}.cta.signup span{color:#cbd5e1}.cta.signup>div{flex:1 1 220px}.cta.signup .btn{flex:1 1 200px;text-align:center}.cta div{flex:1;min-width:220px}.cta b{display:block}
 .cont{display:flex;gap:8px;align-items:flex-start;padding:12px 4px 0;background:none;border:0;cursor:pointer;font:inherit;text-align:left;color:inherit}.cont b{color:var(--ink)}
 .note{border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px}.note.warn{background:#fffbeb;border:1px solid #fde68a}.note.err{background:#fef2f2;border:1px solid #fecaca}.note.info{background:var(--soft);border:1px solid var(--line)}
 .foot{color:var(--mut);font-size:11px;margin-top:12px}.sk{background:linear-gradient(90deg,#f1f5f9,#e2e8f0,#f1f5f9);background-size:200%;animation:s 1.2s infinite;border-radius:8px;height:14px;margin:10px 0}@keyframes s{to{background-position:-200% 0}}
@@ -378,6 +379,9 @@ function render(){
  var g=el("div","grid");add(g,reqsCard(r),refineCard(r));add(w,g);
  var cta=el("div","cta"),ct=el("div");add(ct,el("b",null,"Turn this preview into a complete assessment"),el("span",null,"Requirement-by-requirement reasoning, official sources, dependencies, and a downloadable report."));
  var u1=el("button","btn p","Unlock full assessment");u1.type="button";u1.disabled=state.busy;u1.onclick=function(){act("unlock")};var u2=el("button","btn o","Use my SmartPR plan");u2.type="button";u2.disabled=state.busy;u2.onclick=function(){act("use_plan")};add(cta,ct,u1,u2);add(w,cta);
+ // Signup CTA: drive users to getsmartpr.com — ChatGPT previews, SmartPR completes.
+ var sup=el("div","cta signup");var st=el("div");add(st,el("b",null,"Complete your forms and file with Clara"),el("span",null,"Clara, our browser agent, walks you through each filing. Sign up free at getsmartpr.com."));
+ var sb=el("button","btn p full","Sign up at getsmartpr.com \u2192");sb.type="button";sb.onclick=function(){openLink(CFG.origin+"/signup")};add(sup,st,sb);add(w,sup);
  var cont=el("button","cont");cont.type="button";cont.disabled=state.busy;add(cont,el("span",null,"\u2197"));var cc=el("div");add(cc,el("b",null,"Continue in SmartPR"),el("div","hint","Review your scenario in the portal before anything is saved."));add(cont,cc);cont.onclick=function(){act("continue")};add(w,cont);
  add(w,el("div","foot","Preliminary triage from SmartPR's rules engine, not legal advice. "+(r.coverage_limits||[]).slice(2).join(" ")+" Generated "+new Date(r.versions.generated_at).toLocaleString()+" \u00b7 "+r.versions.kb));
  if(MAP&&MAP.wrap.parentNode){try{MAP.sync();MAP.attach()}catch(err){trace("map sync failed: "+(err&&err.message))}}
@@ -405,7 +409,7 @@ export interface WidgetHtmlOptions {
 
 /** Map config embedded in the widget (tile templates on the asset origin). */
 export function widgetMapConfig(opts: WidgetHtmlOptions = {}) {
-  return { tiles: tileTemplates(opts.assetOrigin || PORTAL_DEFAULT), tileTimeoutMs: TILE_TIMEOUT_MS, minZoom: MAP_MIN_ZOOM, maxZoom: MAP_MAX_ZOOM };
+  return { origin: opts.assetOrigin || PORTAL_DEFAULT, tiles: tileTemplates(opts.assetOrigin || PORTAL_DEFAULT), tileTimeoutMs: TILE_TIMEOUT_MS, minZoom: MAP_MIN_ZOOM, maxZoom: MAP_MAX_ZOOM };
 }
 
 export function widgetHtml(opts: WidgetHtmlOptions = {}): string {
