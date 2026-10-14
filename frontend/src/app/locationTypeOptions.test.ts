@@ -183,3 +183,12 @@ test("mobile-plausible business types offer a Mobile Business location option", 
     `business types missing a mobile location option: ${missing.join(", ")}`
   );
 });
+
+// F6 (live 2026-10-14): ground-mounted solar farm only offered Commercial
+// Office / Warehouse. Land / vacant / outdoor options must be available.
+test("Renewable Energy Company offers land / vacant / outdoor location options", () => {
+  const options = LOCATION_TYPES_BY_BUSINESS_TYPE["Renewable Energy Company"] ?? [];
+  for (const need of ["Agricultural Property", "Vacant Land", "Outdoor / Open Land"]) {
+    assert.ok(options.includes(need), `missing ${need}; got: ${options.join(", ")}`);
+  }
+});

@@ -108,3 +108,57 @@ export function withoutEnergyVerifyExisting<T extends { document_id?: string | n
       : r
   );
 }
+
+/** Legacy DG cards that Act 114 / process exceptions already exclude for utility scale. */
+const UTILITY_SCALE_DG_DOCS = new Set([
+  "DOC_NET_METERING_AGREEMENT",
+  "DOC_LUMA_INTERCONNECTION",
+]);
+
+/**
+ * Align legacy RULE_0610 / RULE_0611 cards with the already-verified process
+ * exceptions (Act 114): a utility-scale project must not get net metering /
+ * LUMA DG interconnection as Required Now. When offtake is still unanswered,
+ * show them as conditional pending that answer. Does not edit process-graph
+ * citations or thresholds (Run 2 net-metering finding).
+ */
+export function gateUtilityScaleDgCards<
+  T extends { document_id?: string | null; applicability?: string | null; mandatory?: boolean }
+>(
+  requirements: readonly T[],
+  opts: {
+    solarSize?: unknown;
+    generationCapacityKw?: unknown;
+    energyMarketSegment?: unknown;
+    powerOfftaker?: unknown;
+  }
+): T[] {
+  const sizeOver1Mw =
+    typeof opts.solarSize === "string" && /over\s*1\s*mw/i.test(opts.solarSize);
+  const kw = typeof opts.generationCapacityKw === "number"
+    ? opts.generationCapacityKw
+    : typeof opts.generationCapacityKw === "string"
+      ? Number(opts.generationCapacityKw)
+      : NaN;
+  const capacityOver1Mw = Number.isFinite(kw) && kw > 1000;
+  const wholesale =
+    opts.energyMarketSegment === "wholesale"
+    || opts.powerOfftaker === "luma_prepa"
+    || opts.powerOfftaker === "luma"
+    || opts.powerOfftaker === "prepa";
+  const offtakeUnknown =
+    opts.energyMarketSegment == null
+    && opts.powerOfftaker == null
+    && !wholesale;
+  const utilityScale = sizeOver1Mw || capacityOver1Mw || wholesale;
+  if (!utilityScale) return [...requirements];
+  return requirements.map((r) => {
+    if (!r.document_id || !UTILITY_SCALE_DG_DOCS.has(r.document_id)) return r;
+    if (wholesale || (capacityOver1Mw && !offtakeUnknown) || (sizeOver1Mw && !offtakeUnknown)) {
+      // Confirmed utility-scale / wholesale: not Required Now (process exceptions).
+      return { ...r, applicability: "not_applicable", mandatory: false };
+    }
+    // Utility-scale signal but offtake unanswered: conditional pending that answer.
+    return { ...r, applicability: "conditional", mandatory: false };
+  });
+}
