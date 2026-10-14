@@ -6631,17 +6631,28 @@ const loadExample = (example: Partial<BusinessProfile>) => {
 
   // Keep answered questions visible in Intake, including answers entered by
   // hand. A selected Yes/No must not vanish when the next question appears.
-  const answeredIntakeQuestions = questionList
-    .filter((q) => discoveryAnswers[q.id] !== undefined)
-    .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }))
-    .concat(UNANSWERED_TRIGGER_QUESTIONS
-      // Trigger rows exist for questions the guided list never asks. A
-      // guided question can share the trigger's answer key under its own
-      // id (e.g. guided `existing_lease` vs trigger Q_EXISTING_LEASE → the
-      // same writeKey), so exclude by writeKey too — otherwise the same
-      // answered question renders twice.
-      .filter((q) => !questionList.some((guided) => guided.id === q.questionId || guided.id === q.writeKey) && discoveryAnswers[q.writeKey] !== undefined)
-      .map((q) => ({ id: q.questionId, text: (KB.questions as Array<{ id: string; question?: string }>).find((item) => item.id === q.questionId)?.question ?? q.questionId, value: discoveryAnswers[q.writeKey] as boolean | string, writeKey: q.writeKey })));
+  // Two rows for the same question id is never valid UI (a guided question
+  // and a trigger can share an answer key after Change + re-answer), so
+  // dedupe by id — first occurrence wins.
+  const answeredIntakeQuestions = (() => {
+    const seen = new Set<string>();
+    return questionList
+      .filter((q) => discoveryAnswers[q.id] !== undefined)
+      .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }))
+      .concat(UNANSWERED_TRIGGER_QUESTIONS
+        // Trigger rows exist for questions the guided list never asks. A
+        // guided question can share the trigger's answer key under its own
+        // id (e.g. guided `existing_lease` vs trigger Q_EXISTING_LEASE → the
+        // same writeKey), so exclude by writeKey too — otherwise the same
+        // answered question renders twice.
+        .filter((q) => !questionList.some((guided) => guided.id === q.questionId || guided.id === q.writeKey) && discoveryAnswers[q.writeKey] !== undefined)
+        .map((q) => ({ id: q.questionId, text: (KB.questions as Array<{ id: string; question?: string }>).find((item) => item.id === q.questionId)?.question ?? q.questionId, value: discoveryAnswers[q.writeKey] as boolean | string, writeKey: q.writeKey })))
+      .filter((item) => {
+        if (seen.has(item.id)) return false;
+        seen.add(item.id);
+        return true;
+      });
+  })();
 
   // After "Change": once the reopened question is answered again, answers to
   // follow-ups the new answer no longer asks (dropped from the engine's
@@ -6973,15 +6984,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     </p>
   ) : null;
   const focusMissing = (key: string) => {
-    if (key === 'business_type' || key === 'industry') setProfileFormExpanded(true);
+    // Profile fields (and the intent question) can live in the collapsed
+    // details block — expand first so the target exists when we look for it.
+    setProfileFormExpanded(true);
     const id = key === 'project_intent' ? null : key === 'location_type' ? 'spr-location-type' : key === 'municipality' ? 'spr-project-location' : key === 'business_type' ? 'spr-business-type' : 'spr-industry';
     window.setTimeout(() => {
-      const el = id ? document.getElementById(id) : document.querySelector<HTMLElement>('.spr-intent-option');
+      // Qualify the intent selector: the "Link business" button reuses the
+      // .spr-intent-option class and must never steal the scroll target.
+      let el = id ? document.getElementById(id) : document.querySelector<HTMLElement>('.spr-intent-options .spr-intent-option');
+      // Last resort: the "Still needed" anchor right above the missing
+      // fields. A tappable chip must never silently do nothing.
+      if (!el) el = profileFieldsRef.current;
       if (!el) return;
       const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
       el.focus({ preventScroll: true });
-    }, 0);
+    }, 60);
   };
 
   // Step 1: Save profile + compute discovery requirements (client-side)
@@ -6991,9 +7009,13 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // straight to the FIRST thing missing — the specific field, then the
   // questions panel, then the profile fields — instead of leaving them to
   // hunt for it.
+  // The gate is exactly what the footer promises: every required-now field
+  // (including the project intent listed under "Still needed") plus every
+  // question. A field the banner names must always block Continue.
+  const intakeComplete = baseProfileReady && intakeQuestionsComplete && projectIntent !== null;
   const handleSubmitTap = () => {
     if (isLoading) return;
-    if (baseProfileReady && intakeQuestionsComplete) {
+    if (intakeComplete) {
       handleStartDiscovery();
       return;
     }
@@ -7004,19 +7026,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       setSubmitPulse(false);
       const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
       const behavior = reduce ? 'auto' : 'smooth';
-      if (!baseProfileReady) {
-        profileFieldsRef.current?.scrollIntoView({ behavior, block: 'center' });
-        return;
-      }
+      // Jump to the FIRST thing missing — the specific field or question —
+      // so the tap always lands the user where they need to act.
       if (stillNeeded.length > 0) {
         focusMissing(stillNeeded[0].key);
+        return;
+      }
+      if (!baseProfileReady) {
+        profileFieldsRef.current?.scrollIntoView({ behavior, block: 'center' });
         return;
       }
       questionsPanelRef.current?.scrollIntoView({ behavior, block: 'center' });
     }, 900);
   };
   /** Incomplete submit: everything still blocking Continue, in tap order. */
-  const incompleteBlockers = submitAttempted && !(baseProfileReady && intakeQuestionsComplete)
+  const incompleteBlockers = submitAttempted && !intakeComplete
     ? stillNeeded.length > 0 || (baseProfileReady && missingQuestionCount > 0)
     : false;
 

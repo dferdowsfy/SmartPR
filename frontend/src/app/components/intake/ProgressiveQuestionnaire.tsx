@@ -47,10 +47,13 @@ export function ProgressiveQuestionnaire({
 
   // Path order = the order questions were first seen. A reopened question
   // keeps its slot (inline editing); new questions append under the path.
+  // Defensive: the same id must never occupy two slots even if the parent
+  // ever passes it twice.
   const [seen, setSeen] = useState<string[]>([]);
   const ids = [...answered.map((a) => a.id), ...(active ? [active.id] : [])];
   const present = new Set(ids);
-  const order = [...seen.filter((id) => present.has(id)), ...ids.filter((id) => !seen.includes(id))];
+  const order: string[] = [...seen.filter((id) => present.has(id))];
+  for (const id of ids) if (!order.includes(id)) order.push(id);
   if (order.length !== seen.length || order.some((id, i) => id !== seen[i])) setSeen(order);
 
   // Questions answered at some point: active again = editing.
