@@ -4359,3 +4359,17 @@ section.spr-plc .spr-plc-proposal { margin: 0; padding: 10px 12px; border: 1px s
   .spr-dec { padding: 12px; }
   .spr-dec-grid > div, .spr-gaps dl > div { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Answer buttons must always be hittable (live 2026-10-14: Own / Lease /
+   Customer were hard to click). Keep them above decorative overlays, make
+   taps immediate on touch, and keep keyboard/scroll focus clear of the
+   sticky intake footer that otherwise covers the last row. */
+.spr-answer-row button,
+.spr-scn-q-btn { position: relative; z-index: 1; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.spr-answer-row .spr-answer-choice > *,
+.spr-scn-q-btn > * { pointer-events: none; }
+html:has(.spr-guided-intake-shell) { scroll-padding-bottom: 120px; }
+.spr-guided-intake-shell .spr-follow-up,
+.spr-guided-intake-shell .spr-scn-questions { scroll-margin-bottom: 120px; }
+.spr-nl-status-elapsed { color: #7a8a96; font-weight: 500; }
+.rq-page-head-label { margin: 2px 0 0; color: #657e86; font-size: 14px; }

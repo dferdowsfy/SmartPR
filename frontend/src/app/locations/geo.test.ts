@@ -7,6 +7,7 @@ import {
   currentGeography,
   formatCoordinate,
   isWithinPuertoRico,
+  parseLatLngQuery,
   parseLocationInput,
   roundCoordinate,
   validateCoordinates,
@@ -174,4 +175,18 @@ test("currentGeography prefers spatial determinations over provider text", () =>
   ];
   assert.equal(currentGeography(geos, "municipality")?.id, "2");
   assert.equal(currentGeography(geos, "barrio"), null);
+});
+
+test("raw lat,lng typed into address search is accepted inside Puerto Rico", () => {
+  assert.deepEqual(parseLatLngQuery("18.4700,-66.5000"), { latitude: 18.47, longitude: -66.5 });
+  assert.deepEqual(parseLatLngQuery(" 18.47, -66.5 "), { latitude: 18.47, longitude: -66.5 });
+  assert.deepEqual(parseLatLngQuery("18.47 -66.5"), { latitude: 18.47, longitude: -66.5 });
+  assert.deepEqual(parseLatLngQuery("(18.39123, -66.11784)"), { latitude: 18.39123, longitude: -66.11784 });
+  assert.deepEqual(parseLatLngQuery("18.47° N, 66.5° W"), { latitude: 18.47, longitude: -66.5 });
+});
+
+test("non-coordinate or out-of-Puerto-Rico input is not treated as coordinates", () => {
+  for (const q of ["Carolina Industrial Park", "Calle 5 #12, Bayamón", "00987", "40.7128,-74.006", "18.47", "", "18.4abc,-66.5"]) {
+    assert.equal(parseLatLngQuery(q), null, q);
+  }
 });

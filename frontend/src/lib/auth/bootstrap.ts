@@ -4,6 +4,7 @@ import { ensureSchema } from "../../app/graph/store";
 import { ensureUserWorkspace } from "../../app/compliance/server";
 import {
   normalizePartnerCode,
+  PartnerCodeError,
   redeemPartnerCode,
   type RedeemResult,
 } from "../partnerCodes";
@@ -28,11 +29,15 @@ export async function bootstrapPlatformUser(
   const pool = getPool();
   if (!pool) throw new Error("Database connection is unavailable.");
 
-  const partnerCode = normalizePartnerCode(
-    opts.partnerCode ??
-      (user.user_metadata?.partner_code as string | undefined) ??
-      null
-  );
+  const explicitCode = normalizePartnerCode(opts.partnerCode ?? null);
+  const partnerCode =
+    explicitCode ??
+    normalizePartnerCode((user.user_metadata?.partner_code as string | undefined) ?? null);
+  // A code typed now (signup / ?code=) must surface its errors. A code that
+  // only lives in signup metadata is replayed on every login; once it has been
+  // deactivated or has expired that replay must never block sign-in or show
+  // "That partner code is no longer active." on the login page.
+  const metadataOnly = !explicitCode && !!partnerCode;
 
   const client = await pool.connect();
   try {
@@ -52,14 +57,20 @@ export async function bootstrapPlatformUser(
     );
 
     if (partnerCode) {
-      const partner = await redeemPartnerCode(client, {
-        userId: user.id,
-        code: partnerCode,
-        email: user.email,
-        inTransaction: true,
-      });
-      await client.query("COMMIT");
-      return { workspaceId: partner.workspaceId, partner };
+      try {
+        const partner = await redeemPartnerCode(client, {
+          userId: user.id,
+          code: partnerCode,
+          email: user.email,
+          inTransaction: true,
+        });
+        await client.query("COMMIT");
+        return { workspaceId: partner.workspaceId, partner };
+      } catch (error) {
+        // Validation failures throw before any write, so the transaction is
+        // still usable: fall through to the user's existing workspace.
+        if (!(metadataOnly && error instanceof PartnerCodeError)) throw error;
+      }
     }
 
     const workspaceId = await ensureUserWorkspace(client, user);

@@ -15,12 +15,12 @@
 //   "nothing found" is a 200 with an empty list.
 
 import { getCurrentUser } from "../../../lib/supabase/server";
-import { attributionFor, geocoderFromEnv, GeocodingError, type SlotReserver } from "../../../lib/geocoding";
+import { attributionFor, geocoderFromEnv, GeocodingError, type GeocodeCandidate, type SlotReserver } from "../../../lib/geocoding";
 import { pgSlotReserver } from "../../../lib/geocoding/slots";
 import { getPool } from "../../graph/db";
 import { ensureSchema } from "../../graph/store";
 import { getClientIpKey, rateLimitAllow } from "../../../lib/rateLimit";
-import { validateCoordinates } from "../../locations/geo";
+import { formatCoordinate, parseLatLngQuery, validateCoordinates } from "../../locations/geo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,6 +56,28 @@ export async function GET(req: Request) {
   try {
     if (q) {
       if (q.length > 200) return Response.json({ error: "query_too_long" }, { status: 400 });
+      // A typed "lat, lng" inside Puerto Rico IS the point: never send it to
+      // an address geocoder (which answers nothing and surfaced as "Address
+      // search failed"). The address is a best-effort reverse lookup.
+      const point = parseLatLngQuery(q);
+      if (point) {
+        const near = await geocoder.reverse(point.latitude, point.longitude, { lang }).catch(() => null);
+        const result: GeocodeCandidate = {
+          latitude: point.latitude,
+          longitude: point.longitude,
+          formatted_address: near?.formatted_address ?? `${formatCoordinate(point.latitude, 5)}, ${formatCoordinate(point.longitude, 5)}`,
+          address_line_1: near?.address_line_1 ?? null,
+          city: near?.city ?? null,
+          municipality: near?.municipality ?? null,
+          state_or_region: near?.state_or_region ?? "Puerto Rico",
+          postal_code: near?.postal_code ?? null,
+          country_code: near?.country_code ?? "US",
+          place_source: "coordinates",
+          place_source_id: null,
+        };
+        const attribution = [attributionFor(near?.place_source)].filter(Boolean);
+        return Response.json({ results: [result], provider: geocoder.id, attribution, coordinates: true }, { headers: { "Cache-Control": "no-store" } });
+      }
       const results = await geocoder.search(q, { limit: 5, lang });
       const attribution = [...new Set(results.map((r) => attributionFor(r.place_source)).filter(Boolean))];
       return Response.json({ results, provider: geocoder.id, attribution }, { headers: { "Cache-Control": "no-store" } });

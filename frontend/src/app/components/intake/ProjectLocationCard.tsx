@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Building2, CheckCircle2, Hash, Info, Landmark, Loader2, MapPin, Pencil, Search } from "lucide-react";
 import { PassportMap, type MapPoint } from "../map/PassportMap";
-import { formatCoordinate, validateCoordinates, type CoordinateSource, type PassportLocationWithGeographies } from "../../locations/geo";
+import { formatCoordinate, parseLatLngQuery, validateCoordinates, type CoordinateSource, type PassportLocationWithGeographies } from "../../locations/geo";
 import type { IntakeSite } from "../../locations/intakeLocation";
 import { siteAddressParts } from "../../locations/siteAddress";
 import type { ResolvedPlacement } from "../../businesses/LocationPickerDialog";
@@ -217,6 +217,8 @@ export function ProjectLocationCard({
   const [busy, setBusy] = useState<null | "search" | "resolve">(null);
   const [message, setMessage] = useState<string | null>(null);
   const [alternatives, setAlternatives] = useState<GeocodeCandidate[]>([]);
+  /** The typed query and the place the geocoder matched it to (shown, never silent). */
+  const [resolvedFrom, setResolvedFrom] = useState<{ query: string; match: string } | null>(null);
   /** Data credit for the last search's results (OSM ODbL, CRIM). */
   const [attribution, setAttribution] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -291,9 +293,17 @@ export function ProjectLocationCard({
     const q = raw.trim();
     if (!q) return;
     setStarted(true);
-    setBusy("search");
     setMessage(null);
+    setResolvedFrom(null);
     setAlternatives([]);
+    // Typed coordinates ("18.4700,-66.5000") are the exact point: pin them
+    // directly, no geocoder involved.
+    const coords = parseLatLngQuery(q);
+    if (coords) {
+      await select(coords, "MANUAL_ENTRY", null);
+      return;
+    }
+    setBusy("search");
     try {
       const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${lang}`, { cache: "no-store", signal: AbortSignal.timeout(12_000) });
       if (!res.ok) {
@@ -320,6 +330,10 @@ export function ProjectLocationCard({
       const [first, ...rest] = data.results;
       setAlternatives(rest.slice(0, 4));
       setQuery(first!.formatted_address ?? q);
+      // Say what the search resolved to, so a named place that snapped to a
+      // barrio or street ("Carolina Industrial Park" → Sabana Abajo) is never
+      // silent; the user can pick an alternative or drag the pin.
+      setResolvedFrom({ query: q, match: first!.formatted_address ?? `${formatCoordinate(first!.latitude, 5)}, ${formatCoordinate(first!.longitude, 5)}` });
       await select({ latitude: first!.latitude, longitude: first!.longitude }, "GEOCODED_ADDRESS", first!.formatted_address ?? null);
     } catch {
       setBusy(null);
@@ -331,6 +345,7 @@ export function ProjectLocationCard({
   const onMapPick = useCallback(
     async (p: MapPoint) => {
       setAlternatives([]);
+      setResolvedFrom(null);
       setPending(p);
       let address: string | null = null;
       try {
@@ -375,6 +390,7 @@ export function ProjectLocationCard({
     setFailed(false);
     setMessage(null);
     setAlternatives([]);
+    setResolvedFrom(null);
     onProposalCancel?.();
   };
 
@@ -467,7 +483,7 @@ export function ProjectLocationCard({
               maxLength={200}
               autoComplete="street-address"
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={L("Search address, business, or place", "Buscar dirección, negocio o lugar", lang)}
+              placeholder={L("Search address, place, or lat, lng", "Buscar dirección, lugar o lat, lng", lang)}
               aria-describedby={missingNote ? `${helpId} spr-missing-municipality` : helpId}
               aria-invalid={invalid || undefined}
               className="spr-plc-input"
@@ -510,12 +526,21 @@ export function ProjectLocationCard({
           </div>
           <div aria-live="polite">
             {message && <p className="spr-plc-message" role="status">{message}</p>}
+            {resolvedFrom && !message && (draft || pending) && resolvedFrom.match.toLowerCase() !== resolvedFrom.query.toLowerCase() && (
+              <p className="spr-plc-message" role="status" data-testid="location-resolved-from">
+                {L(
+                  `“${resolvedFrom.query}” was matched to ${resolvedFrom.match}. If that’s not the exact site, drag the pin onto it or pick another match.`,
+                  `«${resolvedFrom.query}» se ubicó en ${resolvedFrom.match}. Si no es el lugar exacto, arrastra el pin o elige otra coincidencia.`,
+                  lang
+                )}
+              </p>
+            )}
             {attribution && <p className="spr-plc-small" data-testid="geocode-attribution">{L("Search data:", "Datos de búsqueda:", lang)} {attribution}</p>}
             {alternatives.length > 0 && (
               <div className="spr-plc-alts">
                 <span>{L("Not the right place?", "¿No es el lugar correcto?", lang)}</span>
                 {alternatives.map((c, i) => (
-                  <button key={c.place_source_id ?? i} type="button" className="spr-link" onClick={() => { setQuery(c.formatted_address ?? ""); setAlternatives([]); void select({ latitude: c.latitude, longitude: c.longitude }, "GEOCODED_ADDRESS", c.formatted_address ?? null); }}>
+                  <button key={c.place_source_id ?? i} type="button" className="spr-link" onClick={() => { setQuery(c.formatted_address ?? ""); setAlternatives([]); setResolvedFrom(null); void select({ latitude: c.latitude, longitude: c.longitude }, "GEOCODED_ADDRESS", c.formatted_address ?? null); }}>
                     {c.formatted_address ?? `${formatCoordinate(c.latitude)}, ${formatCoordinate(c.longitude)}`}
                   </button>
                 ))}

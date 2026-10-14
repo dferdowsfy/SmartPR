@@ -62,17 +62,17 @@ export function IntakeQuestion({
         </p>
       )}
       {options ? (
-        <div className={`spr-answer-row ${options.length >= 3 ? "spr-answer-row-three" : ""}`}>
+        <div className={`spr-answer-row ${options.length >= 3 ? "spr-answer-row-three" : ""}`} role="group" aria-label={title}>
           {options.map((option) => (
-            <button key={option.value} type="button" className={cls(option.value)} aria-pressed={picked === option.value} disabled={picked !== null && picked !== option.value} onClick={() => choose(option.value)}>
+            <button key={option.value} type="button" className={cls(option.value)} aria-pressed={picked === option.value} data-answer={option.value} disabled={picked !== null && picked !== option.value} onClick={() => choose(option.value)}>
               {picked === option.value && <Check className="i" aria-hidden="true" />} {option.label}
             </button>
           ))}
         </div>
       ) : (
         <div className="spr-answer-row spr-answer-yesno" role="group" aria-label={title}>
-          <button type="button" className={cls(true)} aria-pressed={picked === true} disabled={picked === false} onClick={() => choose(true)}><Check className="i" aria-hidden="true" /> {es ? "Sí" : "Yes"}</button>
-          <button type="button" className={cls(false)} aria-pressed={picked === false} disabled={picked === true} onClick={() => choose(false)}><X className="i" aria-hidden="true" /> No</button>
+          <button type="button" className={cls(true)} aria-pressed={picked === true} data-answer="yes" disabled={picked === false} onClick={() => choose(true)}><Check className="i" aria-hidden="true" /> {es ? "Sí" : "Yes"}</button>
+          <button type="button" className={cls(false)} aria-pressed={picked === false} data-answer="no" disabled={picked === true} onClick={() => choose(false)}><X className="i" aria-hidden="true" /> No</button>
         </div>
       )}
       {onNotSure && (

@@ -33,6 +33,13 @@ import {
 } from "../ai/intake/scenario";
 import { projectIntentLabel } from "../ai/intake/projectIntent";
 import { IntakeVoiceOrb } from "./voice/IntakeVoiceOrb";
+import {
+  clearDescriptionDraft,
+  currentMatterKey,
+  readDescriptionDraft,
+  restorableDescription,
+  writeDescriptionDraft,
+} from "../../lib/descriptionDraft";
 import { PassportVoiceReview, usePassportVoiceInput, type PassportInputTarget } from "./voice/PassportVoiceReview";
 
 export interface NaturalLanguageIntakeProps {
@@ -65,6 +72,15 @@ export interface NaturalLanguageIntakeProps {
 }
 
 type Status = "idle" | "loading" | "done" | "error";
+
+/**
+ * The interpret call must never leave the spinner up indefinitely (live
+ * 2026-10-14: "Analyzing your description…" hung for over a minute). Past
+ * this deadline the request is aborted and the deterministic reading below
+ * takes over, exactly like any other interpret failure.
+ */
+export const INTERPRET_TIMEOUT_MS = 35_000;
+
 
 /**
  * Attach validated project-context facts to a validated interpretation.
@@ -143,6 +159,18 @@ export function NaturalLanguageIntake({
   // voice input becomes the description while later follow-ups are treated
   // as incremental facts (never appended to the box).
   const textRef = useRef("");
+  // Seconds since the current interpretation started (visible progress).
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (status !== "loading") return;
+    const started = Date.now();
+    const reset = window.setTimeout(() => setElapsed(0), 0);
+    const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => { window.clearTimeout(reset); window.clearInterval(id); };
+  }, [status]);
+  useEffect(() => {
+    if (status === "done") clearDescriptionDraft();
+  }, [status]);
 
   // Grow with the text so a long description wraps into view instead of
   // scrolling sideways on one line. Capped so the field never runs away.
@@ -204,9 +232,11 @@ export function NaturalLanguageIntake({
       loadingRef.current = true;
       setStatus("loading");
       setChips([]);
+      writeDescriptionDraft(description, true);
       try {
         if (passport && !replacingDescriptionRef.current) {
           const res = await fetch("/api/intake/interpret", {
+            signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ description, mode: "passport", lang, candidates: buildKbCandidates(kb, description), allowedIndustries, allowedLocationTypes }),
           });
@@ -225,6 +255,7 @@ export function NaturalLanguageIntake({
         // Candidates come from the ACTIVE KB — the same one the rules engine uses.
         const candidates = buildKbCandidates(kb, description);
         const res = await fetch("/api/intake/interpret", {
+            signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -296,10 +327,31 @@ export function NaturalLanguageIntake({
         }
       } finally {
         loadingRef.current = false;
+        // Settled either way: a reload must not re-run it. A successful read
+        // lives on in the intake's own draft/snapshot, so drop the copy;
+        // a failed one keeps the text so the user can retry.
+        if (textRef.current.trim() === description) writeDescriptionDraft(description, false);
       }
     },
     [kb, lang, allowedIndustries, allowedLocationTypes, onApply, passport, receivePassport, buildSuggestedChips, scenarioChips]
   );
+
+  // Reload recovery: put the typed description back, and re-run an
+  // interpretation that was still in flight when the page went away.
+  useEffect(() => {
+    if (textRef.current.trim()) return;
+    const draft = restorableDescription(readDescriptionDraft(), currentMatterKey(), Date.now());
+    if (!draft) return;
+    const id = window.setTimeout(() => {
+      if (textRef.current.trim()) return;
+      textRef.current = draft.text;
+      setText(draft.text);
+      if (draft.pending) void interpretDescription(draft.text);
+    }, 0);
+    return () => window.clearTimeout(id);
+    // Mount-once restore; interpretDescription is read at mount time on purpose.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // The parent's live summary (Passport merged, questions answered) wins;
   // business-level chips from this reading stay alongside it.
@@ -338,6 +390,7 @@ export function NaturalLanguageIntake({
       try {
         const candidates = buildKbCandidates(kb, transcript);
         const res = await fetch("/api/intake/interpret", {
+            signal: AbortSignal.timeout(INTERPRET_TIMEOUT_MS),
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -426,6 +479,7 @@ export function NaturalLanguageIntake({
           onChange={(e) => {
             textRef.current = e.target.value;
             setText(e.target.value);
+            writeDescriptionDraft(e.target.value, false);
           }}
           onKeyDown={(e) => {
             // Enter submits; Shift+Enter adds a line break.
@@ -446,8 +500,18 @@ export function NaturalLanguageIntake({
         </button>
       </div>
       {status === "loading" && (
-        <p className="spr-nl-status" role="status">
+        <p className="spr-nl-status" role="status" aria-live="polite" data-testid="nl-analyzing">
           {L("Analyzing your description…", "Analizando su descripción…")}
+          {elapsed >= 3 && <span className="spr-nl-status-elapsed"> {elapsed}s</span>}
+          {elapsed >= 10 && (
+            <span className="spr-nl-status-elapsed">
+              {" "}
+              {L(
+                `— still working. If this takes more than ${Math.round(INTERPRET_TIMEOUT_MS / 1000)} seconds we'll continue with what we understood; your text is saved if you reload.`,
+                `— seguimos trabajando. Si tarda más de ${Math.round(INTERPRET_TIMEOUT_MS / 1000)} segundos continuaremos con lo que entendimos; su texto se guarda si recarga la página.`
+              )}
+            </span>
+          )}
         </p>
       )}
 
