@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ChevronDown,
   CircleHelp,
+  Loader2,
   Sparkles,
 } from "lucide-react";
 import { HeaderUtilities } from "../HeaderUtilities";
@@ -105,6 +106,9 @@ interface FilingWorkflowShellProps {
   /** When false, the header does not collapse into a compact sticky bar on
    * scroll — it scrolls away normally. Defaults to true. */
   stickyHeader?: boolean;
+  /** A stage being prepared right now (e.g. requirements computing): its
+   * step shows a spinner and a "Preparing…" label instead of looking dead. */
+  preparingStage?: FilingStage | null;
   children: ReactNode;
 }
 
@@ -117,11 +121,13 @@ const stages: Array<{ key: FilingStage; label: string; labelEs: string }> = [
 function WorkflowStepper({
   stage,
   availableStages,
+  preparingStage,
   language,
   onChange,
 }: {
   stage: FilingStage;
   availableStages: FilingStage[];
+  preparingStage?: FilingStage | null;
   language: "en" | "es";
   onChange: (stage: FilingStage) => void;
 }) {
@@ -140,17 +146,26 @@ function WorkflowStepper({
         const complete = index < activeIndex;
         const active = item.key === stage;
         const enabled = availableStages.includes(item.key);
+        const preparing = preparingStage === item.key;
+        const label = language === "es" ? item.labelEs : item.label;
         return (
           <div className={`spr-workflow-step-wrap ${complete ? "complete" : ""}`} key={item.key}>
             <button
               type="button"
               className={`spr-workflow-step ${active ? "active" : ""} ${complete ? "complete" : ""}`}
               aria-current={active ? "step" : undefined}
+              aria-busy={preparing || undefined}
               disabled={!enabled}
+              title={!enabled && !preparing && item.key === "requirements"
+                ? (language === "es" ? "Complete el perfil y las preguntas para ver los requisitos" : "Finish the intake questions to see requirements")
+                : undefined}
+              data-testid={`stepper-${item.key}`}
               onClick={() => onChange(item.key)}
             >
-              <span className="spr-workflow-step-icon">{complete ? <Check size={14} /> : index + 1}</span>
-              <span>{language === "es" ? item.labelEs : item.label}</span>
+              <span className="spr-workflow-step-icon">
+                {preparing ? <Loader2 size={14} className="spr-spin" aria-hidden="true" /> : complete ? <Check size={14} /> : index + 1}
+              </span>
+              <span>{preparing ? (language === "es" ? `${label} — preparando…` : `${label} — preparing…`) : label}</span>
             </button>
             {index < stages.length - 1 && <span className="spr-workflow-connector" aria-hidden="true" />}
           </div>
@@ -414,6 +429,7 @@ export function FilingWorkflowShell({
   sidebar,
   stepperRight,
   stickyHeader = true,
+  preparingStage = null,
   children,
 }: FilingWorkflowShellProps) {
   const [compact, setCompact] = useState(false);
@@ -451,7 +467,7 @@ export function FilingWorkflowShell({
 
   const stepperBar = (
     <div className="spr-stepper-bar">
-      <WorkflowStepper stage={stage} availableStages={availableStages} language={language} onChange={onStageChange} />
+      <WorkflowStepper stage={stage} availableStages={availableStages} preparingStage={preparingStage} language={language} onChange={onStageChange} />
       {stepperRight}
       {/* Utility cluster (EN/ES, bell, avatar) — hidden at page top, revealed
           here once the global nav scrolls away. Visibility is driven by the

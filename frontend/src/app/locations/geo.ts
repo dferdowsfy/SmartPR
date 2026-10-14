@@ -205,6 +205,26 @@ export function isWithinPuertoRico(latitude: number, longitude: number): boolean
   return latitude >= b.south && latitude <= b.north && longitude >= b.west && longitude <= b.east;
 }
 
+/**
+ * Raw "lat, lng" typed into an address search box ("18.4700,-66.5000",
+ * "18.47 -66.5", "18.47°, -66.5°"). Returns the validated point only when it
+ * falls inside Puerto Rico, so a pasted pair goes straight to the pin
+ * instead of a geocoder that cannot answer it. Anything else is null.
+ */
+export function parseLatLngQuery(raw: string): { latitude: number; longitude: number } | null {
+  const m = raw
+    .trim()
+    .replace(/[()]/g, "")
+    .match(/^([+-]?\d{1,2}(?:\.\d+)?)\s*°?\s*[NnSs]?\s*(?:[,;]\s*|\s+)([+-]?\d{1,3}(?:\.\d+)?)\s*°?\s*[EeWw]?$/);
+  if (!m) return null;
+  let lng = Number(m[2]);
+  // "18.47, 66.5 W" style: a West longitude typed without the sign.
+  if (/[Ww]\s*$/.test(raw.trim()) && lng > 0) lng = -lng;
+  const v = validateCoordinates(m[1], String(lng));
+  if (!v.ok || !isWithinPuertoRico(v.latitude, v.longitude)) return null;
+  return { latitude: v.latitude, longitude: v.longitude };
+}
+
 /** Fixed-precision display string, e.g. "18.3912300, -66.1178400". */
 export function formatCoordinate(value: number, decimals = 6): string {
   return roundCoordinate(value).toFixed(decimals);

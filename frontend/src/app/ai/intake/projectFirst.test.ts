@@ -37,6 +37,7 @@ import {
   validateProjectPassport,
   projectPassportTitle,
   matterHeadlineSubject,
+  matterHeadlineLabel,
   PROJECT_PASSPORT_VERSION,
 } from "../../forms/engine/projectPassport.ts";
 
@@ -324,7 +325,15 @@ test("projectPassport: build, round-trip, and branch rules", () => {
   // intake is the business, even with construction facts (live bug: a
   // restaurant read as "Renovation" after Q_RENOVATIONS = yes).
   assert.equal(matterHeadlineSubject({ isProjectOnly: true, passport: only, businessType: null, name: null }), "renovation — Guaynabo");
-  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: "Restaurant", name: "La Fonda" }), "Restaurant");
+  // The user's own business name wins over the classification label
+  // (live 2026-10-14: "Carolina Solar Warehouse" → "Solar Installer, Carolina").
+  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: "Restaurant", name: "La Fonda" }), "La Fonda");
+  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: "Solar Installer", name: "Carolina Solar Warehouse" }), "Carolina Solar Warehouse");
+  assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: "Restaurant", name: "  " }), "Restaurant");
+  assert.equal(matterHeadlineLabel({ isProjectOnly: false, businessType: "Solar Installer", name: "Carolina Solar Warehouse" }), "Solar Installer");
+  assert.equal(matterHeadlineLabel({ isProjectOnly: false, businessType: "Restaurant", name: "restaurant" }), null);
+  assert.equal(matterHeadlineLabel({ isProjectOnly: false, businessType: "Restaurant", name: null }), null);
+  assert.equal(matterHeadlineLabel({ isProjectOnly: true, businessType: "Restaurant", name: "La Fonda" }), null);
   assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: null, name: "La Fonda" }), "La Fonda");
   assert.equal(matterHeadlineSubject({ isProjectOnly: false, passport: only, businessType: null, name: null }), "renovation — Guaynabo");
 });

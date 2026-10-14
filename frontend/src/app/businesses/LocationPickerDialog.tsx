@@ -16,6 +16,7 @@ import {
   type CoordinateError,
   type CoordinateSource,
   type PassportLocationWithGeographies,
+  parseLatLngQuery,
 } from "../locations/geo";
 import type { GeocodeCandidate } from "../../lib/geocoding";
 import type { Lang } from "../forms/engine/types";
@@ -346,6 +347,14 @@ export function LocationPickerDialog({
   const runSearch = async (raw: string) => {
     const q = raw.trim();
     if (!q) return;
+    // Typed "lat, lng" inside Puerto Rico: place the pin directly.
+    const coords = parseLatLngQuery(q);
+    if (coords) {
+      setSearchMessage(null);
+      setResults(null);
+      movePoint(coords, "MANUAL_ENTRY", true);
+      return;
+    }
     setSearching(true);
     setSearchMessage(null);
     setResults(null);

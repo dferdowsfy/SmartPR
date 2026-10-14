@@ -124,16 +124,29 @@ export function validateProjectPassport(raw: unknown): ProjectPassportJson | nul
 /** Human-readable one-liner for the passport header / matter title. */
 /**
  * What the summary headline names. A project-only intake IS its project
- * ("renovation — Guaynabo"); a business intake is the business ("Restaurant"),
- * even when it also carries construction facts (Q_RENOVATIONS = yes sets
- * project_type "renovation" so the OGPe permit rule can fire — that is a
- * requirement driver, not the identity of the matter).
+ * ("renovation — Guaynabo"); a business intake is the business, even when it
+ * also carries construction facts (Q_RENOVATIONS = yes sets project_type
+ * "renovation" so the OGPe permit rule can fire — that is a requirement
+ * driver, not the identity of the matter).
+ *
+ * The name the user typed always wins over SmartPR's classification label
+ * (live 2026-10-14: "Carolina Solar Warehouse" was shown as
+ * "Solar Installer, Carolina"). The business type is the fallback.
  */
 export function matterHeadlineSubject(input: { isProjectOnly: boolean; passport: ProjectPassportJson | null | undefined; businessType: string | null | undefined; name: string | null | undefined }): string | null {
   const projectTitle = input.passport ? projectPassportTitle(input.passport) : null;
   const business = input.businessType?.trim() || null;
   const name = input.name?.trim() || null;
-  return input.isProjectOnly ? projectTitle ?? business ?? name : business ?? name ?? projectTitle;
+  return input.isProjectOnly ? projectTitle ?? business ?? name : name ?? business ?? projectTitle;
+}
+
+/** Secondary line under a user-named headline: the classification label, when it adds information. */
+export function matterHeadlineLabel(input: { isProjectOnly: boolean; businessType: string | null | undefined; name: string | null | undefined }): string | null {
+  if (input.isProjectOnly) return null;
+  const business = input.businessType?.trim() || null;
+  const name = input.name?.trim() || null;
+  if (!name || !business || name.toLowerCase() === business.toLowerCase()) return null;
+  return business;
 }
 
 export function projectPassportTitle(passport: ProjectPassportJson): string | null {

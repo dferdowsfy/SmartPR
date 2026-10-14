@@ -104,6 +104,7 @@ import {
   validateProjectPassport,
   projectPassportTitle,
   matterHeadlineSubject,
+  matterHeadlineLabel,
   type ProjectPassportJson,
 } from './forms/engine/projectPassport';
 import { getDefinition, type RegistryEntry } from './forms/engine/registry';
@@ -157,6 +158,7 @@ import { EnergyProcessesSection, energySummaryQuestions, type EnergyLegacyCard }
 import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue } from './incentives/types';
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { applyMunicipalReviewExclusivity, bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
+import { settleWithin, PREPARE_STEP_TIMEOUT_MS } from '../lib/settleWithin';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft, takeHandoffDraft, matterKeyForSearch, draftMatchesUrl } from '../lib/guestDraft';
 import type { GuestDraft } from '../lib/guestDraft';
 import { useDeliverablesAccess } from '../lib/billing/useDeliverablesAccess';
@@ -3557,6 +3559,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // incomplete tap can jump straight to the first thing missing.)
 
   const handleStartDiscovery = async () => {
+    try {
+      await runStartDiscovery();
+    } finally {
+      // Never leave "Preparing requirements…" spinning after a failure.
+      setIsLoading(false);
+    }
+  };
+  const runStartDiscovery = async () => {
     // The user proceeds with the shown intent — the branch is settled.
     if (projectIntent) setProjectIntentConfirmed(true);
     setIsLoading(true);
@@ -3602,7 +3612,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // before the requirement cards render, so "File with Clara" points at the
     // real business even when the one-shot creation effect missed earlier.
     if (me && projectIntent === 'new_business') {
-      await ensurePersistedBusiness();
+      // Bounded: a slow /api/matters must not hold "Preparing requirements…"
+      // (and the disabled Requirements tab) open. Requirements are computed
+      // client-side; the business record is retried by autosave/Clara entry.
+      await settleWithin(ensurePersistedBusiness(), PREPARE_STEP_TIMEOUT_MS);
     }
     setDiscoveryAnswers(answers);
     const baseRequirements = computeRequirements(profile, answers, potentialDecisions, requirementOptions());
@@ -3635,7 +3648,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     // --- Knowledge-graph capture (observational, fire-and-forget) ---
     // An existing business's project gets its own matter, so the engine's
     // requirements project into obligations Clara can file against.
-    await ensureProjectMatter();
+    await settleWithin(ensureProjectMatter(), PREPARE_STEP_TIMEOUT_MS);
     captureScenario(profile, answers, computed);
 
     setCurrentStep(3);
@@ -6423,12 +6436,21 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const summaryStepCount = mainCardCount + (energyChecklist?.item_count ?? 0);
   // The energy project IS the matter when it is utility-scale or a proposed
   // installation: the line names it ("Rooftop solar, Guaynabo").
-  const summaryHeadline = energyAssessment && (energyPrimary || energyProposed)
+  // The business name the user typed is the headline; SmartPR's own label
+  // (business type, or the energy project line) is shown as secondary text.
+  const userHeadlineName = !isProjectOnly ? (profile.name || '').trim() || null : null;
+  const energyHeadline = energyAssessment && (energyPrimary || energyProposed)
     ? projectSummaryLine(energyAssessment, energyGraph, language)
+    : null;
+  const summaryHeadline = energyHeadline && !userHeadlineName
+    ? energyHeadline
     : [
         matterHeadlineSubject({ isProjectOnly, passport: projectPassport, businessType: profile.business_type ? L(profile.business_type, language) : null, name: profile.name }),
         profile.municipality,
       ].filter(Boolean).join(', ');
+  const summaryHeadlineLabel = userHeadlineName
+    ? energyHeadline ?? matterHeadlineLabel({ isProjectOnly, businessType: profile.business_type ? L(profile.business_type, language) : null, name: profile.name })
+    : null;
   // Location step: does this request need a site? (pure detection, see
   // locations/intakeLocation.ts). Reads the prompt, the scenario, project
   // facts, the energy assessment and the KB rules that depend on location.
@@ -7172,9 +7194,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       : (language === 'es' ? 'Regresa a requisitos y completa la evidencia faltante.' : 'Return to requirements and complete the missing evidence.'),
   };
 
+  // The Requirements tab opens as soon as the intake is complete (tapping it
+  // runs the same "Continue" path), instead of staying disabled with no
+  // explanation until requirements were computed.
+  const intakeReadyForRequirements = baseProfileReady && intakeQuestionsComplete;
   const availableStages: FilingStage[] = requirements.length > 0
     ? ['intake', 'requirements', 'deliverables']
-    : ['intake'];
+    : intakeReadyForRequirements && !isLoading
+      ? ['intake', 'requirements']
+      : ['intake'];
+  const handleStageChange = (next: FilingStage) => {
+    if (next === 'requirements' && requirements.length === 0) {
+      handleSubmitTap();
+      return;
+    }
+    goTo(next);
+  };
   const matterStatus = saveState === 'saved'
     ? (language === 'es' ? 'Guardado' : 'Saved')
     : currentStep === 1
@@ -7223,9 +7258,10 @@ const loadExample = (example: Partial<BusinessProfile>) => {
         matterStatus={matterStatus}
         stage={view}
         availableStages={availableStages}
+        preparingStage={isLoading && view === 'intake' ? 'requirements' : null}
         language={language}
         onLanguageChange={setLanguage}
-        onStageChange={goTo}
+        onStageChange={handleStageChange}
         intelligence={stageIntelligence}
         sidebar={view === 'requirements' ? null : view === 'deliverables' ? deliverablesSidebar : undefined}
         stickyHeader={view !== 'requirements'}
@@ -7839,6 +7875,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           {/* Page head: the project + how many requirements were found. */}
           <div className="rq-page-head">
             <h1>{summaryHeadline ? capitalizeFirst(summaryHeadline) : L('Requirements', language)}</h1>
+            {summaryHeadlineLabel && <p className="rq-page-head-label" data-testid="requirements-headline-label">{capitalizeFirst(summaryHeadlineLabel)}</p>}
             <p>{language === 'es' ? `${summaryStepCount} requisitos identificados` : `${summaryStepCount} requirement${summaryStepCount === 1 ? '' : 's'} identified`}</p>
           </div>
 

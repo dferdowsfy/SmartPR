@@ -88,7 +88,7 @@ function QuestionInput({
   );
   if (q.kind === "boolean") {
     return (
-      <div className="spr-scn-q-row">
+      <div className="spr-scn-q-row" role="group" aria-label={q.text}>
         <button type="button" className="spr-scn-q-btn primary" onClick={() => onAnswer(true)}>{T(lang, "Yes", "Sí")}</button>
         <button type="button" className="spr-scn-q-btn" onClick={() => onAnswer(false)}>{T(lang, "No", "No")}</button>
         {notSure}
@@ -97,12 +97,13 @@ function QuestionInput({
   }
   if (q.kind === "choice") {
     return (
-      <div className="spr-scn-q-row">
+      <div className="spr-scn-q-row" role="group" aria-label={q.text}>
         {(q.options ?? []).map((o) => (
           <button
             key={o.value}
             type="button"
             className="spr-scn-q-btn"
+            data-answer={o.value}
             onClick={() => (o.value === "unknown" ? onSkip() : onAnswer(o.value))}
           >
             {o.label}
@@ -115,7 +116,7 @@ function QuestionInput({
   if (q.kind === "multi") {
     return (
       <div>
-        <div className="spr-scn-q-row">
+        <div className="spr-scn-q-row" role="group" aria-label={q.text}>
           {(q.options ?? []).map((o) => {
             const on = picked.includes(o.value);
             return (
