@@ -160,3 +160,37 @@ describe("reuse forever: a saved scenario survives resume", () => {
     assert.equal(restoreScenario("nope"), null);
   });
 });
+
+describe("the description populates fields and answers questions (bar)", () => {
+  it("a bare 'bar' keyword is a stated use resolving to the Bar business type", () => {
+    const ctx = interpretScenario("bar");
+    assert.equal(ctx.property.proposedUse?.value, "bar");
+    assert.equal(businessTypeFromScenario(ctx, kb), "Bar");
+  });
+
+  it("'I want to open a bar' resolves to Bar, not Restaurant", () => {
+    const ctx = interpretScenario("I want to open a bar");
+    assert.equal(businessTypeFromScenario(ctx, kb), "Bar");
+  });
+
+  it("a bar entails alcohol sold — the question is never asked", () => {
+    const a = scenarioStatedAnswers(interpretScenario("I want to open a bar"));
+    assert.equal(a.alcohol_sold, true);
+  });
+
+  it("a juice bar keeps its own type and does not entail alcohol", () => {
+    const ctx = interpretScenario("I want to open a juice bar in Condado");
+    assert.equal(businessTypeFromScenario(ctx, kb), "Juice Bar");
+    assert.equal(scenarioStatedAnswers(ctx).alcohol_sold, undefined);
+  });
+
+  it("amenities in the sentence answer their questions, negations included", () => {
+    const yes = scenarioStatedAnswers(
+      interpretScenario("I want to open a bar in San Juan with outdoor seating and live music")
+    );
+    assert.equal(yes.outdoor_seating, true);
+    assert.equal(yes.live_entertainment, true);
+    const no = scenarioStatedAnswers(interpretScenario("I want to open a bar with no outdoor seating"));
+    assert.equal(no.outdoor_seating, false);
+  });
+});

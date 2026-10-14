@@ -211,6 +211,20 @@ export function scenarioStatedAnswers(ctx: ScenarioContext | null): Record<strin
     if (fam.includes("industrial")) out.products_manufactured = true;
   }
   if (stated(ctx.operations.foodService) && ctx.operations.foodService!.value === true) out.food_prepared_on_site = true;
+  // A bar sells alcohol by definition — no need to ask "Will alcohol be sold?".
+  // "Juice bar" / "salad bar" style qualifiers are the exception: the "bar"
+  // is a food counter, not an alcohol venue. The answer carries the
+  // description's confirmation affordance, so the user can still correct it.
+  const useLabel = ctx.property.proposedUse?.value ?? ctx.operations.activity?.value;
+  const actWords = String(ctx.operations.activity?.value ?? "").toLowerCase();
+  const NON_ALCOHOL_BAR = /\b(juice|smoothie|salad|coffee|ice\s*cream|dessert|tea|candy|chocolate|oxygen|shave\s*ice|matcha|acai)\b/;
+  if (stated(activity) && useLabel === "bar" && !NON_ALCOHOL_BAR.test(actWords)) out.alcohol_sold = true;
+  // Amenities stated in the description answer their questions directly
+  // (negations count too: "no outdoor seating" settles it as false).
+  const outdoor = ctx.operations.outdoorSeating;
+  if (stated(outdoor) && typeof outdoor!.value === "boolean") out.outdoor_seating = outdoor!.value;
+  const live = ctx.operations.liveEntertainment;
+  if (stated(live) && typeof live!.value === "boolean") out.live_entertainment = live!.value;
   return out;
 }
 

@@ -496,6 +496,17 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
       break;
     }
   }
+
+  // 4. Bare keyword ("bar", "coffee shop"): the whole description is just the
+  // use. The phrasing patterns above need a verb; a lone keyword is still a
+  // stated use and should populate the activity, not force manual entry.
+  if (!ctx.property.proposedUse) {
+    const trimmed = text.trim();
+    if (trimmed.length > 0 && trimmed.length <= 48) {
+      const use = matchUse(trimmed);
+      if (use && !use.generic) setProposed(ctx, use, "explicit", 0.9, trimmed, trimmed);
+    }
+  }
 }
 
 function readChangeOfUse(text: string, ctx: ScenarioContext): void {
@@ -636,6 +647,10 @@ function readOperations(text: string, ctx: ScenarioContext): void {
   set("wastewaterDischarge", /\bwaste\s?water\b|\bindustrial\s+discharge\b|\bdischarg\w*\s+(?:to|into)\b|\bgrease\s+traps?\b/i);
   set("foodService", /\bfood\s+service\b|\b(?:serve|prepare|cook)\w*\s+food\b/i);
   set("publicAccess", /\bopen\s+to\s+the\s+public\b|\bcustomers?\s+(?:will\s+)?(?:visit|come\s+in)\b|\bwalk[\s-]in\s+customers?\b/i);
+  // Whole-sentence understanding: amenities stated in the description answer
+  // their intake questions, so the user isn't re-asked what they already said.
+  set("outdoorSeating" as never, /\boutdoor\s+seating\b|\bterraza\b/i);
+  set("liveEntertainment" as never, /\blive\s+(?:music|entertainment)\b/i);
   const fuel = (ctx.operations as Record<string, unknown>)["fuel_storage"];
   if (fuel) {
     ctx.operations.fuelStorage = fuel as ScenarioFact<boolean>;

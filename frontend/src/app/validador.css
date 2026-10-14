@@ -3903,6 +3903,20 @@ section.spr-plc .spr-plc-intel { padding-top: 4px; border-top: 1px solid #f0ece4
 .spr-pq-a { font-size: 15px; font-weight: 650; color: #152f35; }
 .spr-pq .spr-pq-change { min-height: 32px; padding: 0 6px; border: 0; background: none; color: #1f6b66; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .spr-pq-active { animation: spr-pq-reveal 220ms ease-out; }
+/* The active question stays fixed in one location: while the answered history
+   above it scrolls, the current question pins to the bottom of the viewport
+   (chat-dock style) instead of flowing ever further down the page. Only the
+   true active question pins — a question reopened via "Change" keeps its own
+   slot so the user edits it in context. The pin releases naturally when the
+   questionnaire section scrolls out of view. */
+.spr-pq-item.spr-pq-active[data-state="active"] {
+  position: sticky;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 5;
+}
+.spr-pq-item.spr-pq-active[data-state="active"] .spr-follow-up {
+  box-shadow: 0 -8px 24px rgba(20, 30, 40, .12);
+}
 .spr-pq-active .spr-follow-up { margin: 0; padding: 16px; border: 1px solid #cfdcda; border-radius: 12px; background: #fff; }
 .spr-pq-active .spr-follow-up h2 { margin: 4px 0 10px; font-size: 18px; line-height: 1.35; }
 .spr-pq-active .spr-scn-questions { margin: 0; }

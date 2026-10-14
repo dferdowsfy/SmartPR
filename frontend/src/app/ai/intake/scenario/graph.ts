@@ -110,6 +110,7 @@ const ACTIVITY_BUSINESS_TYPES: Record<string, string[]> = {
   daycare: ["Daycare"],
   warehouse: ["Warehouse Operator", "Warehouse Distributor"],
   restaurant: ["Restaurant"],
+  bar: ["Bar"],
   clinic: ["Medical Office"],
   school: ["Private School"],
   lodging: ["Hotel"],

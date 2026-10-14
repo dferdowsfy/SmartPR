@@ -42,7 +42,10 @@ export const USE_TERMS: UseTerm[] = [
   { pattern: "offices?", label: "office", family: "office", display: "Office" },
   { pattern: "manufacturing(?: plant| facility)?|factory|industrial(?: facility| building| plant)?|plant", label: "manufacturing", family: "industrial", display: "Manufacturing" },
   { pattern: "auto(?:motive)? repair(?: shop)?|body shop|car wash|dealership", label: "automotive", family: "automotive", display: "Automotive" },
-  { pattern: "restaurant|caf[eé]|bakery|commercial kitchen|food service|bar", label: "restaurant", family: "food", display: "Restaurant / food service" },
+  // "bar" is its own use (the KB distinguishes Bar from Restaurant), kept in
+  // the food family so land-use reasoning treats it like food service.
+  { pattern: "juice bar|bar|nightclub|tavern|pub", label: "bar", family: "food", display: "Bar" },
+  { pattern: "restaurant|caf[eé]|coffee\\s*shop|coffeehouse|bakery|commercial kitchen|food service", label: "restaurant", family: "food", display: "Restaurant / food service" },
   { pattern: "retail(?: store| space)?|store(?:front)?|shop", label: "retail", family: "retail", display: "Retail" },
   { pattern: "(?:medical )?clinic|medical office|pharmacy|laboratory", label: "clinic", family: "healthcare", display: "Clinic / healthcare" },
   { pattern: "private school|school|tutoring center|training cent(?:er|re)", label: "school", family: "education", display: "School" },

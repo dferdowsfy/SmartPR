@@ -97,6 +97,8 @@ export interface ScenarioContext {
     fuelStorage?: F<boolean>;
     wastewaterDischarge?: F<boolean>;
     childrenPresent?: F<boolean>;
+    outdoorSeating?: F<boolean>;
+    liveEntertainment?: F<boolean>;
   };
 }
 
