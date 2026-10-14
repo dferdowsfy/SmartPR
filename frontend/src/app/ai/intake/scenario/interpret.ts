@@ -232,14 +232,26 @@ export const EXISTING_BUSINESS_RE = new RegExp(
 export const OPEN_INTENT_RE =
   /\b(?:i|we)\s+(?:want|plan|am\s+planning|are\s+planning|intend|would\s+like|'d\s+like|hope|am\s+going|are\s+going)\s+to\s+(?:open|start|launch)\s+(?:a|an|my)\s+(?!(?:new\s+)?(?:location|branch|site|facility|operation|commercial\s+operation)\b|second\b|another\b|additional\b)/i;
 
+/**
+ * Gerund / bare "Opening a bakery", "Starting a solar farm" — the standard
+ * new-business description in the New Business wizard. Distinct from
+ * OPEN_INTENT_RE ("I want to open"), which an existing owner may also say
+ * about a second site. Without EXISTING_BUSINESS_RE, this is a confirmed
+ * new business (live 2026-10-14 F1: "Needs confirmation" on every clear new case).
+ */
+export const OPENING_AS_NEW_RE =
+  /\b(?:opening|starting|launching|forming)\s+(?:a|an|my|our)\s+(?!(?:new\s+)?(?:location|branch|site|facility|operation|commercial\s+operation)\b|second\b|another\b|additional\b)/i;
+
 function readBusinessStatus(text: string, ctx: ScenarioContext): void {
   const neu = find(text, NEW_ENTITY_RE);
   const old = find(text, EXISTING_BUSINESS_RE);
+  const opening = find(text, OPENING_AS_NEW_RE);
   const open = find(text, OPEN_INTENT_RE);
   // An existing owner forming a new entity for this project: the entity that
   // will operate is new, so "new" governs formation requirements.
   if (neu) ctx.business.status = said("new", text, neu, 0.93);
   else if (old) ctx.business.status = said("existing", text, old, 0.92);
+  else if (opening) ctx.business.status = said("new", text, opening, 0.9);
   else if (open) ctx.business.status = implied("new", text, open, 0.72);
 }
 

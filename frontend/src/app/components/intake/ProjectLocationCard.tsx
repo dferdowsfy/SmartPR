@@ -591,16 +591,29 @@ export function ProjectLocationCard({
               <div className="spr-plc-confirmed" data-testid="project-location-confirmed">
                 <SiteDetails site={shown} lang={lang} status={draft ? "selected" : summary ? "confirmed" : "saved"} report={draft ? null : report} proposed={!!proposal} />
                 {draft && (
-                  <OffLotNotice
-                    check={snap}
-                    lang={lang}
-                    onSnap={(c) => void select({ latitude: c.latitude, longitude: c.longitude }, "MAP_PIN", draft.formatted_address ?? null)}
-                  />
-                )}
-                {draft && (
-                  <button type="button" className="spr-plc-use" onClick={save} data-testid="project-location-use">
-                    {L("Use this location", "Usar esta ubicación", lang)}
-                  </button>
+                  // F7 (live 2026-10-14): the first click missed when OffLotNotice
+                  // inserted above this button after the snap returned and
+                  // shifted the target. Keep Use above the notice so a late
+                  // snap never moves it; disable until the snap for this pin
+                  // has settled so the user is not clicking a moving target.
+                  <>
+                    <button
+                      type="button"
+                      className="spr-plc-use"
+                      onClick={save}
+                      disabled={snapState?.key !== draftKey}
+                      data-testid="project-location-use"
+                    >
+                      {snapState?.key !== draftKey
+                        ? L("Checking the parcel…", "Verificando la parcela…", lang)
+                        : L("Use this location", "Usar esta ubicación", lang)}
+                    </button>
+                    <OffLotNotice
+                      check={snap}
+                      lang={lang}
+                      onSnap={(c) => void select({ latitude: c.latitude, longitude: c.longitude }, "MAP_PIN", draft.formatted_address ?? null)}
+                    />
+                  </>
                 )}
               </div>
             ) : (

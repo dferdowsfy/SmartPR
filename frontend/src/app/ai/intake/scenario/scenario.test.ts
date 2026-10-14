@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { KB } from "../../../kb.ts";
 import type { KnowledgeBase } from "../../../rulesEngine.ts";
-import { interpretScenario, newConstructionStated, renovationStated } from "./interpret.ts";
+import { interpretScenario, newConstructionStated, renovationStated, OPENING_AS_NEW_RE } from "./interpret.ts";
 import { combineScenario, normalizeScenario } from "./normalize.ts";
 import { applyScenarioAnswer, evaluateScenario } from "./graph.ts";
 import { describeScenario } from "./describe.ts";
@@ -20,7 +20,7 @@ import {
 } from "./passport.ts";
 import { reconcileProjectContext, scenarioToProjectContext } from "./adapter.ts";
 import { applyScenarioToInterpretation } from "./bridge.ts";
-import { businessStatus, changeOfUseStatus, SCENARIO_PATHS, getFact, type ScenarioContext } from "./types.ts";
+import { businessStatus, changeOfUseStatus, SCENARIO_PATHS, getFact, isConfirmed, type ScenarioContext } from "./types.ts";
 import type { ValidatedInterpretation } from "../validateInterpretation.ts";
 
 const kb = KB as unknown as KnowledgeBase;
@@ -515,5 +515,15 @@ describe("REG-NEWBUILD-LANG-001: plain-language new buildings (KG47)", () => {
     assert.equal(newConstructionStated("We are building an app for our gym."), false);
     assert.equal(newConstructionStated("We are building a team of five."), false);
     assert.equal(newConstructionStated("We are not building a new store, just leasing."), false);
+  });
+});
+
+describe("F1: opening-as-new confirms business status", () => {
+  it("Opening a bakery… is a confirmed new business, not Needs confirmation", () => {
+    const desc = "Opening a bakery with a small café counter in downtown Mayagüez";
+    assert.ok(OPENING_AS_NEW_RE.test(desc));
+    const c = interpretScenario(desc);
+    assert.equal(c.business.status?.value, "new");
+    assert.ok(isConfirmed(c.business.status!), "opening-as-new must be confirmed, not inferred");
   });
 });
