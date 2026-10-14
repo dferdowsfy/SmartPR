@@ -1,0 +1,141 @@
+{
+  "id": "KG56",
+  "title": "Juice bar (fresh juices and smoothies, no alcohol), existing leased storefront — Vega Baja, zone X",
+  "matrix": {
+    "businessType": "juice_bar",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "We are opening a juice bar in an existing leased storefront in Vega Baja. We make fresh juices, smoothies and acai bowls at the counter. We will not sell alcohol. No construction; the space is already finished.",
+  "profile": {
+    "business_type": "Juice Bar",
+    "municipality": "Vega Baja",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 3,
+    "industry": "Food Services",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_FOOD_PREPARED": true,
+    "Q_ALCOHOL_SOLD": false
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased storefront, already finished"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "existing leased storefront, already finished"
+    }
+  },
+  "site": {
+    "municipality": "Vega Baja",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0079: BT_JUICE_BAR -> Departamento de Salud sanitary license (Ley 81-1912)."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0080: BT_JUICE_BAR -> Bomberos fire-prevention certificate (Ley 20-2017)."
+      },
+      {
+        "key": "DOC_CFPM",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0081 / RULE_0010: juice bar preparing food on site -> certified food protection manager."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Explicit Q_ALCOHOL_SOLD=false: RULE_0083 carries negated_fact_keys=['Q_ALCOHOL_SOLD'] (REG-ALCOHOL-NEGATED-001; requirementsAudit CASE AW), so the BT-keyed alcohol license is suppressed for a juice bar that does not sell alcohol."
+      },
+      {
+        "key": "DOC_CRIM_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "Explicit Q_ALCOHOL_SOLD=false: RULE_0633 (BT_JUICE_BAR alcohol-path prerequisite) carries negated_fact_keys=['Q_ALCOHOL_SOLD']."
+      },
+      {
+        "key": "DOC_ASUME_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "Explicit Q_ALCOHOL_SOLD=false: RULE_0634 (BT_JUICE_BAR alcohol-path prerequisite) carries negated_fact_keys=['Q_ALCOHOL_SOLD']."
+      },
+      {
+        "key": "DOC_BACKGROUND_CHECK",
+        "confidence": "verified-in-code",
+        "rationale": "Explicit Q_ALCOHOL_SOLD=false: RULE_0635 (BT_JUICE_BAR alcohol-path prerequisite) carries negated_fact_keys=['Q_ALCOHOL_SOLD']."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643-0646 need a construction / renovation project type or structural work."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-14 by the scenario loop: first juice bar and first Vega Baja scenario. Exercises explicit-No alcohol suppression for a BT that defaults to the alcohol path; the harness now passes the live intake's session provenance so negated_fact_keys behaves as in production."
+}

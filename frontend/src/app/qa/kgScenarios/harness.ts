@@ -271,6 +271,11 @@ export interface ScenarioRun {
   userFacingText: { where: string; text: string }[];
 }
 
+/** Keys with a real value: the live intake's provenanceExtra() confirmation set. */
+function valuedKeys(obj: Record<string, unknown>): string[] {
+  return Object.keys(obj).filter((k) => obj[k] !== undefined && obj[k] !== null && obj[k] !== "");
+}
+
 export function runKgScenario(scenario: KgScenario, geo: Record<string, GeoContextFixture> = loadGeoContexts()): ScenarioRun {
   const profile = { ...scenario.profile };
   const answers = { ...scenario.answers };
@@ -294,6 +299,14 @@ export function runKgScenario(scenario: KgScenario, geo: Record<string, GeoConte
     projectIntent: scenario.projectIntent,
     projectContext,
     locationFacts,
+    // Same fact provenance the live intake passes (SmartPRIntake
+    // provenanceExtra): a session id plus every valued profile field and
+    // discovery answer as confirmed in this intake. Without it the engine
+    // runs its legacy no-session path, where negated_fact_keys suppression
+    // stays inert (REG-ALCOHOL-NEGATED-001) and an explicit "No" the live
+    // intake honors would still fire here.
+    sessionId: `kg-harness-${scenario.id}`,
+    confirmedKeys: valuedKeys(profile).concat(valuedKeys(answers)),
   });
   const intent = scenario.projectIntent;
   const engineRows =
