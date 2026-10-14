@@ -11,10 +11,15 @@
 // stays instant. No account needed (serves the intake). When a database is
 // configured, answers are also persisted per pin (site_layer_cache) so a
 // government service outage never blanks a pin that was resolved before.
+// Never hangs: a hard route deadline (ROUTE_DEADLINE_MS.layers) answers with
+// every core layer `unknown` (reason route_deadline_…) if the lookup — store
+// read included — has not finished; it keeps running and caches its answer.
 
 import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { resolveSiteLayers } from "../../../locations/layerService";
+import { unavailableSiteLayers } from "../../../locations/layers";
+import { ROUTE_DEADLINE_MS, raceRouteDeadline } from "../../../../lib/routeDeadline";
 import { getLayerStore } from "../../../locations/layerStore";
 import { locateInPuertoRico } from "../../../locations/boundaries";
 
@@ -33,10 +38,17 @@ export async function GET(req: Request) {
   if (!isWithinPuertoRico(coords.latitude, coords.longitude)) {
     return Response.json({ layers: null, reason: "outside_puerto_rico" }, { headers: { "Cache-Control": "no-store" } });
   }
-  const layers = await resolveSiteLayers(coords.latitude, coords.longitude, {
-    store: getLayerStore(),
-    refresh: url.searchParams.get("refresh") === "1",
-    isOnLand: (p) => locateInPuertoRico(p.latitude, p.longitude) !== null,
-  });
-  return Response.json({ layers }, { headers: { "Cache-Control": "no-store" } });
+  const { latitude, longitude } = coords;
+  const { value: layers, outcome, elapsedMs } = await raceRouteDeadline(
+    () =>
+      resolveSiteLayers(latitude, longitude, {
+        store: getLayerStore(),
+        refresh: url.searchParams.get("refresh") === "1",
+        isOnLand: (p) => locateInPuertoRico(p.latitude, p.longitude) !== null,
+      }),
+    ROUTE_DEADLINE_MS.layers,
+    (reason) => unavailableSiteLayers(latitude, longitude, reason)
+  );
+  if (outcome !== "ok") console.warn(`[layers] ${outcome} after ${elapsedMs} ms; answered "unknown" (lat=${latitude.toFixed(5)} lng=${longitude.toFixed(5)})`);
+  return Response.json({ layers, ...(outcome !== "ok" ? { partial: outcome } : {}) }, { headers: { "Cache-Control": "no-store" } });
 }

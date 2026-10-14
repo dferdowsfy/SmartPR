@@ -160,6 +160,7 @@ import type { IncentiveAssessment, IncentiveEligibilityResult, ProjectFactValue 
 import { IncentiveWorkflowPanel } from './components/incentives/IncentiveWorkflowPanel';
 import { applyMunicipalReviewExclusivity, bucketForApplicability, classifyPotentialItem, type Applicability, type RequirementKind, type RequirementStage } from './requirementApplicability';
 import { settleWithin, PREPARE_STEP_TIMEOUT_MS } from '../lib/settleWithin';
+import { SITE_LOOKUP_CLIENT_TIMEOUT_MS } from '../lib/routeDeadline';
 import { saveGuestDraft, loadGuestDraft, clearGuestDraft, takeHandoffDraft, matterKeyForSearch, draftMatchesUrl } from '../lib/guestDraft';
 import type { GuestDraft } from '../lib/guestDraft';
 import { useDeliverablesAccess } from '../lib/billing/useDeliverablesAccess';
@@ -4099,6 +4100,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     intakeLayersAbortRef.current?.abort();
     const ctrl = new AbortController();
     intakeLayersAbortRef.current = ctrl;
+    // Belt and braces for the route's own deadline (E2): never wait forever.
+    const layersTimer = window.setTimeout(() => ctrl.abort(new DOMException('site layers timed out', 'TimeoutError')), SITE_LOOKUP_CLIENT_TIMEOUT_MS);
     fetch(`/api/locations/layers?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store', signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
       .then((data: { layers?: SiteLayers | null; reason?: string }) => {
@@ -4109,7 +4112,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .catch((err: unknown) => {
         if ((err as Error)?.name === 'AbortError') return;
         apply(unavailableSiteLayers(site.latitude, site.longitude, `layers_service_unreachable: ${(err as Error)?.message ?? 'error'}`));
-      });
+      })
+      .finally(() => window.clearTimeout(layersTimer));
   }, [intakeSite]);
 
   // Location revision: every confirmed-site change (confirm, edit, clear,
@@ -4143,6 +4147,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     parcelAbortRef.current = ctrl;
     const refresh = parcelRefreshRef.current;
     parcelRefreshRef.current = false;
+    const parcelTimer = window.setTimeout(() => ctrl.abort(new DOMException('parcel lookup timed out', 'TimeoutError')), SITE_LOOKUP_CLIENT_TIMEOUT_MS);
     fetch(`/api/locations/parcel?lat=${encodeURIComponent(site.latitude)}&lng=${encodeURIComponent(site.longitude)}${refresh ? '&refresh=1' : ''}`, { cache: 'no-store', signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`http_${r.status}`))))
       .then((d: { parcel?: ParcelFindings | null }) => {
@@ -4154,7 +4159,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .catch((err: unknown) => {
         if ((err as Error)?.name === 'AbortError' || locStateRef.current.revision !== revision) return;
         setParcelState({ revision, data: null, loading: false });
-      });
+      })
+      .finally(() => window.clearTimeout(parcelTimer));
     setParcelRetry(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the confirmed site
   }, [confirmedSiteKey, parcelRetry]);
