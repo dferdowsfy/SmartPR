@@ -8,6 +8,7 @@
 import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { findNearbyLots } from "../../../locations/layerService";
+import { ROUTE_DEADLINE_MS, raceRouteDeadline } from "../../../../lib/routeDeadline";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,13 @@ export async function GET(req: Request) {
   if (!isWithinPuertoRico(coords.latitude, coords.longitude)) {
     return Response.json({ candidates: [], reason: "outside_puerto_rico" }, { headers: { "Cache-Control": "no-store" } });
   }
-  const r = await findNearbyLots(coords.latitude, coords.longitude);
-  return Response.json({ candidates: r.candidates, reason: r.reason }, { headers: { "Cache-Control": "private, max-age=300" } });
+  const { latitude, longitude } = coords;
+  // Never hangs: past the route deadline, answer "no candidates" with the reason.
+  const { value: r, outcome } = await raceRouteDeadline(
+    () => findNearbyLots(latitude, longitude),
+    ROUTE_DEADLINE_MS.snap,
+    (reason) => ({ latitude, longitude, candidates: [], reason })
+  );
+  // A deadline answer is not cached by the browser: the next try may succeed.
+  return Response.json({ candidates: r.candidates, reason: r.reason }, { headers: { "Cache-Control": outcome === "ok" ? "private, max-age=300" : "no-store" } });
 }

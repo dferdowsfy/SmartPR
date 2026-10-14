@@ -25,7 +25,7 @@
     "test:scenarios": "tsx src/app/qa/kgScenarios/runKgScenarios.ts",
     "qa:snapshot-goldens": "tsx src/app/qa/snapshotGoldens.ts",
     "qa:update-coverage-baseline": "tsx src/app/qa/updateCoverageBaseline.ts",
-    "test:config": "tsx --test src/lib/config/deployment.test.ts src/lib/config/features.test.ts",
+    "test:config": "tsx --test src/lib/config/deployment.test.ts src/lib/config/features.test.ts src/lib/routeDeadline.test.ts src/lib/geoWarmup.test.ts",
     "test:ai": "tsx --test src/lib/ai/router.test.ts",
     "test:security": "tsx --test src/lib/__tests__/enterprise-security.test.ts src/lib/__tests__/soc2-security.test.ts src/lib/__tests__/admin-open-default.test.ts src/lib/__tests__/pentest-remediations.test.ts",
     "test:clara:e2e": "node tests/clara-rehearsal.e2e.mjs",

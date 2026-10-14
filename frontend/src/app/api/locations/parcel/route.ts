@@ -5,10 +5,15 @@
 //   → { parcel: ParcelFindings | null, reason? }
 //
 // Never fails because a source is down: that part comes back "unavailable".
+// Never hangs: a hard route deadline (ROUTE_DEADLINE_MS.parcel) answers with
+// every part "unavailable" (reason route_deadline_…) if the lookup has not
+// finished; the lookup keeps running and caches its answer for the retry.
 
 import { getClientIpKey, rateLimitAllow } from "../../../../lib/rateLimit";
 import { isWithinPuertoRico, validateCoordinates } from "../../../locations/geo";
 import { resolveParcelFindings } from "../../../locations/parcelService";
+import { parcelFindingsUnavailable } from "../../../locations/parcel";
+import { ROUTE_DEADLINE_MS, raceRouteDeadline } from "../../../../lib/routeDeadline";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +28,12 @@ export async function GET(req: Request) {
   if (!isWithinPuertoRico(coords.latitude, coords.longitude)) {
     return Response.json({ parcel: null, reason: "outside_puerto_rico" }, { headers: { "Cache-Control": "no-store" } });
   }
-  const parcel = await resolveParcelFindings(coords.latitude, coords.longitude, { refresh: u.searchParams.get("refresh") === "1" });
-  return Response.json({ parcel }, { headers: { "Cache-Control": "no-store" } });
+  const { latitude, longitude } = coords;
+  const { value: parcel, outcome, elapsedMs } = await raceRouteDeadline(
+    () => resolveParcelFindings(latitude, longitude, { refresh: u.searchParams.get("refresh") === "1" }),
+    ROUTE_DEADLINE_MS.parcel,
+    (reason) => parcelFindingsUnavailable(latitude, longitude, reason)
+  );
+  if (outcome !== "ok") console.warn(`[parcel] ${outcome} after ${elapsedMs} ms; answered "unavailable" (lat=${latitude.toFixed(5)} lng=${longitude.toFixed(5)})`);
+  return Response.json({ parcel, ...(outcome !== "ok" ? { partial: outcome } : {}) }, { headers: { "Cache-Control": "no-store" } });
 }

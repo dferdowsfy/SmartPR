@@ -286,6 +286,23 @@ export function parseFloodZones(resp: ArcGisQueryResponse | string, scope: "parc
   return { status: zones.length ? "sourced" : "none_mapped", zones, reason: zones.length ? null : "no_flood_polygon (unmapped area)", source, scope };
 }
 
+/**
+ * Every part "unavailable" for one reason — the answer a route gives when its
+ * hard deadline fires (route_deadline_…) before the lookup finished. Same
+ * shape as a lookup whose sources all failed, so every surface shows
+ * "unable to verify" rather than a blank or a spinner.
+ */
+export function parcelFindingsUnavailable(latitude: number, longitude: number, reason: string, at: string = new Date().toISOString()): ParcelFindings {
+  return {
+    latitude,
+    longitude,
+    retrieved_at: at,
+    boundary: parseParcelBoundary(reason, longitude, latitude),
+    zoning: parseZoningDistricts(reason, "point"),
+    flood: parseFloodZones(reason, "point"),
+  };
+}
+
 /** Restore a persisted ParcelFindings defensively (snapshots); null when malformed or for another point. */
 export function restoreParcelFindings(raw: unknown, latitude: number, longitude: number): ParcelFindings | null {
   if (!raw || typeof raw !== "object") return null;

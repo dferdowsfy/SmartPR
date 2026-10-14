@@ -367,6 +367,8 @@ export const findingStateText = (s: ReportFindingState) => STATE_TEXT[s] ?? STAT
 /** Why a source did not answer, in plain words. */
 export function reasonText(reason: string | null | undefined): Bi {
   const r = reason ?? "";
+  const rd = /^route_deadline_(\d+)ms/.exec(r);
+  if (rd) return bi(`the lookup took longer than ${Math.round(Number(rd[1]) / 1000)} s on this try; check again`, `la consulta tardó más de ${Math.round(Number(rd[1]) / 1000)} s en este intento; vuelva a consultar`);
   const t = /^timeout_(\d+)ms/.exec(r);
   if (t) return bi(`timed out after ${Math.round(Number(t[1]) / 1000)} s`, `no respondió en ${Math.round(Number(t[1]) / 1000)} s`);
   if (/^http_403/.test(r)) return bi("the source refused the request (HTTP 403)", "la fuente rechazó la solicitud (HTTP 403)");
