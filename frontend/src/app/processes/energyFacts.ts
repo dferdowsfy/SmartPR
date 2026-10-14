@@ -85,9 +85,44 @@ export function energyFactsFromProjectContext(
   return { facts, evidence };
 }
 
-/** True when the project context mentions anything energy-related at all. */
+/**
+ * True when the project is an energy project — generation, storage, offtake,
+ * interconnection, or an energy applicant role. Site/zoning/structural facts
+ * alone must not open the Energy process section (live 2026-10-14 F8: a
+ * hydroponic farm showed "ENERGY — PROCESS ORDER" from structural_work /
+ * site_zoning alone).
+ */
+const ENERGY_PROJECT_SIGNAL_KEYS = new Set([
+  "generation_technology",
+  "battery_storage",
+  "generation_capacity_kw",
+  "storage_capacity_kw",
+  "storage_energy_mwh",
+  "mounting_type",
+  "energy_project_status",
+  "energy_applicant_role",
+  "proposed_energy_services",
+  "energy_incentive_interest",
+  "net_metering_requested",
+  "parallel_operation",
+  "interconnection_required",
+  "interconnection_voltage",
+  "microgrid_configuration",
+  "sells_energy_to_third_parties",
+  "sells_to_utility_under_ppa",
+  "power_offtaker",
+  "energy_facility_type",
+  "grid_position",
+  "customer_class",
+  "system_ownership",
+  "properties_served",
+  "common_ownership",
+  "customers_served",
+  "procurement_tranche",
+]);
+
 export function hasEnergySignal(facts: FactMap): boolean {
-  return Object.keys(facts).some((k) => k !== "municipality" && facts[k] !== undefined);
+  return Object.keys(facts).some((k) => ENERGY_PROJECT_SIGNAL_KEYS.has(k) && facts[k] !== undefined);
 }
 
 /**

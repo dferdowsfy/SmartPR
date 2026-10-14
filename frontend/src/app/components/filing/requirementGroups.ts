@@ -30,6 +30,8 @@ export interface GroupableRequirement {
   documentId?: string | null;
   applicability?: string | null;
   stage?: string | null;
+  /** Requirement kind — review conditions must not sit under REQUIRED NOW. */
+  kind?: string | null;
   mandatory?: boolean;
   /** Completed (issued document on file and valid). */
   done: boolean;
@@ -83,7 +85,16 @@ export function groupRequirements(
     // until that prerequisite is done, so it sits with the rest of the gated
     // path rather than above it in the conditional group.
     else if (waitingOn.length > 0) group = "prerequisites";
-    else if (r.awaitingAnswer || CONDITIONAL.has(a)) group = "conditional";
+    // F4 (live 2026-10-14): Optional / Review condition / Likely required were
+    // listed under REQUIRED NOW. Only confirmed required filings belong there.
+    else if (
+      r.awaitingAnswer
+      || CONDITIONAL.has(a)
+      || a === "likely_required"
+      || a === "recommended"
+      || r.kind === "review_condition"
+      || r.kind === "informational_notice"
+    ) group = "conditional";
     else if (a === "supporting_evidence") group = "supporting";
     else if (a === "verify_existing" || (REGISTRATION_STAGES.has(r.stage ?? "") && a !== "required" && a !== "likely_required")) group = "registrations";
     else group = "required_now";
