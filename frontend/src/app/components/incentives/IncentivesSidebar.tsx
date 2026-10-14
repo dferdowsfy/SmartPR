@@ -301,7 +301,10 @@ export function IncentivesSidebar({
           {!loading && <span className="inc-count">{count} {es ? "identificados" : "identified"}</span>}
         </div>
 
-        {loading && <div className="inc-loading">{es ? "Evaluando…" : "Evaluating…"}</div>}
+        {/* F9 (live 2026-10-14): a re-fetch left "Evaluating…" under already-
+            resolved matches. Only show the spinner when there is no result yet. */}
+        {loading && !assessment && <div className="inc-loading" data-testid="incentives-evaluating">{es ? "Evaluando…" : "Evaluating…"}</div>}
+        {loading && assessment && <div className="inc-loading inc-updating" role="status">{es ? "Actualizando…" : "Updating…"}</div>}
         {failedNote}
 
         {!loading && !failed && count === 0 && (
