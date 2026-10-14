@@ -1,0 +1,128 @@
+{
+  "id": "KG57",
+  "title": "Nail salon, existing leased storefront, no construction — Manatí, FEMA AE",
+  "matrix": {
+    "businessType": "nail_salon",
+    "projectType": "new_business_existing_building",
+    "locationContext": "flood_ae"
+  },
+  "description": "We are opening a nail salon in an existing leased storefront in Manatí. Licensed nail technicians will do manicures and pedicures. No construction; we only bring in chairs and stations.",
+  "profile": {
+    "business_type": "Nail Salon",
+    "municipality": "Manatí",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 4,
+    "industry": "Beauty & Personal Care",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_CUSTOMERS_VISIT": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased storefront"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "existing leased storefront"
+    }
+  },
+  "site": {
+    "municipality": "Manatí",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0714: BT_NAIL_SALON -> Junta Examinadora de Especialistas en Belleza license (Ley 9-1972, 10 LPRA 2123-2125, Art. 15)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0157 records that no statute requiring a Salud sanitary license for nail salons was identified; PS 971 (2026) would create one but is not law. So it may show as needs-more-information but must never be REQUIRED.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "Pin is in the SFHA but there is no construction/site work: RULE_0706 any_of requires a construction-type project fact."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_CFPM",
+        "confidence": "verified-in-code",
+        "rationale": "No food preparation: RULE_0010 needs Q_FOOD_PREPARED."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643-0646 need a construction / renovation project type or structural work."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-14 by the scenario loop: first nail salon and first Manatí scenario (FEMA AE, no construction)."
+}

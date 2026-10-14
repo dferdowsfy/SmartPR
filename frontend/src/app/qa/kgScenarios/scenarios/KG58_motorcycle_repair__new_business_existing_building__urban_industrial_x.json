@@ -1,0 +1,119 @@
+{
+  "id": "KG58",
+  "title": "Motorcycle repair shop, existing leased industrial bay, no construction — Hatillo, zone X",
+  "matrix": {
+    "businessType": "motorcycle_repair",
+    "projectType": "new_business_existing_building",
+    "locationContext": "urban_industrial_x"
+  },
+  "description": "We are opening a motorcycle repair shop in an existing leased industrial bay in Hatillo. We do tune-ups, tire changes and brake work on motorcycles. No construction.",
+  "profile": {
+    "business_type": "Motorcycle Repair Shop",
+    "municipality": "Hatillo",
+    "location_type": "Industrial Space",
+    "number_of_employees": 3,
+    "industry": "Automotive",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased industrial bay"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "existing leased industrial bay"
+    }
+  },
+  "site": {
+    "municipality": "Hatillo",
+    "geo": "urban_industrial_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0761: BT_MOTORCYCLE_REPAIR_SHOP -> Bomberos fire-prevention certificate (Ley 20-2017), added 2026-10-12 with the KG16 fix."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_CONTRACTOR_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0232 / RULE_0237 / RULE_0642 exclude BT_MOTORCYCLE_REPAIR_SHOP: vehicle repair is not construction services under Ley 146-1995."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED; business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated: RULE_0643-0646 need a construction / renovation project type or structural work."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "No SREP land and no change of use in a residential/conservation/agricultural district: RULE_0709-0712 cannot fire."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-14 by the scenario loop: first motorcycle repair and first Hatillo scenario. Not asserted: whether the DRNA used-oil generator ID (RULE_0678/0679, auto-repair-only heuristics) should also cover motorcycle shops; that is an expert-review question, not encoded here."
+}
