@@ -4387,3 +4387,19 @@ html:has(.spr-guided-intake-shell) { scroll-padding-bottom: 120px; }
 .spr-guided-intake-shell .spr-scn-questions { scroll-margin-bottom: 120px; }
 .spr-nl-status-elapsed { color: #7a8a96; font-weight: 500; }
 .rq-page-head-label { margin: 2px 0 0; color: #657e86; font-size: 14px; }
+
+
+/* G6: Deliverables first-load progress */
+.spr-dlv-preparing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f3f8f7;
+  border: 1px solid #d5e4e1;
+  color: #1f6b66;
+  font-size: 14px;
+  font-weight: 600;
+}

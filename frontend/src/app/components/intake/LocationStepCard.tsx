@@ -40,7 +40,7 @@ export function intakeSiteFromPlacement(
   return {
     ...point,
     municipality: { name: placement.municipality.name, fips: placement.municipality.fips ?? null },
-    barrio: placement.barrio ? { name: placement.barrio.name, geoid: placement.barrio.geoid ?? null } : null,
+    barrio: placement.barrio ? { name: placement.barrio.name, geoid: placement.barrio.geoid ?? null, barrio_pueblo: placement.barrio.barrio_pueblo === true } : null,
     near_boundary: placement.near_boundary,
     designations,
     boundary_source: placement.source ?? null,

@@ -1277,7 +1277,9 @@ export function buildPropertyReport(input: {
       title: [addr.primary.split(",")[0], site.municipality.name].filter((v, i, a) => v && a.indexOf(v) === i).reverse().join(" · "),
       address: { primary: addr.primary, secondary: addr.secondary, formatted: site.formatted_address },
       municipality: site.municipality.name,
-      barrio: site.barrio?.name ?? null,
+      barrio: site.barrio
+        ? (site.barrio.barrio_pueblo || site.barrio.name === site.municipality.name ? "Pueblo" : site.barrio.name)
+        : null,
       latitude: site.latitude,
       longitude: site.longitude,
       coordinate_source: site.coordinate_source,

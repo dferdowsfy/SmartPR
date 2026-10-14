@@ -39,7 +39,7 @@ const STATUS_LABEL: Record<ProviderStatus, { en: string; es: string }> = {
   confirmed: { en: "Confirmed", es: "Confirmado" },
   not_found: { en: "Nothing mapped", es: "Nada mapeado" },
   unavailable: { en: "Unavailable", es: "No disponible" },
-  error: { en: "Couldn't be read", es: "No se pudo leer" },
+  error: { en: "Temporarily unavailable", es: "No disponible por ahora" },
 };
 
 type SiteSourceView = ReturnType<typeof buildSiteIntelligence>["sources"][number];
@@ -108,8 +108,27 @@ export function SiteIntelligencePanel({
   };
   const agencyKeys = [...new Set(si.sources.map((s) => s.agencyKey))];
   const anyUnavailable = si.groups.some((g) => g.pills.some((p) => p.status === "unavailable"));
+  // Review-queue UX (Run 3/4): when CRIM parcel lookup is down, say so in
+  // plain language — no rule change, display only.
+  const parcelPill = si.groups.flatMap((g) => g.pills).find((p) => p.layer === "parcel");
+  const crimDown = !!parcelPill && (parcelPill.status === "unavailable" || parcelPill.status === "error");
   return (
     <div ref={rootRef} className={`spr-si${rows ? " spr-si-rows" : ""}`} data-testid="site-intelligence">
+      {crimDown && (
+        <div className="spr-si-alert spr-si-alert-unknown spr-si-crim-banner" role="status" data-testid="crim-unavailable-banner">
+          <HelpCircle size={16} aria-hidden="true" />
+          <span className="spr-si-alert-body">
+            <strong className="spr-si-alert-title">{L("Parcel lookup temporarily unavailable", "Consulta de parcela no disponible por ahora", lang)}</strong>
+            <span className="spr-si-alert-text">
+              {L(
+                "CRIM's cadastral map service did not answer for this pin. Flood, zoning and other checks still run; a parcel number will appear when CRIM is back. Nothing about the requirements was changed.",
+                "El servicio de catastro del CRIM no respondió para este pin. Las verificaciones de inundación, calificación y otras siguen; el número de parcela aparecerá cuando el CRIM vuelva. No se cambió nada de los requisitos.",
+                lang
+              )}
+            </span>
+          </span>
+        </div>
+      )}
       {si.considerations.length > 0 && (
         <div className="spr-si-alerts">
           {si.considerations.map((c, i) => (

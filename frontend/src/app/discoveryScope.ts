@@ -32,6 +32,30 @@ export const DISCOVERY_QUESTION_SCOPE: Record<string, Scope> = {
     ],
     businessTypes: ["BT_REAL_ESTATE_DEVELOPER", "BT_CATERING_BUSINESS", "BT_THEATER", "BT_ART_GALLERY"],
   },
+  // G10 (live 2026-10-14): overnight / short-term-rental questions were linked
+  // to every tourism BT (tour operators, kayak rentals, car rentals). Intake
+  // only — lodging rules still fire if answered elsewhere.
+  Q_GUESTS_OVERNIGHT: {
+    industries: [],
+    businessTypes: [
+      "BT_HOTEL", "BT_RESORT", "BT_GUEST_HOUSE", "BT_AIRBNB_SHORT_TERM_RENTAL",
+    ],
+  },
+  Q_SHORT_TERM_RENTAL: {
+    industries: [],
+    businessTypes: [
+      "BT_HOTEL", "BT_RESORT", "BT_GUEST_HOUSE", "BT_AIRBNB_SHORT_TERM_RENTAL",
+    ],
+  },
+  // G10: "Will food be sold?" on a hardware store (and other non-food retail).
+  // Keep it for food businesses and retail that commonly sell packaged food.
+  Q_FOOD_SOLD: {
+    industries: ["IND_FOOD"],
+    businessTypes: [
+      "BT_CONVENIENCE_STORE", "BT_GIFT_SHOP", "BT_PHARMACY", "BT_FARM",
+      "BT_FOOD_MANUFACTURING", "BT_WHOLESALE_FOOD_DISTRIBUTOR",
+    ],
+  },
 };
 
 /** True when the intake should ask this question for this business type. */

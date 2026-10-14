@@ -175,7 +175,10 @@ const UNAVAILABLE: Bi = { en: "temporarily unavailable", es: "no disponible por 
 const NOT_MAPPED: Bi = { en: "not mapped here", es: "sin mapa aquí" };
 
 function unknownPill(layer: SiteLayerId, name: Bi, status: ProviderStatus, r: SiteLayerResult | undefined): SitePill {
-  const tail = status === "not_found" ? NOT_MAPPED : status === "error" ? { en: "couldn't be read", es: "no se pudo leer" } : UNAVAILABLE;
+  // G11 (live 2026-10-14): error pills used "couldn't be read" while other
+  // source failures said "temporarily unavailable". Same short label for both;
+  // the detailed why stays on the title / source card.
+  const tail = status === "not_found" ? NOT_MAPPED : UNAVAILABLE;
   const why = r ? layerReasonText(r.reason, SERVICE[layer]).text : UNAVAILABLE;
   return { layer, status, tone: "unknown", label: { en: `${name.en} · ${tail.en}`, es: `${name.es} · ${tail.es}` }, title: why };
 }
