@@ -36,6 +36,7 @@ import PLAN_CURRENCY from "../../kb/plan_currency.json";
 const PUT_LAYER_VERSION_DATE = "2015-11-30";
 type PlanCurrencyEntry = { plan: { resolution: string; effective: string; documents: Array<{ title: string; url: string; note?: string; checked_on?: string }> }; put?: { plan_modifies_put?: boolean; status?: string; layer_check?: { layer: string; finding: string; checked_on: string } } };
 import { siteLayersCurrent, type IntakeSite } from "./intakeLocation.ts";
+import { resolvePinParcel } from "./pinParcel.ts";
 import { parsePlanTerritorialExtra, ptDateText, PT_FIELDS, toPrStatePlane, type ExtraFinding, type ParcelFindings } from "./parcel.ts";
 import { COVERAGE_METHOD, formatArea, formatShare, SMALL_SHARE, UNMAPPED_WARN_SHARE, type Coverage } from "./coverage.ts";
 import { COMPATIBILITY_TEXT, DECISION_TEXT, REQUIREMENT_TEXT, type LandUseAnalysis } from "./landUse.ts";
@@ -515,7 +516,11 @@ export function buildPropertyReport(input: {
   const roadwayAtPin = !!zPin && (/^VIAL$/i.test(zPin.code ?? "") || zPin.tags.includes("road") || /sistema vial/i.test(zPin.name ?? ""));
   // A pin on a mapped water body (JP "AGUA" / Cuerpo de agua) is not a roadway, even when CRIM only has right-of-way polygons there.
   const waterAtPin = !parcelVerified && !!zPin && (/^AGUA$/i.test(zPin.code ?? "") || zPin.tags.includes("water") || /cuerpo de agua/i.test(zPin.name ?? ""));
-  const roadway = !parcelVerified && !waterAtPin && (roadwayAtPin || parcel?.boundary.reason === "only_right_of_way_polygon_at_point");
+  // ONE answer for the pin's parcel, shared with the Requirements site pills
+  // (pinParcel.ts): a roadway only when CRIM says right-of-way (TIPO V) or the
+  // JP map says VIAL — the same reading as the point layers.
+  const pinParcel = resolvePinParcel(current ? site.layers : null, parcel, { parcelLoading: input.parcelLoading });
+  const roadway = !parcelVerified && !waterAtPin && (roadwayAtPin || pinParcel.state === "roadway");
   const pointConfirmed = !!input.pointConfirmed;
   const zCovRaw = zParcel?.status === "sourced" ? (zParcel.coverage ?? (parcel?.areas_reliable?.zoning ? legacyCoverage(zParcel.districts.map((d) => ({ key: d.code, area_m2: d.area_m2, share: d.share })), parcelArea) : null)) : null;
   const districtName = (code: string) => zParcel?.districts.find((d) => d.code === code)?.name ?? null;
@@ -943,7 +948,10 @@ export function buildPropertyReport(input: {
   const addr = siteAddressParts(site);
   const crim = layer("parcel");
   const boundary = parcel?.boundary;
-  const catastroValue = boundary?.value?.catastro ?? (crim?.status === "resolved" && current ? crim.code : null);
+  // A JP label the point lookup borrowed is never shown for a pin on a
+  // roadway / water (same answer as the Requirements pills: pinParcel.ts).
+  const crimShown = crim?.status === "resolved" && current && !(crim.retrieval === "derived" && (pinParcel.state === "roadway" || pinParcel.state === "water"));
+  const catastroValue = boundary?.value?.catastro ?? (crimShown ? crim.code : null);
   // CRIM and the JP zoning map each label the lot; when they disagree, say so without deciding which is right.
   const jpCatastro = typeof zPin?.attributes?.num_catast === "string" ? zPin.attributes.num_catast.trim() : null;
   if (catastroValue && crim?.retrieval !== "derived" && jpCatastro && CATASTRO_RE.test(jpCatastro) && jpCatastro !== catastroValue) {
@@ -1236,7 +1244,11 @@ export function buildPropertyReport(input: {
 
   // ---- Location notices -------------------------------------------------------
   const locationNotices: Bi[] = [];
-  if (parcelStatus === "not_identified") locationNotices.push(bi("No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.", "No se identificó una parcela catastral. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela."));
+  const labelled = pinParcel.catastro;
+  if (parcelStatus === "not_identified") {
+    if (pinParcel.state === "zoning_map_label" && labelled) locationNotices.push(bi(`CRIM has no numbered parcel boundary at this point; the JP zoning map labels it parcel ${labelled}. Findings describe the selected point only; parcel-wide checks have not been performed. Confirm the parcel number with CRIM.`, `El CRIM no tiene un límite de parcela numerada en este punto; el mapa de calificación de la JP lo rotula como parcela ${labelled}. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela. Confirme el número con el CRIM.`));
+    else locationNotices.push(bi("No cadastral parcel was identified. Findings describe the selected point only; parcel-wide checks have not been performed.", "No se identificó una parcela catastral. Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela."));
+  }
   if (parcelStatus === "unavailable") locationNotices.push(bi(`The CRIM parcel source did not respond (${reasonText(boundary?.reason).en}). Findings describe the selected point only; parcel-wide checks have not been performed.`, `La fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es}). Los hallazgos describen solo el punto seleccionado; no se han realizado verificaciones de toda la parcela.`));
   if (roadway) locationNotices.push(bi("This point may be on a roadway rather than your intended property. Move or confirm the pin before evaluating site-specific requirements.", "Este punto puede estar sobre una vía y no en su propiedad. Mueva o confirme el pin antes de evaluar requisitos específicos del lugar."));
   // The geocoder's address can name a neighbouring municipio (a point near a boundary); the pin's Census municipio governs.
@@ -1272,7 +1284,9 @@ export function buildPropertyReport(input: {
       catastro: {
         value: catastroValue, state: catastroValue ? "sourced" : parcelState(boundary?.status), source: catSource,
         text: catastroValue
-          ? bi(parcelVerified ? catastroValue : `${catastroValue} (parcel id at the point; no parcel boundary identified)`, parcelVerified ? catastroValue : `${catastroValue} (id de parcela en el punto; sin límite de parcela identificado)`)
+          ? parcelVerified ? bi(catastroValue)
+            : crim?.retrieval === "derived" ? bi(`${catastroValue} (JP zoning-map label at the point; not confirmed by CRIM)`, `${catastroValue} (rótulo del mapa de calificación JP en el punto; no confirmado por el CRIM)`)
+            : bi(`${catastroValue} (parcel id at the point; no parcel boundary identified)`, `${catastroValue} (id de parcela en el punto; sin límite de parcela identificado)`)
           : parcelStatus === "not_identified" ? bi("No cadastral parcel identified at the selected point", "No se identificó parcela catastral en el punto seleccionado")
           : parcelStatus === "unavailable" ? bi(`Not available — the CRIM parcel source did not respond (${reasonText(boundary?.reason).en})`, `No disponible — la fuente de parcelas del CRIM no respondió (${reasonText(boundary?.reason).es})`)
           : parcelStatus === "loading" ? bi("Checking…", "Verificando…")

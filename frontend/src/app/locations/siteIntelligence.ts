@@ -17,6 +17,8 @@
 // ============================================================================
 
 import { layerAnswered, layerCards, layerReasonText, type SiteLayerId, type SiteLayerResult, type SiteLayers } from "./layers.ts";
+import type { ParcelFindings } from "./parcel.ts";
+import { resolvePinParcel } from "./pinParcel.ts";
 
 type Bi = { en: string; es: string };
 
@@ -192,7 +194,7 @@ function landFamily(r: SiteLayerResult): string | null {
 }
 
 /** Build the full site-intelligence view for a set of layer results. */
-export function buildSiteIntelligence(layers: SiteLayers, extra: { municipality?: string | null; address?: string | null } = {}): SiteIntelligence {
+export function buildSiteIntelligence(layers: SiteLayers, extra: { municipality?: string | null; address?: string | null; /** Whole-parcel findings for this pin (same answer as the Property & Site Report). */ parcel?: ParcelFindings | null } = {}): SiteIntelligence {
   const by = new Map(layers.results.map((r) => [r.layer, r]));
   const cards = new Map(layerCards(layers).map((c) => [c.layer, c]));
   const get = (l: SiteLayerId) => by.get(l);
@@ -248,10 +250,14 @@ export function buildSiteIntelligence(layers: SiteLayers, extra: { municipality?
   const parcel = get("parcel");
   const terrain = get("terrain");
   const sitePills: SitePill[] = [];
-  if (parcel?.status === "resolved") {
-    sitePills.push({ layer: "parcel", status: "confirmed", tone: "ok", label: { en: `Parcel · ${parcel.code}`, es: `Parcela · ${parcel.code}` }, title: { en: "CRIM cadastral parcel identified", es: "Parcela catastral del CRIM identificada" } });
-  } else if (parcel?.status === "none") {
-    sitePills.push({ layer: "parcel", status: "not_found", tone: "unknown", label: { en: "Parcel · none at this point", es: "Parcela · ninguna en este punto" }, title: { en: "The pin may be on a street — move it onto the lot", es: "El pin puede estar en la calle — muévelo sobre el solar" } });
+  // The same parcel answer as the intake's Property & Site Report (pinParcel.ts).
+  const pinParcel = resolvePinParcel(layers, extra.parcel && Math.abs(extra.parcel.latitude - layers.latitude) < 1e-7 && Math.abs(extra.parcel.longitude - layers.longitude) < 1e-7 ? extra.parcel : null);
+  if (pinParcel.state === "parcel") {
+    sitePills.push({ layer: "parcel", status: "confirmed", tone: "ok", label: pinParcel.label, title: { en: "CRIM cadastral parcel identified", es: "Parcela catastral del CRIM identificada" } });
+  } else if (pinParcel.state === "zoning_map_label") {
+    sitePills.push({ layer: "parcel", status: "confirmed", tone: "info", label: pinParcel.label, title: pinParcel.detail });
+  } else if (pinParcel.state === "roadway" || pinParcel.state === "water" || pinParcel.state === "none") {
+    sitePills.push({ layer: "parcel", status: "not_found", tone: "unknown", label: pinParcel.label, title: pinParcel.detail });
   } else sitePills.push(unknownPill("parcel", { en: "Parcel", es: "Parcela" }, st("parcel"), parcel));
   const ls = terrain?.status === "resolved" ? String(terrain.code) : null;
   if (ls) {
