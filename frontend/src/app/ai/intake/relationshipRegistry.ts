@@ -383,8 +383,14 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
   whenTrue(
     "REL_ON_SITE_CONSUMPTION_IMPLIES_FOOD_SERVED",
     "Q_ON_SITE_CONSUMPTION",
-    [det("Q_FOOD_SERVED", true)],
-    "Customers eating on-site are being served food."
+    [det("Q_FOOD_SERVED", true), det("Q_FOOD_SOLD", true), det("Q_CUSTOMERS_VISIT", true)],
+    "Customers eating on-site are being served food they bought, at the location."
+  ),
+  whenTrue(
+    "REL_FOOD_SERVED_IMPLIES_FOOD_SOLD",
+    "Q_FOOD_SERVED",
+    [det("Q_FOOD_SOLD", true)],
+    "Serving food to customers is selling it (a free meal service answers No explicitly, which overrides this)."
   ),
   whenTrue(
     "REL_COMMERCIAL_KITCHEN_IMPLIES_FOOD_PREPARED",
@@ -579,9 +585,11 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
   fromBusinessType("REL_BT_BAR", "BT_BAR", [det("Q_ALCOHOL_SERVED", true), det("Q_ALCOHOL_SOLD", true)],
     "A bar exists to serve and sell alcohol — definitional, unlike a restaurant."),
   fromBusinessType("REL_BT_RESTAURANT", "BT_RESTAURANT",
-    [det("Q_FOOD_SERVED", true), det("Q_FOOD_SOLD", true), maybe("Q_FOOD_PREPARED", true)],
-    "A restaurant serves and sells food. It does NOT definitionally serve alcohol, " +
-    "have outdoor seating, host live entertainment, or hire employees."),
+    [det("Q_FOOD_SERVED", true), det("Q_FOOD_SOLD", true), det("Q_FOOD_PREPARED", true),
+      det("Q_ON_SITE_CONSUMPTION", true), det("Q_CUSTOMERS_VISIT", true)],
+    "A restaurant prepares, serves and sells food that customers come in to eat " +
+    "(a ghost kitchen / delivery-only operation answers No explicitly, which overrides this). " +
+    "It does NOT definitionally serve alcohol, have outdoor seating, host live entertainment, or hire employees."),
   fromBusinessType("REL_BT_FAST_FOOD", "BT_FAST_FOOD_RESTAURANT",
     [det("Q_FOOD_SERVED", true), det("Q_FOOD_SOLD", true), maybe("Q_FOOD_PREPARED", true)], "Serves and sells food."),
   fromBusinessType("REL_BT_CAFE", "BT_CAFE",

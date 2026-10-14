@@ -277,6 +277,24 @@ function readBusinessIdentity(text: string, ctx: ScenarioContext): void {
     const type = isA?.groups[0] ? entityTypeOf(isA.groups[0]) ?? (/partnership/i.test(isA.groups[0]) ? "partnership" : /nonprofit/i.test(isA.groups[0]) ? "nonprofit_nonstock_corporation" : null) : null;
     if (isA && type) ctx.business.entityType = said(type, text, isA, 0.92);
   }
+  // A bare mention ("open an LLC restaurant", "it'll be a CRL", "Inc.",
+  // "as a sole proprietor") settles the entity type too, so the wizard does
+  // not ask it again. PR's CRL (Compañía de Responsabilidad Limitada) is
+  // its LLC; a sole proprietorship / DBA files no formation certificate.
+  if (!ctx.business.entityType) {
+    const bare: [RegExp, string][] = [
+      [/\b(?:llc|l\.l\.c\.?|crl|c\.r\.l\.?|limited\s+liability\s+company|compa[nñ][ií]a\s+de\s+responsabilidad\s+limitada)(?![A-Za-z])/i, "llc"],
+      [/\b(?:inc\.|incorporated|corp\.|corporation|corporaci[oó]n)(?![A-Za-z])|\b(?:inc|corp)\b/i, "corporation"],
+      [/\bsole\s+propriet(?:or|orship)\b|\bnegocio\s+propio\b/i, "sole_proprietorship"],
+    ];
+    for (const [re, type] of bare) {
+      const hit = find(text, re);
+      if (hit) {
+        ctx.business.entityType = said(type, text, hit, 0.9);
+        break;
+      }
+    }
+  }
   const industry = find(text, /\bin\s+the\s+([a-z][a-z &-]{2,40}?)\s+(?:industry|sector)\b/i);
   if (industry?.groups[0]) {
     const words = industry.groups[0].trim().replace(/\s+/g, " ");

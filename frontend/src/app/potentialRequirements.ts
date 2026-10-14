@@ -36,10 +36,28 @@ export const POTENTIAL_BY_FLAG: Record<string, PotentialDef> =
   ACTIVE_JURISDICTION.flagAdvisories.byFlag;
 
 // Potential items for a set of geo flags, in the jurisdiction's display order.
+// A jurisdiction-specific advisory replaces the generic ones it supersedes
+// (San Juan's own review replaces the metro "Additional Municipal Review").
 export function potentialItemsForFlags(flags: string[]): PotentialDef[] {
-  return ACTIVE_JURISDICTION.flagAdvisories.order
+  const present = ACTIVE_JURISDICTION.flagAdvisories.order
     .filter((f) => flags.includes(f) && POTENTIAL_BY_FLAG[f])
     .map((f) => POTENTIAL_BY_FLAG[f]);
+  const superseded = new Set(present.flatMap((d) => d.supersedes ?? []));
+  return present.filter((d) => !superseded.has(d.flag));
+}
+
+// The advisories the user is asked about: an auto-applying advisory is
+// settled by the location itself and never becomes a question.
+export function potentialQuestionsFor(definitions: PotentialDef[]): PotentialDef[] {
+  return definitions.filter((d) => !d.autoApplies);
+}
+
+/** The decision that counts for an advisory: auto-applying ones always apply. */
+export function effectivePotentialDecision(
+  definition: PotentialDef,
+  decisions: Record<string, PotentialDecision>
+): PotentialDecision | undefined {
+  return definition.autoApplies ? "applies" : decisions[definition.flag];
 }
 
 // Add the municipality-driven items the user confirmed during intake. Keeping
@@ -50,7 +68,7 @@ export function confirmedPotentialRequirements(
   decisions: Record<string, PotentialDecision>
 ): PotentialRequirement[] {
   return definitions
-    .filter((definition) => decisions[definition.flag] === "applies")
+    .filter((definition) => effectivePotentialDecision(definition, decisions) === "applies")
     .map((definition) => ({
       code: `potential_${definition.flag}`,
       name: definition.document,

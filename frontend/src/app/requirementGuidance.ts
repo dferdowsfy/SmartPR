@@ -255,6 +255,31 @@ function advisory(req: GuidanceRequirement, ctx: GuidanceContext): RequirementGu
   };
 }
 
+function entityRegistration(ctx: GuidanceContext): RequirementGuidance {
+  const es = ctx.language === "es";
+  const what = es
+    ? "El registro de tu entidad con el Departamento de Estado. Una LLC (CRL) radica un Certificado de Organización; una corporación radica un Certificado de Incorporación; un negocio propio (individuo) no radica ninguno."
+    : "Registering your business entity with the Department of State. An LLC files a Certificate of Organization; a corporation files a Certificate of Incorporation; a sole proprietorship files neither.";
+  const why = es
+    ? "Todavía no has escogido la estructura legal del negocio, así que SmartPR no puede decir cuál de los dos certificados aplica."
+    : "You haven't chosen the business's legal structure yet, so SmartPR can't tell which of the two certificates applies.";
+  const doNext = es
+    ? "Escoge la estructura legal (LLC, corporación o negocio propio) en los datos del negocio; SmartPR mostrará la radicación exacta."
+    : "Choose the legal structure (LLC, corporation, or sole proprietorship) in the business details; SmartPR will show the exact filing.";
+  const thenWhat = es
+    ? "Con la entidad registrada, sigues con el EIN y el Registro de Comerciante."
+    : "Once the entity is registered, you continue with the EIN and the Merchant Registration.";
+  return {
+    requirementId: "DOC_BUSINESS_ENTITY_REGISTRATION", status: "VALIDATED", reviewReasons: [],
+    triggerFacts: [], regulatoryReason: what, purpose: what, nextAction: doNext,
+    consequenceOrNextStep: thenWhat,
+    dependencies: [], sources: [], sourceVersion: null,
+    summary: why, whyThisApplies: why, whatThisIs: what,
+    whatYouNeedToDo: doNext, whatHappensNext: thenWhat,
+    triggeredBy: [], satisfiesOrUnlocks: [thenWhat], sourceReferences: [], lastVerified: null,
+  };
+}
+
 function review(req: GuidanceRequirement, ctx: GuidanceContext, reasons: string[]): RequirementGuidance {
   const es = ctx.language === "es";
   const desc = caseDescriptor(ctx);
@@ -327,6 +352,9 @@ function buildGuidanceFor(req: GuidanceRequirement, ctx: GuidanceContext): Requi
   if (!req.document_id && (req.code ?? "").startsWith("potential_") && (req.reason ?? "").trim()) {
     return advisory(req, ctx);
   }
+  // The consolidated formation step shown while the entity type is open is
+  // not a KB document: explain the choice it stands for.
+  if (req.document_id === "DOC_BUSINESS_ENTITY_REGISTRATION") return entityRegistration(ctx);
   const raw = kb.documents.find(d => d.id === req.document_id)?.requirement_guidance;
   const problems = validateGuidanceConcept(raw, req.document_id);
   if (problems.length) return review(req, ctx, problems);

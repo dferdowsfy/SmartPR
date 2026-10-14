@@ -119,6 +119,7 @@ export const PROJECT_FACT_KEYS = [
   "outside_pr_revenue_percentage",
   "tourism_activity",
   "manufacturing_activity",
+  "food_beverage_manufacturing",
   "research_and_development_activity",
   "renewable_energy_investment",
   "green_energy_decree",

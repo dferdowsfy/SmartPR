@@ -191,12 +191,28 @@ export const PR_ACT60_CATALOG: IncentiveProgram[] = [
     agency: OCIF,
   }),
   program({
-    id: "PR_ACT60_FOOD_MANUFACTURING", name: "Manufacturing Framework — Food & Beverage Export", industry: "Food & Beverage",
+    id: "PR_ACT60_FOOD_MANUFACTURING", name: "Manufacturing Framework — Food & Beverage Export", industries: ["Food & Beverage", "Manufacturing"],
     description: "Companies that process, blend, or package food or beverages on the island for export qualify under the industrial tax decree. Local restaurants, bars, and cafes serving island customers operate under standard Puerto Rico corporate tax rates instead.",
     benefits: [
       benefit("b1", "Manufacturing corporate tax rate", "A 4% corporate tax rate on qualifying export food/beverage manufacturing income."),
     ],
     applicationProcess: "Confirm the activity is manufacturing-for-export rather than local food service, then apply for an industrial tax exemption decree through DDEC.",
+    // The industry alone (a restaurant is "Food & Beverage") never matches:
+    // both manufacturing and export must hold.
+    criteria: [
+      factCriterion({
+        id: "food_beverage_manufacturing_fact", factKey: "food_beverage_manufacturing",
+        label: "Commercial food or beverage manufacturing",
+        question: "Does the business manufacture, process, or package food or beverage products commercially (not prepared to order for its own customers)?",
+        description: "The decree covers industrial processing, blending, or packaging of food or beverages. Restaurants, cafes, bars, and food trucks preparing food for local customers do not qualify.",
+      }),
+      factCriterion({
+        id: "food_beverage_export_fact", factKey: "export_activity",
+        label: "Exports products outside Puerto Rico",
+        question: "Does the business sell or ship its food or beverage products to markets outside Puerto Rico?",
+        description: "The 4% rate applies to income from qualifying export manufacturing.",
+      }),
+    ],
   }),
   program({
     id: "PR_ACT60_PHYSICIAN", name: "Resident Physician Incentive", industry: "Healthcare",

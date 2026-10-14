@@ -78,6 +78,7 @@ export const ES: Record<string, string> = {
   "Sole proprietorship": "Empresa individual",
   "Partnership": "Sociedad",
   "Other / not sure": "Otro / no estoy seguro",
+  "Other": "Otro",
   "Start": "Comenzar",
   "History": "Historial",
   "Calendar": "Calendario",
@@ -1083,6 +1084,12 @@ export const ES: Record<string, string> = {
   "Filing details (optional now)": "Datos de radicación (opcional por ahora)",
   "Clara uses these when preparing a filing. Anything you leave blank is asked only when a filing needs it.": "Clara los usa al preparar una radicación. Lo que dejes en blanco se pide solo cuando una radicación lo necesite.",
   "Opening Clara…": "Abriendo a Clara…",
+  "Already settled by your answers": "Ya resuelto por tus respuestas",
+  "Yes": "Sí",
+  "No": "No",
+  "Business Entity Registration (Certificate of Organization for LLC or Certificate of Incorporation for Corp.)": "Registro de la entidad (Certificado de Organización para LLC o Certificado de Incorporación para corporación)",
+  "Your business entity type is not chosen yet. An LLC files a Certificate of Organization and a corporation files a Certificate of Incorporation with the Department of State; a sole proprietorship files neither. Choose the structure to see the exact filing.": "Todavía no has escogido el tipo de entidad. Una LLC radica un Certificado de Organización y una corporación un Certificado de Incorporación en el Departamento de Estado; un negocio propio no radica ninguno. Escoge la estructura para ver la radicación exacta.",
+  "Not sure yet": "Aún no lo sé",
 };
 
 export function L(text: string | undefined | null, lang: Lang): string {

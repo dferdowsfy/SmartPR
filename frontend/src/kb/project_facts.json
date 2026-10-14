@@ -33,5 +33,12 @@
     "fact_key": "opportunity_zone",
     "value_type": "boolean",
     "description": "Puerto Rico designated Opportunity Zones covering most of the island under the 2017 federal Tax Cuts and Jobs Act."
+  },
+  {
+    "id": "FACT_FOOD_BEVERAGE_MANUFACTURING",
+    "name": "Commercial food or beverage manufacturing",
+    "fact_key": "food_beverage_manufacturing",
+    "value_type": "boolean",
+    "description": "Industrial processing, blending, or packaging of food or beverages. Restaurants, cafes, bars, and food trucks preparing food for local customers are food service, not manufacturing."
   }
 ]

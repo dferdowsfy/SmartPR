@@ -56,13 +56,15 @@ describe("the description answers facts once", () => {
         municipality: "Guaynabo",
         business_type: businessTypeFromScenario(ctx, kb),
         location_type: locationTypeFromScenario(ctx, ALL_LOCATIONS),
+        // A new business's entity type is asked up front ("Not sure yet" counts).
+        business_structure: "undecided",
       },
       descriptionKnown: new Set(["municipality", "business_type", "location_type"]),
     });
     assert.equal(plan.ready, true);
     assert.deepEqual(plan.missingRequired, []);
-    // Name, entity type and headcount are not required to see requirements.
-    for (const key of ["name", "business_structure", "number_of_employees"] as const) {
+    // Name and headcount are not required to see requirements.
+    for (const key of ["name", "number_of_employees"] as const) {
       const f = plan.fields.find((x) => x.key === key);
       assert.ok(f && f.tier !== "required_now", key);
     }
@@ -79,10 +81,12 @@ describe("the description answers facts once", () => {
 });
 
 describe("tiers by branch", () => {
-  it("new business: only municipality, business type and location type block requirements", () => {
+  it("new business: municipality, business type, location type and entity type block requirements", () => {
     const plan = planIntake({ intent: "new_business", profile: {} });
-    assert.deepEqual(plan.missingRequired.sort(), ["business_type", "location_type", "municipality"]);
-    assert.equal(plan.fields.find((f) => f.key === "business_structure")?.tier, "filing_specific");
+    // Entity type decides LLC vs corporation vs no formation filing, so a new
+    // business is asked it once ("Not sure yet" is an answer).
+    assert.deepEqual(plan.missingRequired.sort(), ["business_structure", "business_type", "location_type", "municipality"]);
+    assert.equal(plan.fields.find((f) => f.key === "business_structure")?.tier, "required_now");
     assert.equal(plan.fields.find((f) => f.key === "name")?.tier, "useful_later");
   });
 
