@@ -6812,27 +6812,39 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Two rows for the same question id is never valid UI (a guided question
   // and a trigger can share an answer key after Change + re-answer), so
   // dedupe by id — first occurrence wins.
-  // H10 (live 2026-10-15): remember text for answers that briefly leave the
-  // engine's live questionList while an earlier answer is being re-edited.
-  const answeredQuestionMetaRef = useRef<Record<string, { text: string }>>({});
+  // H10 (live 2026-10-15): remember question text for answers that briefly
+  // leave the engine's live questionList while an earlier answer is re-edited.
+  // Updated in an effect (not during render) to satisfy react-hooks/refs.
+  const [answeredQuestionMeta, setAnsweredQuestionMeta] = useState<Record<string, string>>({});
+  useEffect(() => {
+    setAnsweredQuestionMeta((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const q of questionList) {
+        if (discoveryAnswers[q.id] !== undefined && next[q.id] !== q.text) {
+          next[q.id] = q.text;
+          changed = true;
+        }
+      }
+      for (const id of Object.keys(next)) {
+        if (discoveryAnswers[id] === undefined) {
+          delete next[id];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [questionList, discoveryAnswers]);
   const answeredIntakeQuestions = (() => {
-    // Keep meta warm for live questions; drop meta when the answer is gone
-    // (pruneAfterChange or Change). H10: orphans with meta stay visible.
-    for (const q of questionList) {
-      if (discoveryAnswers[q.id] !== undefined) answeredQuestionMetaRef.current[q.id] = { text: q.text };
-    }
-    for (const id of Object.keys(answeredQuestionMetaRef.current)) {
-      if (discoveryAnswers[id] === undefined) delete answeredQuestionMetaRef.current[id];
-    }
     const seen = new Set<string>();
     const guidedLive = questionList
       .filter((q) => discoveryAnswers[q.id] !== undefined)
       .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }));
-    const guidedOrphans = Object.keys(answeredQuestionMetaRef.current)
+    const guidedOrphans = Object.keys(answeredQuestionMeta)
       .filter((id) => discoveryAnswers[id] !== undefined && !questionList.some((q) => q.id === id))
       .map((id) => ({
         id,
-        text: answeredQuestionMetaRef.current[id]!.text,
+        text: answeredQuestionMeta[id]!,
         value: discoveryAnswers[id] as boolean | string,
         writeKey: id,
       }));
