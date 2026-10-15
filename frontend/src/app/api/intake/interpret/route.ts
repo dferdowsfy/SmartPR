@@ -17,6 +17,7 @@ import { detectSpanish } from "../../../ai/intake/detectSpanish";
 import { clampCandidates, type KbCandidates } from "../../../ai/intake/kbCandidates";
 import { BUSINESS_STRUCTURE_VALUES } from "../../../ai/intake/validateInterpretation";
 import { validateProjectContext } from "../../../ai/intake/projectContext";
+import { describesEnergyServiceCompany, scopeEnergyServiceCompanyContext } from "../../../processes/energyServiceCompany";
 import { kbExtractionPromptLines } from "../../../processes/extraction";
 import { combineScenario, interpretScenario, normalizeScenario } from "../../../ai/intake/scenario";
 import { passportExtractionPrompt, validatePassportProposals } from "../../../ai/intake/passportExtraction";
@@ -922,7 +923,13 @@ export async function POST(request: Request) {
     const stripped = stripUnknownIds(parsed, candidates);
     // Project-context facts are validated defensively: malformed entries are
     // dropped individually and never destroy the rest of the interpretation.
-    const { context: projectContext } = validateProjectContext(parsed.projectContext, description);
+    let { context: projectContext } = validateProjectContext(parsed.projectContext, description);
+    // Live Run 5 I2: a solar sales/installation COMPANY's office is not a
+    // plant — drop site-system facts the model read off the service line so
+    // intake does not ask roof/kW/LUMA plant questions for the office pin.
+    if (describesEnergyServiceCompany(description)) {
+      projectContext = scopeEnergyServiceCompanyContext(projectContext);
+    }
     // The model's scenario reading is checked against the text (quotes must
     // be real; guarded conclusions need the right language) and combined
     // with the deterministic reading. Never trusted as-is.

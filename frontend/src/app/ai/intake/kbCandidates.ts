@@ -133,11 +133,16 @@ const ALWAYS_INCLUDE = ["Q_PHYSICAL_LOCATION", "Q_HOME_BASED", "Q_ONLINE_ONLY", 
  * that exist in the active KB survive validation.
  */
 const BUSINESS_TYPE_SYNONYMS: Record<string, string[]> = {
+  // "coffee" alone stays for cafés; cacao/cocoa never map here (I1).
   BT_CAFE: ["coffee shop", "coffee house", "coffeehouse", "coffee", "espresso", "cafeteria", "cafetin"],
   BT_BAR: ["pub", "tavern", "cocktail lounge", "wine bar", "beer garden", "barra"],
   BT_RESTAURANT: ["eatery", "bistro", "diner", "restaurante"],
   BT_FOOD_TRUCK: ["food truck", "mobile kitchen", "food cart"],
   BT_BAKERY: ["panaderia", "pastry shop", "patisserie"],
+  // Live Run 5 I1: cacao processing + farm stand is food manufacturing / farm,
+  // never a coffee shop.
+  BT_FOOD_MANUFACTURING: ["cacao", "cocoa", "chocolate", "food processing", "processing workshop", "taller de procesamiento"],
+  BT_FARM: ["farm stand", "puesto agricola", "puesto agrícola", "cacao farm", "cocoa farm", "finca de cacao"],
   BT_CONSULTING_FIRM: ["consulting", "consultant", "consultancy", "advisory", "consultoria"],
   BT_LAW_FIRM: ["lawyer", "attorney", "legal practice", "abogado"],
   BT_GUEST_HOUSE: ["airbnb", "bed and breakfast", "b&b", "short term rental", "hostal"],

@@ -241,6 +241,18 @@ export interface ValidateOptions {
 const FEDERAL_CONTRACTS_STATED_RE =
   /\b(?:federal\s+contracts?|federal\s+grants?|federal\s+awards?|sam\.gov|gsa\b|far\b|contratos?\s+federales?|fondos?\s+federales?|subvenci(?:ón|ones)\s+federales?)\b/i;
 
+/** Live Run 5 I1: cacao/cocoa/chocolate processing is not a café / coffee shop. */
+const CACAO_PROCESSING_RE =
+  /\b(?:cacao|cocoa|chocolate)\b/i;
+const COFFEE_CAFE_STATED_RE =
+  /\b(?:coffee\s*shop|coffee\s*house|coffeehouse|caf[eé]|espresso|cafeter[ií]a|cafet[ií]n)\b/i;
+
+function isCacaoMisclassifiedAsCafe(description: string | undefined, businessTypeId: string): boolean {
+  if (!description || businessTypeId !== "BT_CAFE") return false;
+  if (!CACAO_PROCESSING_RE.test(description)) return false;
+  return !COFFEE_CAFE_STATED_RE.test(description);
+}
+
 
 /**
  * Validate a raw model interpretation against the active KB.
@@ -274,6 +286,8 @@ export function validateInterpretation(
       drop("businessType", "missing id");
     } else if (!match) {
       drop("businessType", `unknown business type id "${id}"`);
+    } else if (isCacaoMisclassifiedAsCafe(options.description, match.id)) {
+      drop("businessType", "cacao/cocoa processing is not a coffee shop / café — leave type for confirmation");
     } else {
       const band = classifyConfidence(confidence);
       const evidence = extractEvidence(raw.businessType);
