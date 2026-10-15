@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import JSZip from 'jszip';
 import { L } from './i18n';
 import { computeRequirementsFromKB, requirementForProcessDocument, documentIdForCode, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, agencySiteUrl, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
-import { isOnlineOnlyLocation } from './locationTypes';
+import { isOnlineOnlyLocation, locationTypeInAllowed } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
 import { buildRequirementGuidance, legalBasisFor, sourceRowValue, newPremisesContextLabel, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
@@ -2397,6 +2397,19 @@ export default function SmartPRIntake() {
   // established fills the form, so the same fact is never asked again in a
   // different form. Only empty fields the user has not set by hand are
   // filled; a project municipality replaces a Passport business address.
+  // J1: a location label spelled differently in the business type's list
+  // ("Restaurant / Food Service Location" vs "Restaurant Location") is the
+  // same answer — show it selected instead of re-asking.
+  useEffect(() => {
+    const current = profile.location_type;
+    if (!current || !profile.business_type) return;
+    const allowed = LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES;
+    if (allowed.includes(current)) return;
+    const equivalent = locationTypeInAllowed(current, allowed);
+    if (equivalent && equivalent !== current) {
+      setProfile((prev) => (prev.location_type === current ? { ...prev, location_type: equivalent } : prev)); // eslint-disable-line react-hooks/set-state-in-effect
+    }
+  }, [profile.business_type, profile.location_type]);
   const scenarioProfileFill = useMemo(() => {
     if (!mergedScenario || !scenarioActive || projectIntent === 'project_only') {
       return mergedScenario && scenarioActive ? { municipality: mergedScenario.property.municipality?.value ?? null } : null;
@@ -2426,7 +2439,7 @@ export default function SmartPRIntake() {
         // A location type the business type does not offer (the property's
         // old use, e.g. "Warehouse" for a furniture factory) is not an answer.
         const invalidLocation = key === 'location_type' && !!current
-          && !(LOCATION_TYPES_BY_BUSINESS_TYPE[next.business_type] || LOCATION_TYPES).includes(current);
+          && !locationTypeInAllowed(current, LOCATION_TYPES_BY_BUSINESS_TYPE[next.business_type] || LOCATION_TYPES);
         const replaceable = !current || invalidLocation || (key === 'municipality' && fromPassport.has('municipality'));
         if (!replaceable || current === value) return;
         next[key] = value;
@@ -8040,7 +8053,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     onChange={e => {
                       const newBt = e.target.value;
                       const allowed = LOCATION_TYPES_BY_BUSINESS_TYPE[newBt] || LOCATION_TYPES;
-                      const newLoc = allowed.includes(profile.location_type || '') ? profile.location_type : '';
+                      // J1: keep an equivalent location label ("Restaurant / Food Service Location" -> "Restaurant Location").
+                      const newLoc = locationTypeInAllowed(profile.location_type, allowed);
                       setProfile({ ...profile, business_type: newBt, location_type: newLoc });
                       markUserTouched('business_type');
                     }}

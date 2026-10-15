@@ -52,3 +52,31 @@ export function isHomeBasedLocation(locationType: string | null | undefined): bo
 export function isMobileLocation(locationType: string | null | undefined): boolean {
   return MOBILE_SET.has(canon(locationType));
 }
+
+/**
+ * Location-type labels that mean the same premises but are spelled
+ * differently in the generic list and the per-business-type lists.
+ * J1 (Run 7 live, Cidra pizzeria, 2026-10-15): the description prefilled
+ * "Restaurant / Food Service Location" from the generic list; picking the
+ * business type "Restaurant" then silently cleared it, because that type's
+ * list calls the same thing "Restaurant Location".
+ */
+const LOCATION_TYPE_ALIAS_GROUPS: readonly (readonly string[])[] = [
+  ["Restaurant / Food Service Location", "Restaurant Location", "Restaurant / Food Service"],
+  ["Online / Remote Only", "Online Only", "Online", "Remote Only"],
+  ["Shared Workspace / Coworking", "Shared Workspace"],
+  ["Home-Based Business", "Home Based Business"],
+];
+
+/**
+ * The label in `allowed` that means the same as `current`: `current` itself
+ * when allowed, otherwise an equivalent spelling the list offers, else "".
+ */
+export function locationTypeInAllowed(current: string | null | undefined, allowed: readonly string[]): string {
+  const value = (current || "").trim();
+  if (!value) return "";
+  if (allowed.includes(value)) return value;
+  const group = LOCATION_TYPE_ALIAS_GROUPS.find((g) => g.some((label) => canon(label) === canon(value)));
+  if (!group) return "";
+  return allowed.find((option) => group.some((label) => canon(label) === canon(option))) ?? "";
+}
