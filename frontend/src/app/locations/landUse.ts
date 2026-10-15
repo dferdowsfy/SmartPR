@@ -359,7 +359,8 @@ export function analyzeLandUse(parcel: ParcelFacts, activity: ProposedActivity, 
       return { code: d.code, share: d.share, districtId: null, districtName: d.name ?? "Sistema vial", outcome: "insufficient", permissionId: null, conditions: [], citation: null, sources: [], equivalence: null, sliver, gap: null, road: true, via: null };
     }
     if (!zd) {
-      if (!sliver) gaps.push({ kind: "zoning_district", detail: `No graph district for calificación "${d.code}"${d.name ? ` (${d.name})` : ""} in ${parcel.municipality}: add it with its RC 2023 equivalence.` });
+      // H8 (live 2026-10-15): never surface internal KB instructions to users.
+      if (!sliver) gaps.push({ kind: "zoning_district", detail: `Zoning compatibility could not be verified: district "${d.code}"${d.name ? ` (${d.name})` : ""} is not yet in SmartPR's knowledge base for ${parcel.municipality}.` });
       return { code: d.code, share: d.share, districtId: null, districtName: d.name, outcome: "insufficient", permissionId: null, conditions: [], citation: null, sources: [], equivalence: null, sliver, gap: `No verified district rules for ${d.code}`, via };
     }
     const perm = activity.use ? g.usePermissions.find((p) => s(p.zoning_district_id) === zd.id && s(p.land_use_id) === activity.use && s(p.verification) === "verified_text") : undefined;
@@ -786,7 +787,7 @@ function projectDecision(x: {
     obtain: ap.citationGap!, from: "Reglamento Conjunto 2023 text", blocks: bi(`Confirmed status of ${ap.name}.`, `El estado confirmado de ${ap.name}.`) });
   for (const d of principal.filter((y) => !y.districtId)) gaps.push({ id: `district_${d.code}`, kind: "rule_coverage", label: bi(`Evidence gap — rules for ${d.code}`, `Brecha de evidencia — reglas de ${d.code}`),
     missing: bi(`The district rules (uses and parameters) for mapped code ${d.code} in ${parcel.municipality}.`, `Las reglas del distrito (usos y parámetros) para el código ${d.code} en ${parcel.municipality}.`), why: bi("Without them SmartPR cannot read the use against the district.", "Sin ellas SmartPR no puede evaluar el uso frente al distrito."),
-    obtain: bi("Research task: find the RC 2023 equivalence table or municipal regulation for this code and add it to the knowledge base.", "Tarea: ubicar la tabla de equivalencias del RC 2023 o el reglamento municipal para este código y añadirlo a la base de conocimiento."), from: "Junta de Planificación", blocks: bi("Compatibility conclusion.", "La conclusión de compatibilidad.") });
+    obtain: bi("Ask a land-use professional or the municipal planning office which Reglamento Conjunto district this mapped code corresponds to.", "Consulte a un profesional de uso de suelo o a la oficina de planificación municipal a qué distrito del Reglamento Conjunto corresponde este código."), from: "Junta de Planificación / municipal planning office", blocks: bi("Compatibility conclusion.", "La conclusión de compatibilidad.") });
   const unable: Array<[keyof ParcelFacts, Bi]> = [["wetlands", bi("wetlands", "humedales")], ["protectedArea", bi("protected areas", "áreas protegidas")], ["historic", bi("historic zones/sites", "zonas/sitios históricos")], ["archaeology", bi("archaeological sensitivity", "sensibilidad arqueológica")], ["reserve", bi("natural reserves", "reservas naturales")], ["coastal", bi("coastal zone", "zona costanera")]];
   if (parcel.flood.status === "unable") unable.unshift(["flood", bi("FEMA flood zones", "zonas inundables FEMA")]);
   if (parcel.zoningStatus === "unable") unable.unshift(["zoningStatus", bi("zoning (calificación)", "calificación")]);

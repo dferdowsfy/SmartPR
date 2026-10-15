@@ -296,7 +296,9 @@ const REQUIREMENT_GROUP_COPY: Record<RequirementGroupId, { title: string; sub: s
 /** Environmental review: undetermined until the operation's equipment and waste facts are known. */
 /** Land-use KB gap note (Run 2): when zoning district or use permission is
  * missing from the land-use table, surface it on Requirements instead of silence. */
-function ZoningCoverageNote({ language, detail }: { language: 'en' | 'es'; detail?: string }) {
+function ZoningCoverageNote({ language }: { language: 'en' | 'es' }) {
+  // H8 (live 2026-10-15): plain language only — never append internal KB/
+  // graph-gap strings (e.g. "add it with its RC 2023 equivalence").
   return (
     <div className="rq-card rq-open-item" data-testid="zoning-coverage-note">
       <div className="rq-card-row">
@@ -307,7 +309,6 @@ function ZoningCoverageNote({ language, detail }: { language: 'en' | 'es'; detai
           </div>
           <p className="rq-card-desc">
             {L('Zoning compatibility not yet verified for this district/use — under expert review', language)}
-            {detail ? ` (${detail})` : ''}
           </p>
         </div>
       </div>
@@ -2338,7 +2339,7 @@ export default function SmartPRIntake() {
   );
   // What the user is told is still needed: the Project choice already answers
   // "existing business or a new one being formed?" (display only).
-  const scenarioEvalShown = useMemo(() => evaluationAsShown(scenarioEval, { projectIntent }), [scenarioEval, projectIntent]);
+  const scenarioEvalShown = useMemo(() => evaluationAsShown(scenarioEval, { projectIntent, skippedQuestions: scenarioSkipped }), [scenarioEval, projectIntent, scenarioSkipped]);
   // Scenario-based permit reasoning (knowledge graph): recomputed whenever
   // intake answers change. Display only — requirement generation unchanged.
   const permitReasoning = useMemo(
@@ -6811,11 +6812,32 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Two rows for the same question id is never valid UI (a guided question
   // and a trigger can share an answer key after Change + re-answer), so
   // dedupe by id — first occurrence wins.
+  // H10 (live 2026-10-15): remember text for answers that briefly leave the
+  // engine's live questionList while an earlier answer is being re-edited.
+  const answeredQuestionMetaRef = useRef<Record<string, { text: string }>>({});
   const answeredIntakeQuestions = (() => {
+    // Keep meta warm for live questions; drop meta when the answer is gone
+    // (pruneAfterChange or Change). H10: orphans with meta stay visible.
+    for (const q of questionList) {
+      if (discoveryAnswers[q.id] !== undefined) answeredQuestionMetaRef.current[q.id] = { text: q.text };
+    }
+    for (const id of Object.keys(answeredQuestionMetaRef.current)) {
+      if (discoveryAnswers[id] === undefined) delete answeredQuestionMetaRef.current[id];
+    }
     const seen = new Set<string>();
-    return questionList
+    const guidedLive = questionList
       .filter((q) => discoveryAnswers[q.id] !== undefined)
-      .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }))
+      .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }));
+    const guidedOrphans = Object.keys(answeredQuestionMetaRef.current)
+      .filter((id) => discoveryAnswers[id] !== undefined && !questionList.some((q) => q.id === id))
+      .map((id) => ({
+        id,
+        text: answeredQuestionMetaRef.current[id]!.text,
+        value: discoveryAnswers[id] as boolean | string,
+        writeKey: id,
+      }));
+    return guidedLive
+      .concat(guidedOrphans)
       .concat(UNANSWERED_TRIGGER_QUESTIONS
         // Trigger rows exist for questions the guided list never asks. A
         // guided question can share the trigger's answer key under its own
@@ -8260,7 +8282,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     />
                   ))}
                   {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
-                  {group.id === 'conditional' && zoningCoverageNote && <ZoningCoverageNote language={language} detail={zoningGapDetail ?? undefined} />}
+                  {group.id === 'conditional' && zoningCoverageNote && <ZoningCoverageNote language={language} />}
                 </div>
               </section>
             );
@@ -8275,7 +8297,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           {zoningCoverageNote && !groupedCards.some((g) => g.id === 'conditional') && (
             <section className="rq-group ck-group rq-group-conditional" data-testid="req-group-zoning-gap">
               <div className="rq-group-head">{L('CONDITIONAL / NEEDS INFORMATION', language)}</div>
-              <div className="rq-list"><ZoningCoverageNote language={language} detail={zoningGapDetail ?? undefined} /></div>
+              <div className="rq-list"><ZoningCoverageNote language={language} /></div>
             </section>
           )}
 
@@ -8520,7 +8542,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
             <div className="headline">
               <div className="eyebrow">{L('Readiness Score', language)}</div>
-              <h1>{profile.name || (mergedScenario ? scenarioTitle(mergedScenario) : null) || L(isProjectOnly ? 'Your project' : 'Your business', language)}</h1>
+              <h1>{profile.name.trim()
+                || (!isProjectOnly && profile.business_type
+                  ? (profile.municipality
+                      ? `${profile.business_type} ${language === 'es' ? 'en' : 'in'} ${profile.municipality}`
+                      : profile.business_type)
+                  : null)
+                || (mergedScenario && scenarioActive ? scenarioTitle(mergedScenario) : null)
+                || L(isProjectOnly ? 'Your project' : 'Your business', language)}</h1>
               <p>{completedMandatory} {L('of', language)} {totalMandatory} {L('Required Documents Validated', language)}{findings.filter(f => f.severity === 'critical').length === 0 && missingCount === 0 ? ` · ${L('No Critical Issues Found', language)}` : missingCount > 0 ? ` · ${missingCount} ${L('still missing', language)}` : ''}</p>
             </div>
             <div className="banner-stat">
