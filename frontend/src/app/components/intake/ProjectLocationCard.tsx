@@ -107,6 +107,8 @@ function SiteDetails({ site, lang, status, report, proposed }: { site: IntakeSit
   const cat = report?.property.catastro.value ?? null;
   const area = report?.property.boundary.area_m2 ?? null;
   const approximate = site.coordinate_source === "GEOCODED_ADDRESS";
+  // H12 (live 2026-10-15): after the user confirms a geocoded address, do not
+  // keep saying "Site from address" — that reads as unconfirmed.
   const pill =
     proposed && status === "selected"
       ? L("Proposed location — not confirmed", "Ubicación propuesta — sin confirmar", lang)
@@ -115,7 +117,7 @@ function SiteDetails({ site, lang, status, report, proposed }: { site: IntakeSit
       : status === "selected"
         ? L("Exact site selected", "Lugar exacto seleccionado", lang)
         : approximate
-          ? L("Site from address", "Lugar según la dirección", lang)
+          ? L("Location confirmed (from address)", "Ubicación confirmada (según la dirección)", lang)
           : L("Exact site confirmed", "Lugar exacto confirmado", lang);
   return (
     <div className="spr-plc-details" data-testid="location-rules-for">
@@ -232,6 +234,19 @@ export function ProjectLocationCard({
   /** Resolved but not yet saved ("Use this location"). */
   const [draft, setDraft] = useState<IntakeSite | null>(null);
   const seq = useRef(0);
+  // H3 (live 2026-10-15): description → prefill often arrives after mount
+  // (interpret finishes later). Seed an empty search once, and open the map
+  // workspace so the user sees the named place without an extra click.
+  const seededQuery = useRef(false);
+  useEffect(() => {
+    const q = (initialQuery ?? "").trim();
+    if (!q || site || draft) return;
+    if (!query.trim() && !seededQuery.current) {
+      seededQuery.current = true;
+      setQuery(q);
+      setStarted(true);
+    }
+  }, [initialQuery, site, draft, query]);
   /** Off-lot check for the draft pin (null = not checked / unavailable). */
   // Keyed by the draft point, so a stale answer never shows for a moved pin.
   const [snapState, setSnapState] = useState<{ key: string; check: SnapCheck } | null>(null);

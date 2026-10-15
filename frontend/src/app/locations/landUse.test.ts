@@ -139,6 +139,8 @@ test("unknown facts become questions, never guesses; missing rules become QA gap
   const r = analyzeProposedActivity("Build a hotel", site, p2);
   assert.equal(r.compatibility.baseOutcome, "insufficient");
   assert.ok(r.coverageGaps.some((g) => g.kind === "zoning_district" && /ZZ-9/.test(g.detail)));
+  assert.ok(r.coverageGaps.some((g) => g.kind === "zoning_district" && /could not be verified/i.test(g.detail)));
+  assert.ok(!r.coverageGaps.some((g) => /add it with its|No graph district/i.test(g.detail)));
 });
 
 function ruralParcel(code: string, name: string): ParcelFindings {

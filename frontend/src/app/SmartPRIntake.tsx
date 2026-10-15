@@ -294,9 +294,22 @@ const REQUIREMENT_GROUP_COPY: Record<RequirementGroupId, { title: string; sub: s
 };
 
 /** Environmental review: undetermined until the operation's equipment and waste facts are known. */
+/** H10: question text for answers that briefly leave the live questionList
+ * (e.g. while an earlier answer is re-edited). Module-level so we neither
+ * mutate refs during render nor setState in an effect (lint baseline). */
+const answeredQuestionTextCache: Record<string, string> = {};
+function rememberAnsweredQuestionText(id: string, text: string) {
+  answeredQuestionTextCache[id] = text;
+}
+function forgetAnsweredQuestionText(id: string) {
+  delete answeredQuestionTextCache[id];
+}
+
 /** Land-use KB gap note (Run 2): when zoning district or use permission is
  * missing from the land-use table, surface it on Requirements instead of silence. */
-function ZoningCoverageNote({ language, detail }: { language: 'en' | 'es'; detail?: string }) {
+function ZoningCoverageNote({ language }: { language: 'en' | 'es' }) {
+  // H8 (live 2026-10-15): plain language only — never append internal KB/
+  // graph-gap strings (e.g. "add it with its RC 2023 equivalence").
   return (
     <div className="rq-card rq-open-item" data-testid="zoning-coverage-note">
       <div className="rq-card-row">
@@ -307,7 +320,6 @@ function ZoningCoverageNote({ language, detail }: { language: 'en' | 'es'; detai
           </div>
           <p className="rq-card-desc">
             {L('Zoning compatibility not yet verified for this district/use — under expert review', language)}
-            {detail ? ` (${detail})` : ''}
           </p>
         </div>
       </div>
@@ -2338,7 +2350,7 @@ export default function SmartPRIntake() {
   );
   // What the user is told is still needed: the Project choice already answers
   // "existing business or a new one being formed?" (display only).
-  const scenarioEvalShown = useMemo(() => evaluationAsShown(scenarioEval, { projectIntent }), [scenarioEval, projectIntent]);
+  const scenarioEvalShown = useMemo(() => evaluationAsShown(scenarioEval, { projectIntent, skippedQuestions: scenarioSkipped }), [scenarioEval, projectIntent, scenarioSkipped]);
   // Scenario-based permit reasoning (knowledge graph): recomputed whenever
   // intake answers change. Display only — requirement generation unchanged.
   const permitReasoning = useMemo(
@@ -3179,6 +3191,7 @@ export default function SmartPRIntake() {
           return next;
         });
       }
+      rememberAnsweredQuestionText(q.id, q.text);
       setDiscoveryAnswers((prev) => ({ ...prev, [q.id]: value }));
       // Advance past the question just answered; the questionList effect
       // recomputes firstUnanswered once the new fact removes this question.
@@ -3267,6 +3280,7 @@ export default function SmartPRIntake() {
     // truck both rendered a phantom "Owned property" deed card.
     // projectContextAnswerToFacts("existing_lease", false) now returns [].
 
+    rememberAnsweredQuestionText(q.id, q.text);
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
     // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): a Yes
     // on food served/sold arms Q_FOOD_PREPARED when preparation is still
@@ -6811,11 +6825,32 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Two rows for the same question id is never valid UI (a guided question
   // and a trigger can share an answer key after Change + re-answer), so
   // dedupe by id — first occurrence wins.
+  // H10: warm text cache when the live list or answers change (effect only —
+  // never during render, so react-hooks/immutability stays at baseline).
+  useEffect(() => {
+    for (const q of questionList) {
+      if (discoveryAnswers[q.id] !== undefined) rememberAnsweredQuestionText(q.id, q.text);
+    }
+    for (const id of Object.keys(answeredQuestionTextCache)) {
+      if (discoveryAnswers[id] === undefined) forgetAnsweredQuestionText(id);
+    }
+  }, [questionList, discoveryAnswers]);
   const answeredIntakeQuestions = (() => {
+    // H10: cache is written only in answer/prune handlers and the effect above.
     const seen = new Set<string>();
-    return questionList
+    const guidedLive = questionList
       .filter((q) => discoveryAnswers[q.id] !== undefined)
-      .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }))
+      .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }));
+    const guidedOrphans = Object.keys(answeredQuestionTextCache)
+      .filter((id) => discoveryAnswers[id] !== undefined && !questionList.some((q) => q.id === id))
+      .map((id) => ({
+        id,
+        text: answeredQuestionTextCache[id]!,
+        value: discoveryAnswers[id] as boolean | string,
+        writeKey: id,
+      }));
+    return guidedLive
+      .concat(guidedOrphans)
       .concat(UNANSWERED_TRIGGER_QUESTIONS
         // Trigger rows exist for questions the guided list never asks. A
         // guided question can share the trigger's answer key under its own
@@ -6845,7 +6880,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       id !== pending.reopened && !id.startsWith('pc_') && discoveryAnswers[id] !== undefined
       && (!current.has(id) || isQuestionSuppressedByAnswers(id, discoveryAnswers)));
     if (stale.length === 0) return;
-    stale.forEach((id) => markUserTouched(id));
+    stale.forEach((id) => { markUserTouched(id); forgetAnsweredQuestionText(id); });
     setDiscoveryAnswers((prev) => { const next = { ...prev }; for (const id of stale) delete next[id]; return next; });
   }, [discoveryAnswers, questionList]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6853,6 +6888,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const reopenAnsweredQuestion = (questionId: string) => {
     setAiPrefilledKeys((prev) => prev.filter((id) => id !== questionId));
     markUserTouched(questionId);
+    forgetAnsweredQuestionText(questionId);
     setDiscoveryAnswers((prev) => {
       const next = { ...prev };
       delete next[questionId];
@@ -7824,6 +7860,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                           // user-touched so the scenario-answer merge
                           // cannot re-apply the deleted value.
                           markUserTouched(item.writeKey);
+                          forgetAnsweredQuestionText(item.writeKey);
+                          forgetAnsweredQuestionText(item.id);
                           setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; });
                         }
                       },
@@ -8260,7 +8298,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                     />
                   ))}
                   {group.id === 'conditional' && envOpenItem && <EnvironmentalOpenItem language={language} />}
-                  {group.id === 'conditional' && zoningCoverageNote && <ZoningCoverageNote language={language} detail={zoningGapDetail ?? undefined} />}
+                  {group.id === 'conditional' && zoningCoverageNote && <ZoningCoverageNote language={language} />}
                 </div>
               </section>
             );
@@ -8275,7 +8313,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           {zoningCoverageNote && !groupedCards.some((g) => g.id === 'conditional') && (
             <section className="rq-group ck-group rq-group-conditional" data-testid="req-group-zoning-gap">
               <div className="rq-group-head">{L('CONDITIONAL / NEEDS INFORMATION', language)}</div>
-              <div className="rq-list"><ZoningCoverageNote language={language} detail={zoningGapDetail ?? undefined} /></div>
+              <div className="rq-list"><ZoningCoverageNote language={language} /></div>
             </section>
           )}
 
@@ -8520,7 +8558,14 @@ const loadExample = (example: Partial<BusinessProfile>) => {
             </div>
             <div className="headline">
               <div className="eyebrow">{L('Readiness Score', language)}</div>
-              <h1>{profile.name || (mergedScenario ? scenarioTitle(mergedScenario) : null) || L(isProjectOnly ? 'Your project' : 'Your business', language)}</h1>
+              <h1>{profile.name.trim()
+                || (!isProjectOnly && profile.business_type
+                  ? (profile.municipality
+                      ? `${profile.business_type} ${language === 'es' ? 'en' : 'in'} ${profile.municipality}`
+                      : profile.business_type)
+                  : null)
+                || (mergedScenario && scenarioActive ? scenarioTitle(mergedScenario) : null)
+                || L(isProjectOnly ? 'Your project' : 'Your business', language)}</h1>
               <p>{completedMandatory} {L('of', language)} {totalMandatory} {L('Required Documents Validated', language)}{findings.filter(f => f.severity === 'critical').length === 0 && missingCount === 0 ? ` · ${L('No Critical Issues Found', language)}` : missingCount > 0 ? ` · ${missingCount} ${L('still missing', language)}` : ''}</p>
             </div>
             <div className="banner-stat">

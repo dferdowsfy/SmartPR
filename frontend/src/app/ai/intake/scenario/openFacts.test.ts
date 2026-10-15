@@ -53,3 +53,19 @@ test("the intake wires the shown evaluation into the hint and the sidebar", asyn
   assert.match(intake, /stillNeeds: \(scenarioEvalShown\?\.controlling/);
   assert.doesNotMatch(intake, /scenarioEval\.controlling\.length/);
 });
+
+test("H11: skipping authorized_use clears it from the may-also-need hint", () => {
+  const withAuth = {
+    ...ev,
+    controlling: [
+      ...ev.controlling,
+      { id: "authorized_use" as const, label: "Current authorized use of the property", paths: ["property.authorizedUse" as const], branch: "use_authorization" },
+    ],
+    questions: [],
+  };
+  assert.ok(openControllingFacts(withAuth.controlling, { projectIntent: "new_business" }).some((x) => x.id === "authorized_use"));
+  assert.ok(!openControllingFacts(withAuth.controlling, { projectIntent: "new_business", skippedQuestions: ["sq_authorized_use"] }).some((x) => x.id === "authorized_use"));
+  const html = (e: typeof withAuth) => renderToStaticMarkup(createElement(ScenarioQuestions, { evaluation: e, lang: "en", onAnswer: () => {}, onSkip: () => {} }));
+  assert.match(html(withAuth), /current authorized use of the property/i);
+  assert.doesNotMatch(html(evaluationAsShown(withAuth, { projectIntent: "new_business", skippedQuestions: ["sq_authorized_use"] })), /current authorized use of the property/i);
+});
