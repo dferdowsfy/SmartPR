@@ -140,6 +140,12 @@ import type { LocationEngineFacts } from './locations/locationContext';
 import { RequirementCard, type RequirementAction, type RequirementBadge, type RequirementSecondaryAction, type RequirementFact, type RequirementFiling } from './components/filing/RequirementCard';
 import { claraSupportFor, groupRequirements, orderByPrerequisites, splitOtherChecks, isEnergyDeveloperCompany, developerGroup, openStepCount, REQUIREMENT_GROUP_ORDER, type RequirementGroupId } from './components/filing/requirementGroups';
 import { computeEnergyAssessment } from './processes/view';
+import {
+  describesEnergyServiceCompany,
+  scopeEnergyServiceCompanyContext,
+  withoutSiteSystemAnswers,
+  withoutSiteSystemQuestions,
+} from './processes/energyServiceCompany';
 import { gateUtilityScaleDgCards, isProposedEnergyProject, supersededLegacyCards, withoutEnergyVerifyExisting } from './processes/legacyCards';
 import { processChecklist, countsLine, projectSummaryLine, capitalizeFirst } from './processes/presentation';
 import { ChecklistSummary, InfoTip, type SummaryQuestion } from './components/checklist/ChecklistParts';
@@ -2970,7 +2976,12 @@ export default function SmartPRIntake() {
         projectIntent === "existing_business" && existingBizFormed
           ? list.filter((q) => q.id !== "Q_BUSINESS_STRUCTURE")
           : list;
-      const fullList = [...intentFiltered, ...projectFollowUps];
+      // Live Run 5 I2: energy sales/install COMPANY — drop plant/system
+      // discovery questions (roof/kW/ownership) that describe customers' systems.
+      const serviceScoped = describesEnergyServiceCompany(intakeDescription)
+        ? withoutSiteSystemQuestions(intentFiltered)
+        : intentFiltered;
+      const fullList = [...serviceScoped, ...projectFollowUps];
       // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): when
       // the narrative/interpreter already established food served/sold, the
       // snapshot list may still lack Q_FOOD_PREPARED — ask it rather than
@@ -3002,7 +3013,7 @@ export default function SmartPRIntake() {
       setQuestionList([]);
       setCurrentQuestionIndex(0);
     }
-  }, [profile.business_type, profile.location_type, kbReady, projectContext, projectIntent, existingBizFormed, scenarioActive]);
+  }, [profile.business_type, profile.location_type, kbReady, projectContext, projectIntent, existingBizFormed, scenarioActive, intakeDescription]);
 
   // Project-first branching.
   //
@@ -3588,16 +3599,24 @@ export default function SmartPRIntake() {
     // On a fresh description quarantineNarrativeFacts already dropped the old
     // description's keys synchronously (state and ref), so the merge base
     // below can never reintroduce them.
-    const incoming = validated?.projectContext;
+    const incomingRaw = validated?.projectContext;
+    const incoming =
+      incomingRaw && describesEnergyServiceCompany(intakeDescription)
+        ? scopeEnergyServiceCompanyContext(incomingRaw)
+        : incomingRaw;
     const mergedContext =
       incoming && Object.keys(incoming).length > 0
         ? mergeProjectContext(projectContextRef.current, incoming)
-        : projectContextRef.current;
-    if (incoming && Object.keys(incoming).length > 0) {
+        : describesEnergyServiceCompany(intakeDescription)
+          ? scopeEnergyServiceCompanyContext(projectContextRef.current)
+          : projectContextRef.current;
+    if ((incoming && Object.keys(incoming).length > 0) || describesEnergyServiceCompany(intakeDescription)) {
       setProjectContext(mergedContext);
       // Narrative-derived context keys are dropped on the next fresh
       // description (user-stated pc_* follow-up facts are never tracked here).
-      for (const k of Object.keys(incoming)) interpretedContextKeysRef.current.add(k);
+      if (incoming) {
+        for (const k of Object.keys(incoming)) interpretedContextKeysRef.current.add(k);
+      }
     }
 
     // Rebuild the Project Passport from the current intent + context so it
@@ -5770,10 +5789,16 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       .map((d) => documentIdForCode(d.requirement_code))
       .filter((id): id is string => !!id),
   ];
+  const energyProjectContext = describesEnergyServiceCompany(intakeDescription)
+    ? scopeEnergyServiceCompanyContext(projectContext)
+    : projectContext;
+  const energyDiscoveryAnswers = describesEnergyServiceCompany(intakeDescription)
+    ? withoutSiteSystemAnswers(discoveryAnswers)
+    : discoveryAnswers;
   const { graph: energyGraph, assessment: energyAssessment } = computeEnergyAssessment({
-    projectContext,
+    projectContext: energyProjectContext,
     municipality: profile.municipality,
-    answers: discoveryAnswers,
+    answers: energyDiscoveryAnswers,
     // The pin's map layers answer siting questions (flood zone, coastal
     // zone, land classification) the description left open.
     location: intakeSite && siteLayersCurrent(intakeSite)

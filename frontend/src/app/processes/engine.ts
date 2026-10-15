@@ -572,6 +572,17 @@ export function evaluateProcesses(graph: ProcessGraph, inputFacts: FactMap, opts
     for (const f of expandAsk(graph.projectTypes.get(m.id)!.ask ?? [])) bump(f, 2, m.id);
   }
   const prio = (f: string) => factDefs.get(f)?.question_priority ?? 0;
+  // Live Run 5 I2: parallel_operation and interconnection_required are
+  // aliases of the same LUMA-grid fact (energyFacts mirrors one into the
+  // other). Asking both blocks intake with duplicate "Will it connect to
+  // LUMA?" / "Will it run connected to the LUMA grid?" lines.
+  if (weight.has("parallel_operation") && weight.has("interconnection_required")) {
+    const a = weight.get("parallel_operation")!;
+    const b = weight.get("interconnection_required")!;
+    for (const id of b.resolves) a.resolves.add(id);
+    a.w = Math.max(a.w, b.w);
+    weight.delete("interconnection_required");
+  }
   const questions: ClarifyingQuestion[] = [...weight.entries()]
     .sort((a, b) => b[1].w - a[1].w || prio(b[0]) - prio(a[0]) || b[1].resolves.size - a[1].resolves.size || a[0].localeCompare(b[0]))
     .slice(0, opts.maxQuestions ?? 3)
