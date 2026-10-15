@@ -253,3 +253,11 @@ test("known Puerto Rico points land in the right municipio", () => {
   }
 });
 
+
+test("G11: terrain source-failure pill matches other unavailable wording", async () => {
+  const down = buildSiteIntelligence(await run(siteFetch({ landslide: "down" })));
+  const terrain = down.groups.flatMap((g) => g.pills).find((p) => p.layer === "terrain");
+  assert.ok(terrain);
+  assert.match(terrain!.label.en, /temporarily unavailable/);
+  assert.ok(!/couldn.t be read/i.test(terrain!.label.en));
+});

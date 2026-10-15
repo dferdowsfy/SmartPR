@@ -30,3 +30,19 @@ test("contractors still get both; consulting firm gets federal contracts only", 
   assert.ok(c.includes("Q_FEDERAL_CONTRACTS_GRANTS") && !c.includes("Q_OFFERS_CONSTRUCTION_SERVICES"));
   assert.ok(ids("Nonprofit Organization").includes("Q_FEDERAL_CONTRACTS_GRANTS"));
 });
+
+test("G10: tour operator / kayak rental: no overnight or short-term-rental questions", () => {
+  for (const bt of ["Tour Operator", "Water Sports & Watercraft Rental", "Excursion Company", "Car Rental Business"]) {
+    const q = ids(bt);
+    assert.ok(!q.some((id) => /guest|overnight|short_term_rental/i.test(id)), `${bt}: ${q.join(",")}`);
+  }
+  const hotel = ids("Hotel");
+  assert.ok(hotel.some((id) => /guest|overnight|short_term/i.test(id)), hotel.join(","));
+});
+
+test("G10: hardware store: no food-sold question; bakery still has it", () => {
+  assert.ok(!ids("Hardware Store").some((id) => /food_sold/i.test(id)));
+  assert.ok(!ids("Clothing Store").some((id) => /food_sold/i.test(id)));
+  assert.ok(ids("Bakery").some((id) => /food/i.test(id)));
+  assert.ok(ids("Restaurant").some((id) => /food/i.test(id)));
+});

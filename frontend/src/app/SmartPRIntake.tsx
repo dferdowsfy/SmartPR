@@ -1694,6 +1694,8 @@ export default function SmartPRIntake() {
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  /** G6: brief progress on first paint of the Deliverables stage. */
+  const [deliverablesPreparing, setDeliverablesPreparing] = useState(false);
   const [missingDocsOpen, setMissingDocsOpen] = useState(false);
   const [businessId, setBusinessId] = useState<string | null>(null);
   // Intake location step: the confirmed site (pin / geocoded address / saved
@@ -3457,11 +3459,24 @@ export default function SmartPRIntake() {
       setAiPrefilledKeys((prev) => Array.from(new Set([...prev, ...prefillKeys])));
     }
     if (confirmKeys.length > 0) {
-      setConfirmationsNeeded((prev) => {
-        const next = { ...prev };
-        for (const key of confirmKeys) next[key] = true;
-        return next;
-      });
+      // G9: a mid-band location_type that matches what the description already
+      // implies for this business type does not need a confirmation badge.
+      const bt = (typeof fullProfile.business_type === 'string' ? fullProfile.business_type : null)
+        || (typeof profilePatch.business_type === 'string' ? profilePatch.business_type : null);
+      const loc = typeof fullProfile.location_type === 'string' ? fullProfile.location_type : null;
+      const allowed = bt ? (LOCATION_TYPES_BY_BUSINESS_TYPE[bt] || LOCATION_TYPES) : LOCATION_TYPES;
+      const clearLoc = !!loc && allowed.includes(loc) && (allowed[0] === loc || /storefront|store|shop|office|warehouse|facility/i.test(loc));
+      const keys = clearLoc ? confirmKeys.filter((k) => k !== 'location_type') : confirmKeys;
+      if (keys.length > 0) {
+        setConfirmationsNeeded((prev) => {
+          const next = { ...prev };
+          for (const key of keys) next[key] = true;
+          if (clearLoc) next.location_type = false;
+          return next;
+        });
+      } else if (clearLoc) {
+        setConfirmationsNeeded((prev) => (prev.location_type ? { ...prev, location_type: false } : prev));
+      }
     }
     // A high-confidence (applied, not suggested) read re-establishes the fact
     // in the current session — including after a fresh description quarantined
@@ -5601,9 +5616,15 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       ? 'deliverables'
       : 'requirements';
   const goTo = (nextView: FilingStage) => {
-    if (nextView === 'intake') setCurrentStep(1);
-    else if (nextView === 'requirements') setCurrentStep(3);
-    else setCurrentStep(9);
+    if (nextView === 'intake') { setDeliverablesPreparing(false); setCurrentStep(1); }
+    else if (nextView === 'requirements') { setDeliverablesPreparing(false); setCurrentStep(3); }
+    else {
+      // G6 (live 2026-10-14): Deliverables first paint can take a while on a
+      // full checklist with no progress feedback. Show a preparing state until
+      // the stage has painted.
+      setDeliverablesPreparing(true);
+      setCurrentStep(9);
+    }
   };
 
   // Switching stages swaps the whole main panel in place; without this the
@@ -5611,6 +5632,17 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // intake -> requirements can land the user mid-page instead of at the top.
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    if (view !== 'deliverables') return;
+    // Two rAFs: wait until the deliverables tree has committed, then clear.
+    let alive = true;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (alive) setDeliverablesPreparing(false);
+      });
+    });
+    // Safety: never leave the preparing banner up forever.
+    const t = window.setTimeout(() => { if (alive) setDeliverablesPreparing(false); }, 8000);
+    return () => { alive = false; window.clearTimeout(t); };
   }, [view]);
 
   const ringScore = readinessScore !== null ? readinessScore : checklistProgress;
@@ -6731,6 +6763,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
     />
   ) : null;
   summaryStepCount = mainCardCount + (showEnergySection ? (energyChecklist?.item_count ?? 0) : 0);
+  // G2 (live 2026-10-14): headline counted only Required Now + Waiting while
+  // more cards were listed. Keep that step count, and name may-apply cards
+  // separately so the label matches what is on the page.
+  const summaryMayApplyCount = mainGroups
+    .filter((g) => g.id === 'conditional' || g.id === 'supporting')
+    .reduce((n, g) => n + g.cards.length, 0);
   // F3 (live 2026-10-14): headline "N identified", readiness denominator, and
   // listed open steps were three different numbers. One open-step count
   // (REQUIRED NOW + WAITING ON PREREQUISITES, plus energy steps when shown).
@@ -7038,9 +7076,22 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const sidebarScopeParts = isProjectOnly
     ? dedupedParts
     : workParts;
-  const sidebarScopeLabel = sidebarScopeParts.length > 0
-    ? sidebarScopeParts.map((p) => p.replace(/_/g, ' ')).join(', ')
-    : null;
+  // G5 (live 2026-10-14): answering the renovation follow-up set Scope to
+  // "renovation" and replaced "Retail Storefront". Location type stays the
+  // Scope; confirmed construction work is appended, never a replacement.
+  const sidebarScopeLabel = (() => {
+    if (isProjectOnly) {
+      return sidebarScopeParts.length > 0
+        ? sidebarScopeParts.map((p) => p.replace(/_/g, ' ')).join(', ')
+        : null;
+    }
+    const loc = profile.location_type?.trim() || null;
+    const work = workParts.map((p) => p.replace(/_/g, ' '));
+    if (loc && work.length) return `${loc} · ${work.join(', ')}`;
+    if (loc) return loc;
+    if (work.length) return work.join(', ');
+    return null;
+  })();
   const projectTypeSignal = dedupedParts.length > 0
     ? { label: `${language === 'es' ? 'Proyecto' : 'Project'}: ${dedupedParts.join(', ')}`, state: 'confirmed' as const }
     : { label: language === 'es' ? 'Se necesita el tipo de proyecto' : 'Project type needed', state: 'needs-info' as const };
@@ -8102,7 +8153,9 @@ const loadExample = (example: Partial<BusinessProfile>) => {
           <div className="rq-page-head">
             <h1>{summaryHeadline ? capitalizeFirst(summaryHeadline) : L('Requirements', language)}</h1>
             {summaryHeadlineLabel && <p className="rq-page-head-label" data-testid="requirements-headline-label">{capitalizeFirst(summaryHeadlineLabel)}</p>}
-            <p>{language === 'es' ? `${summaryStepCount} requisitos identificados` : `${summaryStepCount} requirement${summaryStepCount === 1 ? '' : 's'} identified`}</p>
+            <p data-testid="requirements-headline-count">{language === 'es'
+              ? `${summaryStepCount} trámite${summaryStepCount === 1 ? '' : 's'} por completar ahora${summaryMayApplyCount > 0 ? ` · ${summaryMayApplyCount} más pueden aplicar` : ''}`
+              : `${summaryStepCount} required filing${summaryStepCount === 1 ? '' : 's'} to complete now${summaryMayApplyCount > 0 ? ` · ${summaryMayApplyCount} more may apply` : ''}`}</p>
           </div>
 
           {activeIncentiveResult && (
@@ -8430,6 +8483,12 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       {/* ====================== DELIVERABLES ====================== */}
       {view === 'deliverables' && (
         <main className="shell">
+          {deliverablesPreparing && (
+            <div className="spr-dlv-preparing" role="status" aria-live="polite" data-testid="deliverables-preparing">
+              <RefreshCw className="i spr-spin" aria-hidden="true" />
+              <span>{L('Preparing your deliverables…', language)}</span>
+            </div>
+          )}
           <button className="section-back" onClick={() => goTo('requirements')}>
             ← {L('Back to requirements', language)}
           </button>

@@ -193,11 +193,34 @@ export function PassportMap({
         if (loadTimer) clearTimeout(loadTimer);
         if (!cancelled) setStatus("ready");
       });
+      // G8: some basemap styles paint tiles before "load" settles (or stick
+      // on loading when sprite icons 404). Idle with a loaded style means the
+      // map is usable — clear the "Loading map…" overlay.
+      map.on("idle", () => {
+        if (cancelled || !map.isStyleLoaded()) return;
+        if (loadTimer) clearTimeout(loadTimer);
+        setStatus((s) => (s === "loading" ? "ready" : s));
+      });
+      // G7: OpenFreeMap/liberty references Maki icons (swimming_pool, recycling,
+      // office, running, …) that are missing from the sprite — MapLibre then
+      // logs styleimagemissing and null-number paint warnings. Provide a
+      // transparent 1×1 placeholder so POIs simply omit the icon.
+      map.on("styleimagemissing", (event) => {
+        const id = (event as { id?: string }).id;
+        if (!id || map.hasImage(id)) return;
+        const data = new Uint8Array(4);
+        map.addImage(id, { width: 1, height: 1, data }, { pixelRatio: 1 });
+      });
       // Overlays and the parcel live on top of whichever base style is loaded.
       map.on("style.load", () => drawExtras());
       map.on("error", (event) => {
-        // Individual tile hiccups are recoverable; a style that never loads is not.
-        if (!map.isStyleLoaded() && !(event as { tile?: unknown }).tile) fail();
+        // Individual tile hiccups and missing-sprite notices are recoverable;
+        // a style that never loads is not.
+        const e = event as { tile?: unknown; error?: { status?: number; message?: string } };
+        if (e.tile) return;
+        const msg = e.error?.message ?? "";
+        if (/image|sprite|icon/i.test(msg)) return;
+        if (!map.isStyleLoaded()) fail();
       });
 
       if (navigable && !interactive) map.addControl(new lib.NavigationControl({ showCompass: false }), "top-right");

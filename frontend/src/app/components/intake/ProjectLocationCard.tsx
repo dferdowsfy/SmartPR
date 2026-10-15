@@ -130,10 +130,16 @@ function SiteDetails({ site, lang, status, report, proposed }: { site: IntakeSit
           <dt><Landmark aria-hidden="true" /> {L("Municipality", "Municipio", lang)}</dt>
           <dd data-testid="project-location-municipality">{site.municipality.name}</dd>
         </div>
-        {site.barrio && site.barrio.name !== site.municipality.name && (
+        {/* G4: barrio-pueblo (Census LSAD 41) often shares the municipio name
+            (Arecibo / Guaynabo downtown). Show "Pueblo" so the field is not dropped. */}
+        {site.barrio && (
           <div>
             <dt><MapPin aria-hidden="true" /> {L("Barrio", "Barrio", lang)}</dt>
-            <dd data-testid="project-location-barrio">{site.barrio.name}</dd>
+            <dd data-testid="project-location-barrio">
+              {site.barrio.barrio_pueblo || site.barrio.name === site.municipality.name
+                ? L("Pueblo", "Pueblo", lang)
+                : site.barrio.name}
+            </dd>
           </div>
         )}
         {cat && (
@@ -573,7 +579,7 @@ export function ProjectLocationCard({
             />
             {shown && !pending && (
               <span className="spr-plc-map-label" aria-hidden="true">
-                <strong>{shown.barrio && shown.barrio.name !== shown.municipality.name ? shown.barrio.name : shown.municipality.name}</strong>
+                <strong>{shown.barrio ? (shown.barrio.barrio_pueblo || shown.barrio.name === shown.municipality.name ? "Pueblo" : shown.barrio.name) : shown.municipality.name}</strong>
                 <span>{shown.municipality.name}, PR</span>
               </span>
             )}
