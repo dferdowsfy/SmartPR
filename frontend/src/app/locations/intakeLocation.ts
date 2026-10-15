@@ -369,7 +369,13 @@ export function restoreIntakeSite(raw: unknown): IntakeSite | null {
     coordinate_source: (["MAP_PIN", "MANUAL_ENTRY", "GEOCODED_ADDRESS"].includes(s.coordinate_source) ? s.coordinate_source : "MAP_PIN") as CoordinateSource,
     formatted_address: typeof s.formatted_address === "string" ? s.formatted_address : null,
     municipality: { name: String(muni.name), fips: typeof muni.fips === "string" ? muni.fips : null },
-    barrio: s.barrio && typeof s.barrio.name === "string" ? { name: s.barrio.name, geoid: typeof s.barrio.geoid === "string" ? s.barrio.geoid : null, barrio_pueblo: s.barrio.barrio_pueblo === true } : null,
+    barrio: s.barrio && typeof s.barrio.name === "string"
+      ? {
+          name: s.barrio.name,
+          geoid: typeof s.barrio.geoid === "string" ? s.barrio.geoid : null,
+          ...(s.barrio.barrio_pueblo === true ? { barrio_pueblo: true as const } : {}),
+        }
+      : null,
     near_boundary: s.near_boundary === true,
     designations: Array.isArray(s.designations) ? s.designations.filter((d: unknown) => typeof d === "string") : [],
     boundary_source: s.boundary_source && typeof s.boundary_source.id === "string" ? s.boundary_source : null,
