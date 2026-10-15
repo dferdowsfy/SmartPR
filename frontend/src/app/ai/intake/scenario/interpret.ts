@@ -640,13 +640,23 @@ function readProjectScope(text: string, ctx: ScenarioContext): void {
 // Operations
 // ---------------------------------------------------------------------------
 
+/** Words right before "N people" that make it a capacity, not a headcount. */
+const CAPACITY_CUE_RE =
+  /\b(?:for|seats?|seating|capacity(?:\s+of)?|holds?|hold(?:ing)?|accommodat\w*|serv\w*|host\w*|welcom\w*|fits?)\s+(?:about\s+|around\s+|up\s+to\s+|roughly\s+|approximately\s+|some\s+|over\s+|nearly\s+|at\s+least\s+)?$/i;
+
 function readOperations(text: string, ctx: ScenarioContext): void {
   const proposed = ctx.property.proposedUse;
   if (proposed && ctx.property.proposedUseSpecificity?.value === "specific" && !ctx.operations.activity) {
     ctx.operations.activity = { ...proposed };
     ctx.business.proposedActivity = { ...proposed };
   }
-  const staff = find(text, /\b(\d{1,5})\s+(?:full[\s-]time\s+|part[\s-]time\s+)?(?:employees|workers|staff(?:\s+members)?|people)\b/i);
+  // "N people" is staff only when it is not an occupancy/capacity phrase
+  // ("a place of worship for about 80 people", "seats 120 people"), which
+  // describes visitors, not employees.
+  const staff =
+    findAll(text, /\b(\d{1,5})\s+(?:full[\s-]time\s+|part[\s-]time\s+)?(employees|workers|staff(?:\s+members)?|people)\b/i).find(
+      (h) => !/^people$/i.test(h.groups[1] ?? "") || !CAPACITY_CUE_RE.test(text.slice(Math.max(0, h.index - 40), h.index))
+    ) ?? null;
   if (staff?.groups[0]) ctx.operations.employees = said(Number(staff.groups[0]), text, staff, 0.95);
   const set = (key: keyof ScenarioContext["operations"], re: RegExp) => {
     const f = flag(text, re);

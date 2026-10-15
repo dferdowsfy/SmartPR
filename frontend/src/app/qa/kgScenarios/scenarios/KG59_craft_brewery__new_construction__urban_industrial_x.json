@@ -1,0 +1,177 @@
+{
+  "id": "KG59",
+  "title": "Craft brewery: new production building on an owned industrial lot, no taproom — Gurabo, zone X",
+  "matrix": {
+    "businessType": "craft_brewery",
+    "projectType": "new_construction",
+    "locationContext": "urban_industrial_x"
+  },
+  "description": "We will build a new one-story craft brewery building on an industrial lot we own in Gurabo. We will brew and can beer for sale to distributors and stores. There is no taproom or bar on site. It is new construction.",
+  "profile": {
+    "business_type": "Beverage Manufacturing",
+    "municipality": "Gurabo",
+    "location_type": "Industrial Space",
+    "number_of_employees": 8,
+    "industry": "Manufacturing",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_OWNS_PROPERTY": true,
+    "Q_EXISTING_LEASE": false,
+    "Q_ALCOHOL_MANUFACTURED": true,
+    "Q_ALCOHOL_SERVED": false,
+    "Q_PRODUCTS_MANUFACTURED": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "new_construction",
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "new_construction": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new construction"
+    },
+    "property_tenure": {
+      "value": "owned",
+      "confidence": 0.9,
+      "evidence": "lot we own"
+    }
+  },
+  "site": {
+    "municipality": "Gurabo",
+    "geo": "urban_industrial_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI), Sec. 4060.01(a) Codigo de Rentas Internas (Ley 1-2011)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Arts. 7.200-7.207, Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Art. 8.4A, Ley 161-2009)."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0643: project_type new_construction -> construction permit (Ley 161-2009, 23 L.P.R.A. 9011 et seq.).",
+        "agencyMatches": "OGPe"
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0015: Q_ALCOHOL_MANUFACTURED=true -> Hacienda internal-revenue license to manufacture alcoholic beverages (Sec. 5022.01, Codigo de Rentas Internas de 2011, Ley 1-2011).",
+        "agencyMatches": "Hacienda"
+      },
+      {
+        "key": "DOC_CRIM_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0623: Q_ALCOHOL_MANUFACTURED=true -> CRIM clearance, a KB prerequisite of the Hacienda alcohol license (documents.json DOC_ALCOHOL_LICENSE.depends_on_document_ids)."
+      },
+      {
+        "key": "DOC_ASUME_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0626: Q_ALCOHOL_MANUFACTURED=true -> ASUME clearance, a KB prerequisite of the Hacienda alcohol license (documents.json DOC_ALCOHOL_LICENSE.depends_on_document_ids)."
+      },
+      {
+        "key": "DOC_BACKGROUND_CHECK",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0629: Q_ALCOHOL_MANUFACTURED=true -> Certificado de Antecedentes Penales (Ley 254-1974), a KB prerequisite of the Hacienda alcohol license."
+      },
+      {
+        "key": "DOC_FIRE_CERT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0174: BT_BEVERAGE_MANUFACTURING -> Bomberos fire-prevention certificate (Ley 20-2017)."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0692: BT_BEVERAGE_MANUFACTURING -> Departamento de Salud sanitary license (validated review 2026-09-16)."
+      },
+      {
+        "key": "DOC_FDA_FOOD_FACILITY_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0656: BT_BEVERAGE_MANUFACTURING -> FDA food facility registration (FD&C Act 415, 21 U.S.C. 350d; 21 CFR Part 1 Subpart H; beverages, including alcoholic beverages, are food under the Act)."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Industrial use on urban (SU) light-industrial (I-L) land, no change of use: RULE_0709 needs SREP land and RULE_0710-0712 need a change of use in a residential/conservation/agricultural district."
+      },
+      {
+        "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside any JP historic zone: RULE_0730 needs location.historic_zone.inside."
+      },
+      {
+        "key": "DOC_CONTRACTOR_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0232 / RULE_0237 / RULE_0642 need Q_OFFERS_CONSTRUCTION_SERVICES=true: an owner building its own plant is not offering construction services to others (Ley 146-1995)."
+      },
+      {
+        "key": "DOC_LUMA_INTERCONNECTION",
+        "confidence": "verified-in-code",
+        "rationale": "No renewable installation: RULE_0610 needs Q_RENEWABLE_INSTALL=true."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_CRIM_CLEARANCE",
+        "after": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_ALCOHOL_LICENSE.depends_on_document_ids = [DOC_CRIM_CLEARANCE, DOC_ASUME_CLEARANCE, DOC_BACKGROUND_CHECK]."
+      },
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids includes DOC_OGPE_CONSTRUCTION_PERMIT (use permit after the construction permit)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-15 by the scenario loop: first craft-brewery (beverage manufacturing) scenario and first Gurabo scenario. Expert-review questions, not encoded: (1) Federal TTB Brewer's Notice (27 CFR 25.61, TTB F 5130.10) is not modeled; whether it is required for a brewery in Puerto Rico producing for the local market (26 U.S.C. 7652 and the PR excise regime under Ley 1-2011) is an expert call. (2) DRNA/AAA wastewater and EPA stormwater/air rules for beverage manufacturing (RULE_0568-0570, 0668-0671, 0674-0675) are keyed on the metro / coastal / industrial_port municipio flags, so an inland, unflagged municipio like Gurabo gets none of them; whether an AAA pretreatment / non-domestic discharge authorization should apply island-wide based on the discharge route is an expert call. (3) Whether the Hacienda manufacturer license class for a brewer also requires a separate wholesale-dealer license to sell to distributors and stores is not modeled."
+}

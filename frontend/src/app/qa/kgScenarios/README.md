@@ -1,4 +1,4 @@
-# Knowledge-graph scenario matrix (KG01–KG55)
+# Knowledge-graph scenario matrix (KG01–KG61)
 
 The scenario matrix tests the regulatory knowledge graph and requirements engine end to end. Each scenario
 goes through the same steps the intake uses (`SmartPRIntake.tsx` `computeRequirements`):

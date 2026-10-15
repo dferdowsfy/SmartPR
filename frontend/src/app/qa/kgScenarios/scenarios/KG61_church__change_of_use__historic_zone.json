@@ -1,0 +1,156 @@
+{
+  "id": "KG61",
+  "title": "Church: change of use of a leased former store in the historic center — San Germán, historic zone",
+  "matrix": {
+    "businessType": "church",
+    "projectType": "change_of_use",
+    "locationContext": "historic_zone"
+  },
+  "description": "Our church is converting a former retail store we lease in the historic center of San Germán into a place of worship for about 80 people. This is a change of use from store to church. Interior work only: new partition walls and two restrooms; no exterior changes. We have one employee.",
+  "profile": {
+    "business_type": "Religious Organization",
+    "municipality": "San Germán",
+    "location_type": "Commercial Space",
+    "number_of_employees": 1,
+    "industry": "Nonprofit",
+    "business_structure": "Nonprofit"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "change_of_use": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use from store to church"
+    },
+    "occupancy_change": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "change of use from store to church"
+    },
+    "existing_use": {
+      "value": "retail store",
+      "confidence": 0.9,
+      "evidence": "former retail store"
+    },
+    "proposed_use": {
+      "value": "church",
+      "confidence": 0.9,
+      "evidence": "to church"
+    },
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "former retail store"
+    },
+    "new_walls": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new partition walls"
+    },
+    "exterior_work": {
+      "value": false,
+      "confidence": 0.9,
+      "evidence": "no exterior changes"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "we lease"
+    }
+  },
+  "site": {
+    "municipality": "San Germán",
+    "geo": "historic_zone"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_CERT_INCORPORATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0001: a new nonprofit (non-LLC) entity -> Certificate of Incorporation filed with the Departamento de Estado (Ley 164-2009, Art. 1.01(C))."
+      },
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every organization gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0699: confirmed change of use -> new Permiso Unico for the new use (Art. 8.4A, Ley 161-2009)."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0644: interior work (new partition walls, restrooms) reads as project_type renovation -> construction permit (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_ICP_HISTORIC_RECOMMENDATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0730: pin inside a JP historic zone (location.historic_zone.inside) -> ICP recommendation; Ley 374-1949, Art. 1 (23 L.P.R.A. 161) bars OGPe and the municipalities from issuing any construction or use permit in a historic zone without it (RC-2023, Regla 10.2.11).",
+        "agencyMatches": "Instituto de Cultura"
+      },
+      {
+        "key": "DOC_SHPO_SECTION106_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0731: historic zone -> Section 106 review (54 U.S.C. 306108; 36 CFR Part 800), conditional because it applies only to a federal undertaking.",
+        "applicabilityIn": [
+          "conditional"
+        ]
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_SHPO_SECTION106_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0731 is_conditional: no federal funds, permit or license stated, so Section 106 must never be REQUIRED here.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "Nonprofit entity, not an LLC: RULE_0651 excludes nonprofit_nonstock_corporation."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Change of use on urban (SU) traditional-urban-center (CUT) land: RULE_0710-0712 need a residential/conservation/agricultural district and RULE_0709 needs SREP land."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014/0015 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED / Q_ALCOHOL_MANUFACTURED; business-type alcohol rules exist only for Bar / Juice Bar."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids includes DOC_OGPE_CONSTRUCTION_PERMIT (use permit after the construction permit)."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-15 by the scenario loop: first church / religious-organization scenario and first San Germán scenario (historic zone, change of use). The same run fixed the description reader so an occupancy phrase ('for about 80 people') is no longer read as 80 employees (interpret.ts readOperations). Expert-review questions, not encoded: (1) RULE_0004 excludes BT_NONPROFIT_ORGANIZATION from the universal patente (handled by heuristic RULE_0694 on the exemption question) but not BT_RELIGIOUS_ORGANIZATION, so a church gets the patente as REQUIRED; Ley 107-2020 grants no general nonprofit patente exemption and exemptions vary by municipal ordinance, so whether a church should get the patente as required or as an exemption question is an expert call. (2) Whether a church that does not sell goods or services must hold a Registro de Comerciante (RULE_0003, Sec. 4060.01 Ley 1-2011) is an expert call. (3) The Hacienda income-tax exemption (Sec. 1101.01 Ley 1-2011) and the IRS treatment of churches (automatically exempt, IRC 508(c)(1)(A)) are modeled only for BT_NONPROFIT_ORGANIZATION. (4) No KB rule asks for a Bomberos fire-prevention certificate for a place of assembly of about 80 people. (5) No KB edge orders the ICP recommendation before the Permiso Unico, so that order is not asserted."
+}
