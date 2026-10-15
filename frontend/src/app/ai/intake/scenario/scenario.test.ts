@@ -527,3 +527,20 @@ describe("F1: opening-as-new confirms business status", () => {
     assert.ok(isConfirmed(c.business.status!), "opening-as-new must be confirmed, not inferred");
   });
 });
+
+describe("headcount vs. occupancy (KG61)", () => {
+  it("an occupancy phrase ('for about 80 people') is not read as the employee count", () => {
+    const c = interpretScenario(
+      "Our church is converting a former retail store in San Germán into a place of worship for about 80 people. We have one employee."
+    );
+    assert.equal(c.operations.employees, undefined);
+  });
+  it("a capacity phrase does not mask a stated headcount", () => {
+    const c = interpretScenario("The venue seats 120 people and we will hire 6 workers.");
+    assert.equal(c.operations.employees?.value, 6);
+  });
+  it("'N people' as staff still reads as the employee count", () => {
+    assert.equal(interpretScenario("We have 12 people on staff at our bakery.").operations.employees?.value, 12);
+    assert.equal(interpretScenario("Our gym will employ 5 people.").operations.employees?.value, 5);
+  });
+});

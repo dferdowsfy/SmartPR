@@ -1,0 +1,156 @@
+{
+  "id": "KG60",
+  "title": "Physical therapy clinic: interior renovation of a leased suite in the floodplain — Toa Alta, FEMA AE",
+  "matrix": {
+    "businessType": "physical_therapy_clinic",
+    "projectType": "renovation",
+    "locationContext": "flood_ae"
+  },
+  "description": "We are opening a physical therapy clinic in a leased ground-floor suite in Toa Alta. We will renovate the interior only: new partition walls, treatment rooms and a small gym area. Four employees, all licensed therapists or assistants.",
+  "profile": {
+    "business_type": "Physical Therapy Clinic",
+    "municipality": "Toa Alta",
+    "location_type": "Commercial Space",
+    "number_of_employees": 4,
+    "industry": "Healthcare",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_PATIENTS_VISIT": true,
+    "Q_HEALTHCARE_SERVICES": true,
+    "Q_PROFESSIONAL_LICENSES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "project_type": {
+      "value": "renovation",
+      "confidence": 0.9,
+      "evidence": "renovate the interior"
+    },
+    "renovation": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "renovate the interior"
+    },
+    "new_walls": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new partition walls"
+    },
+    "exterior_work": {
+      "value": false,
+      "confidence": 0.9,
+      "evidence": "renovate the interior only"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased ground-floor suite"
+    }
+  },
+  "site": {
+    "municipality": "Toa Alta",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI), Sec. 4060.01(a) Codigo de Rentas Internas (Ley 1-2011)."
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Arts. 7.200-7.207, Ley 107-2020 Codigo Municipal)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Art. 8.4A, Ley 161-2009)."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0644: project_type renovation -> construction permit (Ley 161-2009, 23 L.P.R.A. 9011 et seq.)."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0706: renovation at a pin in the FEMA SFHA (location.flood_zone.sfha, zone AE) -> Planning Regulation 13 flood-zone review."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0100: BT_PHYSICAL_THERAPY_CLINIC -> professional license; physical therapists and assistants are licensed by the Junta Examinadora de Terapia Fisica under Ley Num. 114 of 29 June 1962, as amended."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0101 is heuristic with missing_fact_keys=[facility_license_category]: until the Salud facility category is known the sanitary license may show as needs-more-information but must never be REQUIRED.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+        "confidence": "verified-in-code",
+        "rationale": "Pin is in zone AE but outside the floodway: RULE_0732 needs location.flood_zone.floodway."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial use on urban (SU) commercial (C-I) land, no change of use: RULE_0709 needs SREP land and RULE_0710-0712 need a change of use in a residential/conservation/agricultural district."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014/0015 need Q_ALCOHOL_SOLD / Q_ALCOHOL_SERVED / Q_ALCOHOL_MANUFACTURED; business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_CONTRACTOR_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0232 / RULE_0237 / RULE_0642 need Q_OFFERS_CONSTRUCTION_SERVICES=true: a clinic renovating its own suite is not offering construction services (Ley 146-1995)."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO.depends_on_document_ids includes DOC_OGPE_CONSTRUCTION_PERMIT (use permit after the construction permit)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL.depends_on_document_ids = [DOC_PERMISO_UNICO] (patente after the use permit)."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-15 by the scenario loop: first physical-therapy scenario and first Toa Alta scenario (FEMA AE, interior-only renovation). Expert-review questions, not encoded: (1) Reg. 13 fires on any renovation in the SFHA; whether an interior-only remodel below the substantial-improvement threshold (50% of market value, 44 CFR 59.1) needs more than the floodplain determination inside the construction permit is an expert call. (2) Whether a free-standing outpatient physical-therapy clinic is a facility that needs a Salud license under Ley 101-1965 (Ley de Facilidades de Salud) depends on the facility category, which RULE_0101 leaves open. (3) The professional-license card names 'Department of State Examining Boards', but the Junta Examinadora de Terapia Fisica sits under the Departamento de Salud (Ley 114-1962, board presided by the Secretary of Health); the agency label for health-profession boards should be reviewed. Ley 114-1962 is current law; PS 1138 (2026), which would repeal and replace it, is a pending bill and is not assumed to pass."
+}
