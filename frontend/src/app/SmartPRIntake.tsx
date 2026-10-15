@@ -294,6 +294,17 @@ const REQUIREMENT_GROUP_COPY: Record<RequirementGroupId, { title: string; sub: s
 };
 
 /** Environmental review: undetermined until the operation's equipment and waste facts are known. */
+/** H10: question text for answers that briefly leave the live questionList
+ * (e.g. while an earlier answer is re-edited). Module-level so we neither
+ * mutate refs during render nor setState in an effect (lint baseline). */
+const answeredQuestionTextCache: Record<string, string> = {};
+function rememberAnsweredQuestionText(id: string, text: string) {
+  answeredQuestionTextCache[id] = text;
+}
+function forgetAnsweredQuestionText(id: string) {
+  delete answeredQuestionTextCache[id];
+}
+
 /** Land-use KB gap note (Run 2): when zoning district or use permission is
  * missing from the land-use table, surface it on Requirements instead of silence. */
 function ZoningCoverageNote({ language }: { language: 'en' | 'es' }) {
@@ -3180,6 +3191,7 @@ export default function SmartPRIntake() {
           return next;
         });
       }
+      rememberAnsweredQuestionText(q.id, q.text);
       setDiscoveryAnswers((prev) => ({ ...prev, [q.id]: value }));
       // Advance past the question just answered; the questionList effect
       // recomputes firstUnanswered once the new fact removes this question.
@@ -3268,6 +3280,7 @@ export default function SmartPRIntake() {
     // truck both rendered a phantom "Owned property" deed card.
     // projectContextAnswerToFacts("existing_lease", false) now returns [].
 
+    rememberAnsweredQuestionText(q.id, q.text);
     setDiscoveryAnswers(prev => ({ ...prev, [q.id]: value, ...extraAnswers }));
     // Deterministic food-prep follow-up (QA 2026-09-22 12:00, S135): a Yes
     // on food served/sold arms Q_FOOD_PREPARED when preparation is still
@@ -6812,39 +6825,27 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   // Two rows for the same question id is never valid UI (a guided question
   // and a trigger can share an answer key after Change + re-answer), so
   // dedupe by id — first occurrence wins.
-  // H10 (live 2026-10-15): remember question text for answers that briefly
-  // leave the engine's live questionList while an earlier answer is re-edited.
-  // Updated in an effect (not during render) to satisfy react-hooks/refs.
-  const [answeredQuestionMeta, setAnsweredQuestionMeta] = useState<Record<string, string>>({});
+  // H10: warm text cache when the live list or answers change (effect only —
+  // never during render, so react-hooks/immutability stays at baseline).
   useEffect(() => {
-    setAnsweredQuestionMeta((prev) => {
-      let changed = false;
-      const next = { ...prev };
-      for (const q of questionList) {
-        if (discoveryAnswers[q.id] !== undefined && next[q.id] !== q.text) {
-          next[q.id] = q.text;
-          changed = true;
-        }
-      }
-      for (const id of Object.keys(next)) {
-        if (discoveryAnswers[id] === undefined) {
-          delete next[id];
-          changed = true;
-        }
-      }
-      return changed ? next : prev;
-    });
+    for (const q of questionList) {
+      if (discoveryAnswers[q.id] !== undefined) rememberAnsweredQuestionText(q.id, q.text);
+    }
+    for (const id of Object.keys(answeredQuestionTextCache)) {
+      if (discoveryAnswers[id] === undefined) forgetAnsweredQuestionText(id);
+    }
   }, [questionList, discoveryAnswers]);
   const answeredIntakeQuestions = (() => {
+    // H10: cache is written only in answer/prune handlers and the effect above.
     const seen = new Set<string>();
     const guidedLive = questionList
       .filter((q) => discoveryAnswers[q.id] !== undefined)
       .map((q) => ({ id: q.id, text: q.text, value: discoveryAnswers[q.id] as boolean | string, writeKey: q.id }));
-    const guidedOrphans = Object.keys(answeredQuestionMeta)
+    const guidedOrphans = Object.keys(answeredQuestionTextCache)
       .filter((id) => discoveryAnswers[id] !== undefined && !questionList.some((q) => q.id === id))
       .map((id) => ({
         id,
-        text: answeredQuestionMeta[id]!,
+        text: answeredQuestionTextCache[id]!,
         value: discoveryAnswers[id] as boolean | string,
         writeKey: id,
       }));
@@ -6879,7 +6880,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
       id !== pending.reopened && !id.startsWith('pc_') && discoveryAnswers[id] !== undefined
       && (!current.has(id) || isQuestionSuppressedByAnswers(id, discoveryAnswers)));
     if (stale.length === 0) return;
-    stale.forEach((id) => markUserTouched(id));
+    stale.forEach((id) => { markUserTouched(id); forgetAnsweredQuestionText(id); });
     setDiscoveryAnswers((prev) => { const next = { ...prev }; for (const id of stale) delete next[id]; return next; });
   }, [discoveryAnswers, questionList]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -6887,6 +6888,7 @@ const loadExample = (example: Partial<BusinessProfile>) => {
   const reopenAnsweredQuestion = (questionId: string) => {
     setAiPrefilledKeys((prev) => prev.filter((id) => id !== questionId));
     markUserTouched(questionId);
+    forgetAnsweredQuestionText(questionId);
     setDiscoveryAnswers((prev) => {
       const next = { ...prev };
       delete next[questionId];
@@ -7858,6 +7860,8 @@ const loadExample = (example: Partial<BusinessProfile>) => {
                           // user-touched so the scenario-answer merge
                           // cannot re-apply the deleted value.
                           markUserTouched(item.writeKey);
+                          forgetAnsweredQuestionText(item.writeKey);
+                          forgetAnsweredQuestionText(item.id);
                           setDiscoveryAnswers((previous) => { const next = { ...previous }; delete next[item.writeKey]; return next; });
                         }
                       },
