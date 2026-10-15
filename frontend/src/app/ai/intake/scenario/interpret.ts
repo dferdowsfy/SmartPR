@@ -473,15 +473,22 @@ function activityPhrase(phrase: string | undefined, use: UseTerm): string | null
   if (!phrase) return null;
   const cleaned = phrase
     .toLowerCase()
+    // Drop wizard gerunds so "Opening a juice bar" does not become activity
+    // "opening juice bar" (which resolves to Bar instead of Juice Bar).
+    .replace(/\b(?:opening|starting|launching|forming)\b/g, " ")
     .replace(/\b(?:an?|the|our|its|their|new|small|light|proposed)\b/g, " ")
     .replace(/[^a-z0-9\s&/-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   const m = new RegExp(`\\b(?:${use.pattern})\\b`, "i").exec(cleaned);
   if (!m) return null;
+  const matched = m[0].toLowerCase().trim();
   const qualified = cleaned.slice(0, m.index + m[0].length).trim();
   const n = qualified.split(" ").length;
-  return n >= 2 && n <= 4 ? qualified : null;
+  if (n >= 2 && n <= 4) return qualified;
+  // Single-token synonyms more specific than the use label ("bakery" ≠ "restaurant").
+  if (n === 1 && matched && matched !== use.label.replace(/_/g, " ")) return matched;
+  return null;
 }
 
 function readProposedUse(text: string, ctx: ScenarioContext): void {
@@ -515,7 +522,39 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
     return;
   }
 
-  // 3. "for manufacturing", "to operate a warehouse", "for a new commercial operation".
+  // 3. "Opening a bakery…", "Starting a solar farm…" — New Business wizard phrasing.
+  // Distinct from FOR_USE ("to open a …"): the gerund has no "to" and used to
+  // miss proposed use entirely unless the whole description was ≤48 chars.
+  if (!ctx.property.proposedUse) {
+    const opening = find(
+      text,
+      /\b(?:opening|starting|launching|forming)\s+(?:a|an|my|our)\s+(.+?)(?=\s+(?:in|at|near|on|within|inside|located)\b|[,.;!?\n]|$)/i
+    );
+    if (opening?.groups[0]) {
+      const phrase = opening.groups[0].trim();
+      const use = matchUse(phrase);
+      if (use && !use.generic) {
+        setProposed(ctx, use, "explicit", 0.93, clauseAt(text, opening.index), phrase);
+      } else if (!ctx.operations.activity) {
+        // No use-vocabulary hit (e.g. "barbershop") — keep a short free-text
+        // activity so resolveBusinessTypes can match a KB business-type name.
+        const act = phrase
+          .toLowerCase()
+          .replace(/[^a-z0-9\s&/-]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .split(" ")
+          .slice(0, 6)
+          .join(" ");
+        if (act.length >= 3) {
+          ctx.operations.activity = fact(act, "explicit", 0.9, clauseAt(text, opening.index));
+          ctx.business.proposedActivity = fact(act, "explicit", 0.9, clauseAt(text, opening.index));
+        }
+      }
+    }
+  }
+
+  // 4. "for manufacturing", "to operate a warehouse", "for a new commercial operation".
   for (const hit of findAll(text, FOR_USE)) {
     const phrase = hit.groups[0] ?? "";
     const use = matchUse(phrase);
@@ -534,7 +573,7 @@ function readProposedUse(text: string, ctx: ScenarioContext): void {
     }
   }
 
-  // 4. Bare keyword ("bar", "coffee shop"): the whole description is just the
+  // 5. Bare keyword ("bar", "coffee shop"): the whole description is just the
   // use. The phrasing patterns above need a verb; a lone keyword is still a
   // stated use and should populate the activity, not force manual entry.
   if (!ctx.property.proposedUse) {

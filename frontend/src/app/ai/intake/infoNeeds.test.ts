@@ -184,6 +184,29 @@ describe("the description populates fields and answers questions (bar)", () => {
     assert.equal(scenarioStatedAnswers(ctx).alcohol_sold, undefined);
   });
 
+  it("Opening a juice bar and smoothie shop resolves to Juice Bar (Run 9 L1)", () => {
+    const ctx = interpretScenario("Opening a juice bar and smoothie shop in downtown Vega Baja");
+    assert.equal(businessTypeFromScenario(ctx, kb), "Juice Bar");
+    assert.equal(scenarioStatedAnswers(ctx).alcohol_sold, undefined);
+  });
+
+  it("Opening a dive shop with snorkel rentals resolves to Water Sports rental (Run 9 L2)", () => {
+    const ctx = interpretScenario(
+      "Opening a small dive shop with snorkel and scuba gear rentals near the coast in Loíza"
+    );
+    assert.equal(businessTypeFromScenario(ctx, kb), "Water Sports & Watercraft Rental");
+  });
+
+  it("Opening a bakery resolves to Bakery, not Restaurant (Run 9 L1)", () => {
+    const ctx = interpretScenario("Opening a bakery with a small café counter in downtown Mayagüez");
+    assert.equal(businessTypeFromScenario(ctx, kb), "Bakery");
+  });
+
+  it("Opening a men's barbershop resolves to Barbershop (Run 9 L1)", () => {
+    const ctx = interpretScenario("Opening a men's barbershop and beard spa in Canóvanas");
+    assert.equal(businessTypeFromScenario(ctx, kb), "Barbershop");
+  });
+
   it("amenities in the sentence answer their questions, negations included", () => {
     const yes = scenarioStatedAnswers(
       interpretScenario("I want to open a bar in San Juan with outdoor seating and live music")

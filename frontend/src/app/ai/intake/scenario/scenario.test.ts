@@ -560,6 +560,25 @@ describe("F1: opening-as-new confirms business status", () => {
   });
 });
 
+describe("Run 9: Opening… extracts proposed use (not only I want to open)", () => {
+  it("Opening a juice bar and smoothie shop → Juice Bar, not empty / not Bar", () => {
+    const c = interpretScenario("Opening a juice bar and smoothie shop in downtown Vega Baja");
+    assert.equal(c.property.proposedUse?.value, "bar");
+    assert.equal(c.operations.activity?.value, "juice bar");
+  });
+  it("Opening a juice bar (short) keeps Juice Bar activity, not opening juice bar", () => {
+    const c = interpretScenario("Opening a juice bar in downtown Vega Baja");
+    assert.equal(c.operations.activity?.value, "juice bar");
+  });
+  it("Opening a dive shop with snorkel rentals yields a dive/snorkel activity phrase", () => {
+    const c = interpretScenario(
+      "Opening a small dive shop with snorkel and scuba gear rentals near the coast in Loíza"
+    );
+    assert.ok(c.operations.activity?.value, "expected an activity from Opening…");
+    assert.match(c.operations.activity!.value, /dive|snorkel|scuba|shop/i);
+  });
+});
+
 describe("headcount vs. occupancy (KG61)", () => {
   it("an occupancy phrase ('for about 80 people') is not read as the employee count", () => {
     const c = interpretScenario(

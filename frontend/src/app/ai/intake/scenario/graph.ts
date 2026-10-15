@@ -135,6 +135,26 @@ export function resolveBusinessTypes(activity: string | undefined, kb: Knowledge
   const phrase = activity.replace(/_/g, " ").toLowerCase().trim();
   const exact = byName.get(phrase);
   if (exact) return [{ id: exact.id, name: exact.name }];
+  // Longest KB business-type name contained as a whole phrase ("barbershop",
+  // "juice bar") beats coarser use-vocabulary fallbacks ("bar" → Bar).
+  const contained = kb.businessTypes
+    .filter((b) => {
+      const name = b.name.toLowerCase();
+      if (name.length < 3) return false;
+      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`\\b${escaped}\\b`).test(phrase);
+    })
+    .sort((a, b) => b.name.length - a.name.length);
+  if (contained.length) return [{ id: contained[0].id, name: contained[0].name }];
+  // Qualifiers that must beat a coarser use-vocabulary match (e.g. "bar" → Bar).
+  if (/\b(juice|smoothie)\b/.test(phrase)) {
+    const juice = byName.get("juice bar");
+    if (juice) return [{ id: juice.id, name: juice.name }];
+  }
+  if (/\b(dive\s*shop|scuba|snorkel)\b/.test(phrase)) {
+    const water = byName.get("water sports & watercraft rental");
+    if (water) return [{ id: water.id, name: water.name }];
+  }
   const use = findUseByLabel(activity) ?? matchUse(phrase);
   if (use?.generic) return [];
   // Every word of the activity appears in the business-type name.
