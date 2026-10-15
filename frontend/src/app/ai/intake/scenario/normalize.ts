@@ -25,6 +25,7 @@ import {
   EXISTING_BUSINESS_RE,
   NEW_ENTITY_RE,
   OPEN_INTENT_RE,
+  leaseOutOnly,
   ownershipStated,
   renovationStated,
 } from "./interpret";
@@ -224,6 +225,13 @@ export function normalizeScenario(
     // ownershipStatus needs ownership language in the text itself — renting
     // or owning said about the property — otherwise it is an inference and
     // stays in the needs-confirmation band. A home may be owned or rented.
+    // Leasing OUT is not tenure: "renting out my apartment as an Airbnb"
+    // says what the host does with the property, never that they lease it
+    // (live Run 8, 2026-10-15, Naguabo STR → invented Lease Agreement card).
+    if (path === "property.ownershipStatus" && value === "leased" && leaseOutOnly(description)) {
+      report.push({ path, action: "dropped", reason: "renting or leasing the property out states no tenure" });
+      continue;
+    }
     if (path === "property.ownershipStatus" && source === "explicit") {
       if (!ownershipStated(description)) {
         source = "inferred";
