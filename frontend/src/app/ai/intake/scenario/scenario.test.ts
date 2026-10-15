@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { KB } from "../../../kb.ts";
 import type { KnowledgeBase } from "../../../rulesEngine.ts";
-import { interpretScenario, newConstructionStated, renovationStated, OPENING_AS_NEW_RE } from "./interpret.ts";
+import { interpretScenario, leaseOutOnly, newConstructionStated, renovationStated, OPENING_AS_NEW_RE } from "./interpret.ts";
 import { combineScenario, normalizeScenario } from "./normalize.ts";
 import { applyScenarioAnswer, evaluateScenario } from "./graph.ts";
 import { describeScenario } from "./describe.ts";
@@ -416,6 +416,38 @@ describe("tenure and premises read in context", () => {
     assert.equal(ctx.property.ownershipStatus?.value, "owned");
     assert.equal(ctx.property.existingBuilding?.value, false);
     assert.equal(ctx.property.existingUse?.value, "vacant_land");
+  });
+
+  it("'renting out' an apartment as a short-term rental states no tenure (live Run 8 Naguabo STR)", () => {
+    for (const d of [
+      "Renting out a 2-bedroom beachfront apartment as an Airbnb-style short-term rental in Naguabo",
+      "I want to rent out my apartment on Airbnb in Rincón",
+      "We plan to rent our 2-bedroom condo out to tourists in Isla Verde",
+      "Leasing out the second floor of the building as office space in Caguas",
+    ]) {
+      assert.equal(interpretScenario(d).property.ownershipStatus, undefined, d);
+      assert.equal(leaseOutOnly(d), true, d);
+    }
+  });
+
+  it("a model 'leased' reading of lease-OUT language is dropped", () => {
+    const d = "Renting out a 2-bedroom beachfront apartment as an Airbnb-style short-term rental in Naguabo";
+    const { scenario, report } = normalizeScenario(
+      { property: { ownershipStatus: { value: "leased", source: "explicit", confidence: 0.95, evidenceText: "Renting out a 2-bedroom beachfront apartment" } } },
+      d
+    );
+    assert.equal(scenario.property.ownershipStatus, undefined);
+    assert.ok(report.some((r) => r.path === "property.ownershipStatus" && r.action === "dropped"));
+  });
+
+  it("a real lease alongside lease-OUT language is still a lease", () => {
+    for (const d of [
+      "We are renting a storefront in Ponce for a bakery",
+      "We lease the building and will rent out two rooms on Airbnb",
+    ]) {
+      assert.equal(interpretScenario(d).property.ownershipStatus?.value, "leased", d);
+      assert.equal(leaseOutOnly(d), false, d);
+    }
   });
 
   it("a tenant's lease is still a lease", () => {

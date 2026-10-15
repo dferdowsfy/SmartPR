@@ -404,12 +404,37 @@ function readSize(text: string, ctx: ScenarioContext): void {
   if (Number.isFinite(n) && n > 0) ctx.property.squareFeet = said(n, text, sq, 0.96);
 }
 
-/** Leasing OUT ("for lease to tenants", "rent it out") says what the owner will do, not the tenure. */
-const LEASE_OUT = /\bfor\s+(?:lease|rent)\b|\b(?:leas|rent)\w*\s+(?:it|them|the\s+\w+|space|units?|suites?)?\s*(?:out\s+)?to\s+(?:tenants?|others|third[\s-]part\w*|businesses)\b|\brent\w*\s+(?:it|them)\s+out\b/gi;
+/**
+ * Leasing OUT ("for lease to tenants", "rent it out", "renting out a
+ * 2-bedroom apartment as an Airbnb", "rent my condo out") says what the
+ * owner/host will do with the property, not the speaker's tenure.
+ * Live Run 8 (2026-10-15, Naguabo STR): "Renting out a 2-bedroom beachfront
+ * apartment …" was read as leased tenure, which pre-answered "Will the
+ * business lease its commercial space? Yes" and rendered a Lease Agreement
+ * card the user never stated (provenance hard rule 2026-09-19).
+ */
+const LEASE_OUT = /\bfor\s+(?:lease|rent)\b|\b(?:leas|rent)\w*\s+(?:it|them|the\s+\w+|space|units?|suites?)?\s*(?:out\s+)?to\s+(?:tenants?|others|third[\s-]part\w*|businesses)\b|\brent\w*\s+(?:it|them)\s+out\b|\b(?:leas(?:e|es|ed|ing)|rent(?:s|ed|ing)?)\s+out\b|\b(?:leas(?:e|es|ed|ing)|rent(?:s|ed|ing)?)\s+(?:my|our|his|her|their|the|a|an|this|that)\s+(?:(?!(?:and|or|but|then|will|would|to|we|i|they|also|plus|leas\w*|rent\w*)\b)[\w'-]+\s+){0,3}?out\b/gi;
+
+const LEASE_TENURE_RE = /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|as\s+(?:a\s+)?tenants?)\b/i;
+
+/** The text with every lease-OUT phrase blanked (same length, so indexes hold). */
+function maskLeaseOut(text: string): string {
+  return text.replace(LEASE_OUT, (m) => " ".repeat(m.length));
+}
+
+/**
+ * True when the description's only lease/rent language is leasing OUT
+ * ("renting out my apartment on Airbnb"): that states no tenure, so a
+ * "leased" reading — ours or the model's — is unsupported.
+ */
+export function leaseOutOnly(text: string): boolean {
+  const masked = maskLeaseOut(text);
+  return masked !== text && !LEASE_TENURE_RE.test(masked);
+}
 
 function readOwnership(text: string, ctx: ScenarioContext): void {
-  const tenureText = text.replace(LEASE_OUT, (m) => " ".repeat(m.length));
-  const lease = find(tenureText, /\b(?:leas(?:e|ed|es|ing)|rent(?:ed|ing|s)?|subleas\w*|as\s+(?:a\s+)?tenants?)\b/i);
+  const tenureText = maskLeaseOut(text);
+  const lease = find(tenureText, LEASE_TENURE_RE);
   const own = find(
     text,
     /\b(?:we|i|they|the\s+client|the\s+company|client)\s+(?:own|owns|purchased|bought|acquired)\b|\b(?:purchased|bought|acquired)\s+(?:an?|the)\s+\w+|\bowners?\s+of\s+the\s+(?:property|building)\b/i
