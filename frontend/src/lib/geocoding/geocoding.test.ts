@@ -17,6 +17,7 @@ import {
   normalizeNominatimPlace,
   politeProvider,
   searchInNamedMunicipio,
+  routeRefQuery,
   stripMunicipioSuffix,
 } from "./index.ts";
 
@@ -317,10 +318,43 @@ test("searchInNamedMunicipio: official boundaries decide when the provider label
   const r = await searchInNamedMunicipio(g, "Carretera 111, Utuado, Puerto Rico", { locate });
   assert.equal(r[0]!.longitude, -66.7, "a point officially inside Utuado leads");
   assert.equal(r[1]!.longitude, -66.825, "the boundary road match stays as an alternative");
-  assert.deepEqual(calls, ["Carretera 111, Utuado, Puerto Rico", "Utuado, Puerto Rico"]);
+  assert.deepEqual(calls, ["PR-111, Utuado, Puerto Rico", "Utuado, Puerto Rico"]);
   // Without a locator the provider label still decides (unchanged behavior).
   calls.length = 0;
   const plain = await searchInNamedMunicipio(g, "Carretera 111, Utuado, Puerto Rico");
   assert.equal(plain[0]!.longitude, -66.825);
-  assert.deepEqual(calls, ["Carretera 111, Utuado, Puerto Rico"]);
+  assert.deepEqual(calls, ["PR-111, Utuado, Puerto Rico"]);
+});
+
+test("routeRefQuery: Puerto Rico road numbers become route refs, not house numbers (Run 15)", () => {
+  assert.equal(routeRefQuery("Carretera 333, Guánica, Puerto Rico"), "PR-333, Guánica, Puerto Rico");
+  assert.equal(routeRefQuery("Carr. 2 Km 45.3, Vega Alta, PR"), "PR-2, Vega Alta, PR");
+  assert.equal(routeRefQuery("Road 116 km 4, Lajas"), "PR-116, Lajas");
+  assert.equal(routeRefQuery("Ruta 52, Cayey"), "PR-52, Cayey");
+  assert.equal(routeRefQuery("PR 3, Humacao"), "PR-3, Humacao");
+  assert.equal(routeRefQuery("PR-333, Guánica"), null, "already a route ref");
+  assert.equal(routeRefQuery("Calle 3, Bayamón, Puerto Rico"), null, "a numbered street is not a state road");
+  assert.equal(routeRefQuery("Carretera Militar, Vega Alta"), null);
+  assert.equal(routeRefQuery("Calle Luna 12, San Juan, PR 00901"), null, "a ZIP after PR is not a road");
+});
+
+test("searchInNamedMunicipio: a Carretera query searches the route ref first, the original wording only as fallback (Run 15)", async () => {
+  const calls: string[] = [];
+  const mk = (formatted: string, latitude: number, longitude: number): GeocodeCandidate => ({
+    latitude, longitude, formatted_address: formatted, address_line_1: null, city: null,
+    municipality: "Guánica", state_or_region: "PR", postal_code: null, country_code: "PR", place_source: "nominatim", place_source_id: null,
+  });
+  const answers: Record<string, GeocodeCandidate[]> = {
+    "PR-333, Guánica, Puerto Rico": [mk("Carretera Caña Gorda, Carenero, Guánica", 17.9577, -66.8675)],
+    "Carretera 333, Guánica, Puerto Rico": [mk("333, Carretera Ciénagas, Fuig, Guánica", 17.9863, -66.9208)],
+    "Carretera 999, Guánica, Puerto Rico": [mk("999, Calle Algo, Guánica", 17.97, -66.9)],
+  };
+  const g = { search: async (q: string) => { calls.push(q); return answers[q] ?? []; } };
+  const r = await searchInNamedMunicipio(g, "Carretera 333, Guánica, Puerto Rico");
+  assert.equal(r[0]!.formatted_address, "Carretera Caña Gorda, Carenero, Guánica", "the road itself, not house 333 elsewhere");
+  assert.deepEqual(calls, ["PR-333, Guánica, Puerto Rico"]);
+  calls.length = 0;
+  const f = await searchInNamedMunicipio(g, "Carretera 999, Guánica, Puerto Rico");
+  assert.equal(f[0]!.formatted_address, "999, Calle Algo, Guánica", "no route match falls back to the original wording");
+  assert.deepEqual(calls, ["PR-999, Guánica, Puerto Rico", "Carretera 999, Guánica, Puerto Rico"]);
 });
