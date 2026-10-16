@@ -159,7 +159,7 @@ async function assertMatches(page: Page, f: Frame, label: string) {
 // Chromium makes direct connections and production is unreachable (net::ERR_EMPTY_RESPONSE).
 const launchOpts: { executablePath?: string; proxy?: { server: string } } = process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {};
 const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
-if (proxyUrl) launchOpts.proxy = { server: proxyUrl };
+if (proxyUrl) launchOpts.proxy = { server: proxyUrl, bypass: "localhost,127.0.0.1,::1" }; // local dev/prod builds bypass the egress proxy
 const browser = await chromium.launch(launchOpts);
 const ctx = await browser.newContext({ viewport: { width: W, height: H } });
 const page = await ctx.newPage();
