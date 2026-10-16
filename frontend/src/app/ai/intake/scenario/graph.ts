@@ -151,6 +151,14 @@ export function resolveBusinessTypes(activity: string | undefined, kb: Knowledge
     const juice = byName.get("juice bar");
     if (juice) return [{ id: juice.id, name: juice.name }];
   }
+  // The KB has no gas-station business type; Convenience Store is the
+  // established proxy (it carries Q_FUEL_SOLD → DACO fuel-retailer and
+  // dispenser weights-and-measures rules). Live Run 11: "Opening a gas
+  // station with fuel pumps…" left Industry and Business Type empty.
+  if (/\b(gas(?:oline)?\s+station|fuel\s+station|service\s+station|gasolinera)\b/.test(phrase)) {
+    const proxy = byName.get("convenience store");
+    if (proxy) return [{ id: proxy.id, name: proxy.name }];
+  }
   if (/\b(dive\s*shop|scuba|snorkel)\b/.test(phrase)) {
     const water = byName.get("water sports & watercraft rental");
     if (water) return [{ id: water.id, name: water.name }];

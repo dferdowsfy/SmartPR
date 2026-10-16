@@ -197,6 +197,16 @@ describe("the description populates fields and answers questions (bar)", () => {
     assert.equal(businessTypeFromScenario(ctx, kb), "Water Sports & Watercraft Rental");
   });
 
+  it("Opening a gas station resolves to the Convenience Store proxy (Run 11 N1)", () => {
+    for (const d of [
+      "Opening a gas station with 6 fuel pumps and a convenience store in Mayagüez",
+      "Opening a gas station in Mayagüez",
+      "I want to open a gasolinera in Ponce",
+    ]) {
+      assert.equal(businessTypeFromScenario(interpretScenario(d), kb), "Convenience Store", d);
+    }
+  });
+
   it("Opening a bakery resolves to Bakery, not Restaurant (Run 9 L1)", () => {
     const ctx = interpretScenario("Opening a bakery with a small café counter in downtown Mayagüez");
     assert.equal(businessTypeFromScenario(ctx, kb), "Bakery");
