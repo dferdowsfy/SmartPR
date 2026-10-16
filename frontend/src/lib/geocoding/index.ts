@@ -35,6 +35,7 @@
 import { PUERTO_RICO_BOUNDS, validateCoordinates } from "../../app/locations/geo.ts";
 import { queryDataset, sourceEndpoints } from "../../app/locations/layerService.ts";
 import { interiorPoint } from "../../app/locations/snap.ts";
+import { addressMunicipio, sameMunicipio } from "../../app/locations/municipios.ts";
 
 /** A normalized geocoder result. Coordinates are WGS84. */
 export interface GeocodeCandidate {
@@ -411,6 +412,47 @@ export function fallbackGeocoder(providers: GeocodingProvider[]): GeocodingProvi
     search: (query, opts) => run((p) => p.search(query, opts), (v) => v.length === 0, [] as GeocodeCandidate[]),
     reverse: (lat, lng, opts) => run((p) => p.reverse(lat, lng, opts), (v) => v === null, null as GeocodeCandidate | null),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Named-municipio preference
+// ---------------------------------------------------------------------------
+
+/** The municipio a candidate sits in (its field, else the one its address names). */
+function candidateMunicipio(c: GeocodeCandidate): string | null {
+  return c.municipality ?? addressMunicipio(c.formatted_address);
+}
+
+/**
+ * Search, keeping the municipio the query names. A query such as "Calle
+ * Comercio, Peñuelas, Puerto Rico" names Peñuelas in its trailing segments;
+ * fuzzy providers (Photon) can rank "Calle Peñuelas, Caguas" first, and the
+ * picker pins the first result — so the whole report moved to Caguas (live
+ * Run 12). Candidates in the named municipio move to the front (stable). When
+ * none is in it, the municipio itself is searched once and its in-municipio
+ * match leads, so the pin lands in the place the user named (they can still
+ * drag it or pick another match). Queries that name no municipio are untouched.
+ */
+export async function searchInNamedMunicipio(
+  geocoder: Pick<GeocodingProvider, "search">,
+  query: string,
+  opts: { limit?: number; lang?: string } = {}
+): Promise<GeocodeCandidate[]> {
+  const results = await geocoder.search(query, opts);
+  const named = addressMunicipio(query);
+  if (!named) return results;
+  const inNamed = (c: GeocodeCandidate) => {
+    const m = candidateMunicipio(c);
+    return !!m && sameMunicipio(m, named);
+  };
+  const inside = results.filter(inNamed);
+  const outside = results.filter((c) => !inNamed(c));
+  if (inside.length) return [...inside, ...outside];
+  const plain = `${named}, Puerto Rico`;
+  if (query.trim().toLowerCase() === plain.toLowerCase()) return results;
+  const fallback = await geocoder.search(plain, { ...opts, limit: 3 }).catch(() => [] as GeocodeCandidate[]);
+  const lead = fallback.find(inNamed);
+  return lead ? [lead, ...outside].slice(0, Math.max(opts.limit ?? 5, 1)) : results;
 }
 
 // ---------------------------------------------------------------------------

@@ -135,6 +135,16 @@ export function resolveBusinessTypes(activity: string | undefined, kb: Knowledge
   const phrase = activity.replace(/_/g, " ").toLowerCase().trim();
   const exact = byName.get(phrase);
   if (exact) return [{ id: exact.id, name: exact.name }];
+  // Breweries are Beverage Manufacturing in the KB (KG59 craft brewery), and
+  // that type asks the taproom questions (alcohol served / sold / made). This
+  // must beat the whole-phrase match below, so "brewery and bar" is not Bar.
+  // Live Run 12: "Opening a craft microbrewery with a taproom…" left Business
+  // Type empty and the nearest pick (Bar) dropped every manufacturing question.
+  // (Activity phrases fold accented letters to spaces: "cervecer a".)
+  if (/\b(micro\s*-?\s*brewer(?:y|ies)|nano\s*-?\s*brewer(?:y|ies)|brewer(?:y|ies)|brew\s*-?\s*pubs?|craft\s+beer|cervecer(?:[ií]| )as?)\b/.test(phrase)) {
+    const bev = byName.get("beverage manufacturing");
+    if (bev) return [{ id: bev.id, name: bev.name }];
+  }
   // Longest KB business-type name contained as a whole phrase ("barbershop",
   // "juice bar") beats coarser use-vocabulary fallbacks ("bar" → Bar).
   const contained = kb.businessTypes
