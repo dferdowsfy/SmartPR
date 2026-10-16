@@ -433,6 +433,21 @@ function candidateMunicipio(c: GeocodeCandidate): string | null {
  * match leads, so the pin lands in the place the user named (they can still
  * drag it or pick another match). Queries that name no municipio are untouched.
  */
+/**
+ * Rewrites a Puerto Rico state-road reference ("Carretera 333", "Carr. 2",
+ * "Road 116 Km 4.2", "Ruta 52", "PR 3") to the OSM route ref form ("PR-333"),
+ * dropping any kilometer marker the provider can't match. Returns null when
+ * the query names no numbered road or already uses the PR-N form.
+ */
+export function routeRefQuery(query: string): string | null {
+  const re = /\b(?:carretera|carr\.?|ctra\.?|road|rd\.?|ruta|highway|hwy\.?|pr)\s*[-#]?\s*(\d{1,3}[a-z]?)\b(?:\s*,?\s*(?:km|kil[oó]metro)\.?\s*\d+(?:[.,]\d+)?)?/iu;
+  const m = re.exec(query);
+  if (!m) return null;
+  if (/^pr-/i.test(m[0])) return null;
+  const rewritten = (query.slice(0, m.index) + `PR-${m[1]!.toUpperCase()}` + query.slice(m.index + m[0].length)).replace(/\s+,/g, ",").replace(/\s{2,}/g, " ").trim();
+  return rewritten === query.trim() ? null : rewritten;
+}
+
 export async function searchInNamedMunicipio(
   geocoder: Pick<GeocodingProvider, "search">,
   query: string,
@@ -449,7 +464,13 @@ export async function searchInNamedMunicipio(
   } = {}
 ): Promise<GeocodeCandidate[]> {
   const { locate, ...searchOpts } = opts;
-  const results = await geocoder.search(query, searchOpts);
+  // "Carretera 333, Guánica" is how Puerto Rico writes a state road, but the
+  // provider reads the number as a house number and pinned house "333" on an
+  // unrelated road ~4 km away (live Run 15). Search the route ref first and
+  // keep the original wording only as the fallback.
+  const routed = routeRefQuery(query);
+  let results = routed ? await geocoder.search(routed, searchOpts).catch(() => [] as GeocodeCandidate[]) : [];
+  if (!results.length) results = await geocoder.search(query, searchOpts);
   const named = addressMunicipio(query);
   if (!named) return results;
   const inNamed = (c: GeocodeCandidate) => {
