@@ -2451,7 +2451,13 @@ export default function SmartPRIntake() {
         fill('business_type', scenarioProfileFill.business_type);
         fill('location_type', scenarioProfileFill.location_type);
       }
-      if (next.business_type && !next.industry && !edited.has('industry')) {
+      // The industry follows the business type when it is empty, or when its
+      // list does not offer that type (the interpreter guessed "Food &
+      // Beverage" while the description resolved to Beverage Manufacturing —
+      // the select then showed no business type at all; live Run 12).
+      const industryOffersType = (industry: string, bt: string) =>
+        businessTypeOptionsFor(industry).some((o) => o.toLowerCase() === bt.trim().toLowerCase());
+      if (next.business_type && !edited.has('industry') && (!next.industry || !industryOffersType(next.industry, next.business_type))) {
         const industry = industryForBusinessType(next.business_type);
         if (industry) {
           next.industry = industry;

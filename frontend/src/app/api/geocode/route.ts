@@ -15,7 +15,7 @@
 //   "nothing found" is a 200 with an empty list.
 
 import { getCurrentUser } from "../../../lib/supabase/server";
-import { attributionFor, geocoderFromEnv, GeocodingError, type GeocodeCandidate, type SlotReserver } from "../../../lib/geocoding";
+import { attributionFor, geocoderFromEnv, GeocodingError, searchInNamedMunicipio, type GeocodeCandidate, type SlotReserver } from "../../../lib/geocoding";
 import { pgSlotReserver } from "../../../lib/geocoding/slots";
 import { getPool } from "../../graph/db";
 import { ensureSchema } from "../../graph/store";
@@ -78,7 +78,8 @@ export async function GET(req: Request) {
         const attribution = [attributionFor(near?.place_source)].filter(Boolean);
         return Response.json({ results: [result], provider: geocoder.id, attribution, coordinates: true }, { headers: { "Cache-Control": "no-store" } });
       }
-      const results = await geocoder.search(q, { limit: 5, lang });
+      // Candidates in the municipio the query names lead (live Run 12).
+      const results = await searchInNamedMunicipio(geocoder, q, { limit: 5, lang });
       const attribution = [...new Set(results.map((r) => attributionFor(r.place_source)).filter(Boolean))];
       return Response.json({ results, provider: geocoder.id, attribution }, { headers: { "Cache-Control": "no-store" } });
     }

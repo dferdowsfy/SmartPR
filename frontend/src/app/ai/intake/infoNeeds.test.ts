@@ -207,6 +207,20 @@ describe("the description populates fields and answers questions (bar)", () => {
     }
   });
 
+  it("Opening a craft microbrewery resolves to Beverage Manufacturing (Run 12)", () => {
+    for (const d of [
+      "Opening a craft microbrewery with a taproom in downtown Peñuelas",
+      "Opening a brewery and bar in Ponce",
+      "Starting a nano-brewery in Cayey",
+      "Opening a brewpub in Caguas",
+      "Opening a cervecería artesanal in Rincón",
+    ]) {
+      assert.equal(businessTypeFromScenario(interpretScenario(d), kb), "Beverage Manufacturing", d);
+    }
+    // A plain bar stays a Bar.
+    assert.equal(businessTypeFromScenario(interpretScenario("Opening a bar in downtown Ponce"), kb), "Bar");
+  });
+
   it("Opening a bakery resolves to Bakery, not Restaurant (Run 9 L1)", () => {
     const ctx = interpretScenario("Opening a bakery with a small café counter in downtown Mayagüez");
     assert.equal(businessTypeFromScenario(ctx, kb), "Bakery");

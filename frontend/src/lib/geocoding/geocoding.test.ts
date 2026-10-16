@@ -16,6 +16,7 @@ import {
   nominatimProvider,
   normalizeNominatimPlace,
   politeProvider,
+  searchInNamedMunicipio,
   stripMunicipioSuffix,
 } from "./index.ts";
 
@@ -260,4 +261,40 @@ test("attribution: OSM-derived results carry the ODbL credit", () => {
   assert.match(attributionFor("photon")!, /OpenStreetMap/);
   assert.match(attributionFor("crim_catastro")!, /CRIM/);
   assert.equal(attributionFor("manual"), null);
+});
+
+test("named municipio: candidates in the municipio the query names lead (Run 12)", async () => {
+  const cand = (formatted: string, municipality: string | null, lat = 18.2): GeocodeCandidate => ({
+    latitude: lat, longitude: -66.5, formatted_address: formatted, address_line_1: null, city: null, municipality,
+    state_or_region: "PR", postal_code: null, country_code: "PR", place_source: "photon", place_source_id: null,
+  });
+  const calls: string[] = [];
+  const answers: Record<string, GeocodeCandidate[]> = {
+    "Calle Comercio, Peñuelas, Puerto Rico": [
+      cand("Calle Peñuelas, Cañaboncito, Caguas, Puerto Rico, 00727", "Caguas"),
+      cand("Calle Comercio, Santurce, San Juan, Puerto Rico, 00907", "San Juan"),
+      cand("Plaza Pública de Peñuelas, Calle Luis Muñoz Rivera, Barrio Pueblo, Peñuelas, Puerto Rico, 00624", "Peñuelas", 18.057),
+    ],
+    "Calle Inexistente, Peñuelas, Puerto Rico": [cand("Calle Peñuelas, Hato Rey Sur, San Juan, Puerto Rico", "San Juan")],
+    "Peñuelas, Puerto Rico": [cand("Peñuelas, Puerto Rico", "Peñuelas", 18.056)],
+    "Calle Peñuelas, Caguas": [cand("Calle Peñuelas, Cañaboncito, Caguas, Puerto Rico, 00727", "Caguas")],
+    "Calle Sin Pueblo": [cand("Calle Sin Pueblo, Caguas, Puerto Rico", "Caguas"), cand("Calle Sin Pueblo, Ponce, Puerto Rico", "Ponce")],
+  };
+  const g = { search: async (q: string) => { calls.push(q); return answers[q] ?? []; } };
+
+  const a = await searchInNamedMunicipio(g, "Calle Comercio, Peñuelas, Puerto Rico");
+  assert.equal(a[0]!.municipality, "Peñuelas", "the Peñuelas match leads, not Calle Peñuelas in Caguas");
+  assert.equal(a.length, 3, "other matches stay as alternatives");
+  assert.deepEqual(calls, ["Calle Comercio, Peñuelas, Puerto Rico"], "no extra lookup when one is already in the municipio");
+
+  calls.length = 0;
+  const b = await searchInNamedMunicipio(g, "Calle Inexistente, Peñuelas, Puerto Rico");
+  assert.equal(b[0]!.municipality, "Peñuelas", "falls back to the named municipio itself");
+  assert.equal(b[1]!.municipality, "San Juan");
+  assert.deepEqual(calls, ["Calle Inexistente, Peñuelas, Puerto Rico", "Peñuelas, Puerto Rico"]);
+
+  // A street named after another municipio, in the municipio the query names.
+  assert.equal((await searchInNamedMunicipio(g, "Calle Peñuelas, Caguas"))[0]!.municipality, "Caguas");
+  // No municipio named: provider order untouched.
+  assert.deepEqual((await searchInNamedMunicipio(g, "Calle Sin Pueblo")).map((c) => c.municipality), ["Caguas", "Ponce"]);
 });
