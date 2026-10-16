@@ -33,7 +33,7 @@ const base = process.env.BASE_URL || "http://localhost:3000";
 const FT = "DEPT_STATE_CORPORATE_FILING";
 const WIZ = (step: string) => `${base}/rehearsal-portal/dept-state/wizard?step=${step}`;
 
-let passport: Record<string, unknown> = {
+const passport: Record<string, unknown> = {
   business: { legalName: "Brisa Tropical Corp.", entityType: "corporation" },
   contact: { fullName: "Ana Rivera", email: "ana@example.com", phone: "787-555-0199" },
   // A PO box on purpose: the registry rejects it (recorded validation).
