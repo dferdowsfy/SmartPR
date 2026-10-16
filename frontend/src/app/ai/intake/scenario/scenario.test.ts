@@ -118,6 +118,22 @@ describe("the Guaynabo scenario is read relationally", () => {
 });
 
 describe("regression tests", () => {
+  it("Run 14 — 'Not sure' on the authorized use falls back to asking whether the use changes", () => {
+    const c = applyScenarioAnswer(
+      interpretScenario("Our existing company leased a warehouse in Guaynabo for a new operation."),
+      "sq_activity",
+      "furniture manufacturing",
+    );
+    const before = evaluateScenario(c, kb).questions.map((q) => q.id);
+    assert.ok(before.includes("sq_authorized_use"));
+    assert.ok(!before.includes("sq_change_of_use"), "authorized use is asked first");
+    const notSure = applyScenarioAnswer(c, "sq_authorized_use", "unknown");
+    const after = evaluateScenario(notSure, kb, { skip: ["sq_authorized_use"] });
+    const ids = after.questions.map((q) => q.id);
+    assert.ok(!ids.includes("sq_authorized_use"));
+    assert.ok(ids.includes("sq_change_of_use"), ids.join(","));
+  });
+
   it("Test 1 — an existing company opening a new operation stays an existing business", () => {
     const c = interpretScenario("Our existing company leased a warehouse in Guaynabo for a new operation.");
     assert.equal(businessStatus(c), "existing");

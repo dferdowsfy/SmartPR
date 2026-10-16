@@ -436,13 +436,25 @@ function candidateMunicipio(c: GeocodeCandidate): string | null {
 export async function searchInNamedMunicipio(
   geocoder: Pick<GeocodingProvider, "search">,
   query: string,
-  opts: { limit?: number; lang?: string } = {}
+  opts: {
+    limit?: number;
+    lang?: string;
+    /**
+     * Official municipio for a point (Census TIGER boundaries). When given,
+     * the coordinates decide, not the provider's label: OSM can label a
+     * road point "Utuado" while it sits on the Utuado–Lares line and the
+     * official map (which drives the report) puts it in Lares (live Run 14).
+     */
+    locate?: (latitude: number, longitude: number) => string | null;
+  } = {}
 ): Promise<GeocodeCandidate[]> {
-  const results = await geocoder.search(query, opts);
+  const { locate, ...searchOpts } = opts;
+  const results = await geocoder.search(query, searchOpts);
   const named = addressMunicipio(query);
   if (!named) return results;
   const inNamed = (c: GeocodeCandidate) => {
-    const m = candidateMunicipio(c);
+    const official = locate ? locate(c.latitude, c.longitude) : null;
+    const m = official ?? candidateMunicipio(c);
     return !!m && sameMunicipio(m, named);
   };
   const inside = results.filter(inNamed);
@@ -450,7 +462,7 @@ export async function searchInNamedMunicipio(
   if (inside.length) return [...inside, ...outside];
   const plain = `${named}, Puerto Rico`;
   if (query.trim().toLowerCase() === plain.toLowerCase()) return results;
-  const fallback = await geocoder.search(plain, { ...opts, limit: 3 }).catch(() => [] as GeocodeCandidate[]);
+  const fallback = await geocoder.search(plain, { ...searchOpts, limit: 3 }).catch(() => [] as GeocodeCandidate[]);
   const lead = fallback.find(inNamed);
   return lead ? [lead, ...outside].slice(0, Math.max(opts.limit ?? 5, 1)) : results;
 }

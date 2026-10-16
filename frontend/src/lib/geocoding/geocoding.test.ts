@@ -298,3 +298,29 @@ test("named municipio: candidates in the municipio the query names lead (Run 12)
   // No municipio named: provider order untouched.
   assert.deepEqual((await searchInNamedMunicipio(g, "Calle Sin Pueblo")).map((c) => c.municipality), ["Caguas", "Ponce"]);
 });
+
+test("searchInNamedMunicipio: official boundaries decide when the provider label disagrees (Run 14)", async () => {
+  const calls: string[] = [];
+  const mk = (municipality: string, latitude: number, longitude: number): GeocodeCandidate => ({
+    latitude, longitude, formatted_address: `Somewhere, ${municipality}, Puerto Rico`, address_line_1: null, city: null,
+    municipality, state_or_region: "PR", postal_code: null, country_code: "PR", place_source: "nominatim", place_source_id: null,
+  });
+  const g = {
+    async search(q: string) {
+      calls.push(q);
+      if (q === "Utuado, Puerto Rico") return [mk("Utuado", 18.26, -66.7)];
+      return [mk("Utuado", 18.2949, -66.825)];
+    },
+  };
+  // The road point is labeled Utuado but officially sits in Lares.
+  const locate = (lat: number, lng: number) => (lng < -66.8 ? "Lares" : "Utuado");
+  const r = await searchInNamedMunicipio(g, "Carretera 111, Utuado, Puerto Rico", { locate });
+  assert.equal(r[0]!.longitude, -66.7, "a point officially inside Utuado leads");
+  assert.equal(r[1]!.longitude, -66.825, "the boundary road match stays as an alternative");
+  assert.deepEqual(calls, ["Carretera 111, Utuado, Puerto Rico", "Utuado, Puerto Rico"]);
+  // Without a locator the provider label still decides (unchanged behavior).
+  calls.length = 0;
+  const plain = await searchInNamedMunicipio(g, "Carretera 111, Utuado, Puerto Rico");
+  assert.equal(plain[0]!.longitude, -66.825);
+  assert.deepEqual(calls, ["Carretera 111, Utuado, Puerto Rico"]);
+});
