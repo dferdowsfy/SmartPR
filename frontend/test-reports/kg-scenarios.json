@@ -1,10 +1,10 @@
 {
   "summary": {
-    "scenarios": 61,
-    "pass": 58,
+    "scenarios": 64,
+    "pass": 61,
     "fail": 3,
-    "expectations": 901,
-    "verified": 838,
+    "expectations": 958,
+    "verified": 895,
     "lint": []
   },
   "results": [
@@ -1838,18 +1838,18 @@
           "agency": "IRS"
         },
         {
-          "key": "DOC_PROPERTY_DEED",
-          "group": "conditional",
-          "applicability": "needs_more_information",
-          "position": 5,
-          "agency": "Property Registry"
-        },
-        {
           "key": "DOC_ISLAND_FERRY_MANIFEST",
           "group": "conditional",
           "applicability": "conditional",
-          "position": 6,
+          "position": 5,
           "agency": "Autoridad de Transporte Marítimo (ATM)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 6,
+          "agency": "Property Owner"
         },
         {
           "key": "DOC_PATENTE_MUNICIPAL",
@@ -1859,14 +1859,16 @@
           "agency": "Municipal Government"
         },
         {
-          "key": "DOC_LEASE_AGREEMENT",
+          "key": "DOC_PROPERTY_DEED",
           "group": "supporting",
           "applicability": "supporting_evidence",
           "position": 8,
-          "agency": "Property Owner"
+          "agency": "Property Registry"
         }
       ],
-      "questions": [],
+      "questions": [
+        "inline: Will the business lease its commercial space?"
+      ],
       "energyQuestionsUncapped": 0,
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
@@ -5448,7 +5450,7 @@
         {
           "key": "DOC_LEASE_AGREEMENT",
           "group": "conditional",
-          "applicability": "needs_more_information",
+          "applicability": "conditional",
           "position": 11,
           "agency": "Property Owner"
         },
@@ -6945,6 +6947,401 @@
       "otherCheckQuestions": [],
       "discardedModelFacts": [],
       "testName": "KG61 kg-scenario: church / change_of_use / historic_zone",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG62",
+      "title": "Convenience store (colmado) selling beer to go and cigarettes, existing leased storefront, no construction — Vieques, coastal zone X",
+      "matrix": {
+        "businessType": "convenience_store",
+        "projectType": "new_business_existing_building",
+        "locationContext": "coastal_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_CRIM_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "CRIM"
+        },
+        {
+          "key": "DOC_ASUME_CLEARANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Administración para el Sustento de Menores (ASUME)"
+        },
+        {
+          "key": "DOC_BACKGROUND_CHECK",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Policía de Puerto Rico"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 9,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 10,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_TAX_COMPLIANCE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 11,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_TOBACCO_SALES_PROJECTION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_ISLAND_FERRY_MANIFEST",
+          "group": "conditional",
+          "applicability": "conditional",
+          "position": 13,
+          "agency": "Autoridad de Transporte Marítimo (ATM)"
+        },
+        {
+          "key": "DOC_ALCOHOL_SALES_PROJECTION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 14,
+          "agency": "Department of the Treasury (Hacienda)"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 15,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_ALCOHOL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 16,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_TOBACCO_RETAIL_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 17,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 18,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG62 kg-scenario: convenience_store / new_business_existing_building / coastal_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG63",
+      "title": "Clinical laboratory: interior renovation of a leased medical-plaza suite — Trujillo Alto, zone X",
+      "matrix": {
+        "businessType": "clinical_laboratory",
+        "projectType": "renovation",
+        "locationContext": "urban_zone_x"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_EIN",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PROFESSIONAL_LICENSE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 2,
+          "agency": "Department of State Examining Boards"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 3,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 4,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 5,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 6,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_CERT_ORGANIZATION",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 7,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_CLIA_CERTIFICATE",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 8,
+          "agency": "Centers for Medicare & Medicaid Services (CMS) — through the Departamento de Salud (SARSP)"
+        },
+        {
+          "key": "DOC_HEALTH_PERMIT",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 9,
+          "agency": "Departamento de Salud"
+        },
+        {
+          "key": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 10,
+          "agency": "Department of Health / DRNA"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 11,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 12,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_CLINICAL_LAB_LICENSE",
+          "group": "prerequisites",
+          "applicability": "required",
+          "position": 13,
+          "agency": "Departamento de Salud — Secretaría Auxiliar para la Regulación de la Salud Pública (SARSP)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 14,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [],
+      "discardedModelFacts": [],
+      "testName": "KG63 kg-scenario: clinical_laboratory / renovation / urban_zone_x",
+      "findingsClassified": []
+    },
+    {
+      "id": "KG64",
+      "title": "Existing used-car dealership: 1,200 sq ft showroom addition on its own lot — Isabela, flood zone AE",
+      "matrix": {
+        "businessType": "car_dealership",
+        "projectType": "expansion",
+        "locationContext": "flood_ae"
+      },
+      "status": "pass",
+      "orderingSkipped": [],
+      "items": [
+        {
+          "key": "DOC_JP_FLOOD_REG13",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 0,
+          "agency": "OGPe / Junta de Planificación"
+        },
+        {
+          "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+          "group": "required_now",
+          "applicability": "required",
+          "position": 1,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_VEHICLE_REGISTRATION",
+          "group": "conditional",
+          "applicability": "needs_more_information",
+          "position": 2,
+          "agency": "DTOP"
+        },
+        {
+          "key": "DOC_PROPERTY_DEED",
+          "group": "supporting",
+          "applicability": "supporting_evidence",
+          "position": 3,
+          "agency": "Property Registry"
+        },
+        {
+          "key": "DOC_EIN",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 4,
+          "agency": "IRS"
+        },
+        {
+          "key": "DOC_MERCHANT_REGISTRATION",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 5,
+          "agency": "Departamento de Hacienda"
+        },
+        {
+          "key": "DOC_PERMISO_UNICO",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 6,
+          "agency": "OGPe"
+        },
+        {
+          "key": "DOC_PATENTE_MUNICIPAL",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 7,
+          "agency": "Municipal Government"
+        },
+        {
+          "key": "DOC_WORKERS_COMP",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 8,
+          "agency": "Corporación del Fondo del Seguro del Estado"
+        },
+        {
+          "key": "DOC_DTRH_EMPLOYER_REG",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 9,
+          "agency": "Departamento del Trabajo y Recursos Humanos (DTRH)"
+        },
+        {
+          "key": "DOC_ANNUAL_REPORT",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 10,
+          "agency": "Department of State"
+        },
+        {
+          "key": "DOC_HACIENDA_EMPLOYER_WITHHOLDING",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 11,
+          "agency": "Department of the Treasury (Hacienda) — SURI"
+        },
+        {
+          "key": "DOC_DACO_DEALER_LICENSE",
+          "group": "registrations",
+          "applicability": "verify_existing",
+          "position": 12,
+          "agency": "Departamento de Asuntos del Consumidor (DACO)"
+        },
+        {
+          "key": "DOC_LEASE_AGREEMENT",
+          "group": "other_checks",
+          "applicability": "conditional",
+          "position": 13,
+          "agency": "Property Owner"
+        }
+      ],
+      "questions": [],
+      "energyQuestionsUncapped": 0,
+      "otherCheckQuestions": [
+        "Will the business lease its commercial space?"
+      ],
+      "discardedModelFacts": [],
+      "testName": "KG64 kg-scenario: car_dealership / expansion / flood_ae",
       "findingsClassified": []
     }
   ]

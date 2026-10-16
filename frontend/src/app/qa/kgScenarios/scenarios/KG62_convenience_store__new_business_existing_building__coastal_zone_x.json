@@ -1,0 +1,187 @@
+{
+  "id": "KG62",
+  "title": "Convenience store (colmado) selling beer to go and cigarettes, existing leased storefront, no construction — Vieques, coastal zone X",
+  "matrix": {
+    "businessType": "convenience_store",
+    "projectType": "new_business_existing_building",
+    "locationContext": "coastal_zone_x"
+  },
+  "description": "We are opening a small convenience store (colmado) in an existing leased storefront in Isabel Segunda, Vieques. We will sell packaged groceries, snacks, sodas, beer to go and cigarettes. No construction; we move in as-is. Two employees.",
+  "profile": {
+    "business_type": "Convenience Store",
+    "municipality": "Vieques",
+    "location_type": "Retail Storefront",
+    "number_of_employees": 2,
+    "industry": "Retail",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_FOOD_SOLD": true,
+    "Q_ALCOHOL_SOLD": true,
+    "Q_TOBACCO_SOLD": true,
+    "Q_RETAIL_SALES": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "existing leased storefront"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased storefront"
+    }
+  },
+  "site": {
+    "municipality": "Vieques",
+    "geo": "coastal_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_EIN",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0002 municipality baseline: every business gets the IRS EIN; employees also trigger RULE_0620."
+      },
+      {
+        "key": "DOC_MERCHANT_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0003 municipality baseline: Registro de Comerciante (SURI)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020, Arts. 7.200-7.207)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Art. 8.4A, Ley 161-2009)."
+      },
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0012: packaged food sold (Q_FOOD_SOLD) -> sanitary permit for a food establishment (Ley 81-1912, 3 LPRA 178)."
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0013: beer sold to go (Q_ALCOHOL_SOLD) -> Hacienda internal-revenue alcohol license (Sec. 5022.01, Ley 1-2011).",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_CRIM_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0621 (alcohol) and RULE_0703 (tobacco): CRIM debt certification is a Hacienda license prerequisite."
+      },
+      {
+        "key": "DOC_ASUME_CLEARANCE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0624 (alcohol) and RULE_0702 (tobacco): ASUME certification is a Hacienda license prerequisite."
+      },
+      {
+        "key": "DOC_BACKGROUND_CHECK",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0627 (alcohol) and RULE_0704 (tobacco): Certificado de Antecedentes Penales is a Hacienda license prerequisite."
+      },
+      {
+        "key": "DOC_TOBACCO_RETAIL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0701: cigarettes sold (Q_TOBACCO_SOLD) -> retail cigarette dealer license (Sec. 3050.01, Ley 1-2011).",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_TOBACCO_SALES_PROJECTION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0705: the tobacco retail license file includes the projected sales volume (Hacienda requisitos, Licencia de Detallista de Cigarrillos)."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      },
+      {
+        "key": "DOC_ISLAND_FERRY_MANIFEST",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0517 (municipality flag island + BT_CONVENIENCE_STORE): Vieques/Culebra cargo logistics with the ATI ferry operator. The document is uncited (procedural, citation_confidence not_applicable), so it may only appear as conditional.",
+        "applicabilityIn": [
+          "conditional"
+        ]
+      },
+      {
+        "key": "DOC_LEASE_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0648: confirmed leased tenure -> the lease is supporting evidence for the permit file."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_ISLAND_FERRY_MANIFEST",
+        "confidence": "verified-in-code",
+        "rationale": "The ATM/ATI ferry manifest has no statutory citation in the KB; an uncited procedural document must never render as REQUIRED.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "No construction stated ('we move in as-is'): RULE_0643-0646 need a construction / renovation project type or structural work."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0708 needs location.czm AND a development fact (construction, renovation, expansion, exterior or site work); moving into an existing storefront as-is has none."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_TOURISM_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "Vieques carries the tourism flag, but RULE_0033, RULE_0139-0148 and RULE_0261-0264 attach the Turismo innkeeper registration only to lodging (hotel, resort, guest house, short-term rental business types or Q_SHORT_TERM_RENTAL)."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial-tourist (C-T) district on urban land, no change of use: RULE_0709-0712 cannot fire."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_CRIM_CLEARANCE",
+        "after": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_ALCOHOL_LICENSE.depends_on_document_ids includes DOC_CRIM_CLEARANCE."
+      },
+      {
+        "before": "DOC_TOBACCO_SALES_PROJECTION",
+        "after": "DOC_TOBACCO_RETAIL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_TOBACCO_RETAIL_LICENSE.depends_on_document_ids includes DOC_TOBACCO_SALES_PROJECTION."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-16 by the scenario loop: first convenience store, first tobacco-retail and first Vieques scenario (island municipality flag). Not asserted, for expert review: (1) RULE_0517-type ferry-manifest cards (RULE_0508-0517) carry no statutory citation; whether they belong on the checklist at all, or only as logistics guidance, is a product/legal call. (2) DOC_ALCOHOL_SALES_PROJECTION renders needs_more_information (RULE_0665 heuristic) while the parallel DOC_TOBACCO_SALES_PROJECTION renders required; the Hacienda requirements page lists a sales projection for both licenses, so the asymmetry is worth an expert look. (3) Whether a retailer selling only sealed beer for off-premises consumption needs any municipal alcohol-hours or zoning endorsement in Vieques is not modeled."
+}

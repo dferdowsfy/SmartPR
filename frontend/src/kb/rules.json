@@ -10410,5 +10410,53 @@
         "reason": "KB gap: tire recycling and manufacturing already carry Bomberos CPI, but Auto Repair / Body Shop / Motorcycle Repair (flammable liquids, solvents, spray operations) did not. Official Bomberos permisos page ties fire-prevention certification to commercial use permits (Permiso Único / Ley 161-2009); Ayuda Legal PR lists Certificación para la Prevención de Incendios as a core small-business permit; CTMAPR taller certification checklist includes Permiso de Bomberos. Sources: https://bomberos.pr.gov/permisos ; https://ayudalegalpr.org/resource/gua-bsica-de-permisos-para-pequeos-negocios ; Ley 20-2017 PDF."
       }
     ]
+  },
+  {
+    "id": "RULE_0762",
+    "rule_type": "business_type",
+    "business_type_id": "BT_CLINICAL_LABORATORY",
+    "question_id": null,
+    "expected_answer": null,
+    "municipality_flag": null,
+    "requires_document_id": "DOC_CLINICAL_LAB_LICENSE",
+    "citation": "Ley Núm. 97 de 25 de junio de 1962, Art. 1 — ninguna persona natural o jurídica podrá establecer y operar en Puerto Rico un laboratorio de análisis clínico sin licencia del Secretario de Salud; Art. 3 — licencia anual; Reglamento Núm. 9508 (2023), Cap. II Arts. 1, 4, 8 y 9",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/97-1962.pdf",
+    "citation_confidence": "statute",
+    "citation_source": "rule",
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "reviewed_at": "2026-10-16",
+    "trigger_summary": "Clinical laboratory. Ley 97-1962 Art. 1 bars anyone from establishing and operating a clinical laboratory in Puerto Rico without a license from the Secretario de Salud; Reg. 9508 sets the initial application, the inspection and the annual renewal.",
+    "change_log": [
+      {
+        "date": "2026-10-16",
+        "change": "rule added (KG scenario loop)",
+        "reason": "KG63 (clinical laboratory, Trujillo Alto): the only state health card was DOC_HEALTH_PERMIT (the food-establishment sanitary permit, RULE_0097, needs_more_information by design), so the laboratory's actual operating license was missing. Primary sources: Ley 97-1962 Arts. 1 y 3 (bvirtualogp.pr.gov 97-1962.pdf); Departamento de Salud Reglamento Núm. 9508 of 3 Oct 2023 (salud.pr.gov/CMS/DOWNLOAD/9063), which repealed Reg. 120 / 7189 / 8785."
+      }
+    ]
+  },
+  {
+    "id": "RULE_0763",
+    "rule_type": "business_type",
+    "business_type_id": "BT_CLINICAL_LABORATORY",
+    "question_id": null,
+    "expected_answer": null,
+    "municipality_flag": null,
+    "requires_document_id": "DOC_CLIA_CERTIFICATE",
+    "citation": "Public Health Service Act § 353 (42 U.S.C. § 263a); 42 C.F.R. § 493.3(a) — a laboratory must hold a current CLIA certificate (waiver, registration, compliance, PPM or accreditation) unless CLIA-exempt; 42 C.F.R. § 493.5(c); Reglamento Núm. 9508 (2023), Cap. II Art. 9(d) — Certificado de Registro de CLIA required for the initial state license",
+    "citation_url": "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-493",
+    "citation_confidence": "regulation",
+    "citation_source": "rule",
+    "verification": "verified",
+    "compliance_mode": "verify_existing",
+    "reviewed_at": "2026-10-16",
+    "trigger_summary": "Clinical laboratory. Federal CLIA (42 U.S.C. § 263a; 42 C.F.R. § 493.3) requires every laboratory that tests human specimens for diagnosis or treatment to hold a CLIA certificate; Puerto Rico is not a CLIA-exempt jurisdiction (only New York and Washington are), and Reg. 9508 Art. 9(d) makes the CLIA registration certificate part of the state license file.",
+    "change_log": [
+      {
+        "date": "2026-10-16",
+        "change": "rule added (KG scenario loop)",
+        "reason": "KG63 (clinical laboratory, Trujillo Alto): no KB document modeled the federal CLIA certificate. Primary sources: 42 C.F.R. §§ 493.3(a), 493.5(c) (eCFR); CMS Form CMS-116 and the CMS CLIA state-agency list (Puerto Rico: Departamento de Salud, SARSP Laboratory Licensure Section); Reg. 9508 Cap. II Art. 9(d)."
+      }
+    ]
   }
 ]

@@ -491,3 +491,27 @@ test("home-based: commercial-lease question is not asked (never bridges to owned
   assert.ok(commercial.includes("existing_lease"),
     `commercial flow must keep the lease question: ${JSON.stringify(commercial)}`);
 });
+
+// --- Tenure stated in the description (KG64, 2026-10-16) -------------------
+// "On the lot we own" is a confirmed project-context tenure. It is the same
+// known tenure as an explicit Q_OWNS_PROPERTY answer: the lease question may
+// stay conditional, but it must not claim tenure is unknown
+// (needs_more_information) while the deed card rests on that same fact.
+
+const OWNED_CONTEXT = { property_tenure: { value: "owned", confidence: 0.9, evidence: "the lot we own" } };
+
+test("lease: confirmed project tenure 'owned' → lease stays conditional, never needs_more_information", () => {
+  const reqs = computeRequirementsFromKB(RESTAURANT, {}, {}, { projectContext: OWNED_CONTEXT as never });
+  const lease = reqs.find((r) => r.document_id === "DOC_LEASE_AGREEMENT");
+  assert.ok(lease, "lease question still surfaces (validated review keeps it conditional)");
+  assert.equal(lease!.applicability, "conditional");
+  assert.ok(reqs.some((r) => r.document_id === "DOC_PROPERTY_DEED"), "deed card rests on the same tenure fact");
+});
+
+test("lease: a suggested (unconfirmed) 'owned' tenure stays inert → needs_more_information", () => {
+  const suggested = { property_tenure: { value: "owned", confidence: 0.7, evidence: "we own" } };
+  const reqs = computeRequirementsFromKB(RESTAURANT, {}, {}, { projectContext: suggested as never, sessionId: "s-kg64" });
+  const lease = reqs.find((r) => r.document_id === "DOC_LEASE_AGREEMENT");
+  assert.ok(lease);
+  assert.equal(lease!.applicability, "needs_more_information");
+});
