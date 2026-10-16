@@ -51,8 +51,12 @@ const passport = {
 const obligations: ObligationLike[] = [
   { id: "obl-suri", name: "Merchant registration (SURI)", requirement_id: "DOC_MERCHANT_REGISTRATION", agency: "Departamento de Hacienda", status: "MISSING" },
 ];
+// The in-progress override below only applies on the ?requirement= resume path
+// (section 2); the plain picker (section 1) keeps production truth.
+let resumeMode = false;
 const filingGroups = () => {
   const groups = resolveFilingOptions({ business_id: "b1", passport, priorRuns: [], obligations, env: {} });
+  if (!resumeMode) return groups;
   // Simulate an in-progress run as a supervised pilot would produce it.
   // Production truth (asserted below) is "not yet supported".
   for (const g of groups)
@@ -124,12 +128,12 @@ const card = (page: Page) => page.locator("#agency-intervention");
 const pwInputs = (page: Page) => page.evaluate(() => document.querySelectorAll("input[type=password]").length);
 const chatPinned = (page: Page) =>
   page.evaluate(() => {
-    const box = document.querySelector("[aria-label='Clara chat'] .overflow-y-auto") as HTMLElement;
+    const box = document.querySelector('[aria-label="Clara\'s progress"] .overflow-y-auto') as HTMLElement;
     return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
   });
 const mobile = W < 1024;
 const showBrowser = async (page: Page) => { if (mobile) { await page.getByRole("tab", { name: "Browser" }).click(); await page.waitForTimeout(300); } };
-const showChat = async (page: Page) => { if (mobile) { await page.getByRole("tab", { name: "Conversation" }).click(); await page.waitForTimeout(300); } };
+const showChat = async (page: Page) => { if (mobile) { await page.getByRole("tab", { name: "Status" }).click(); await page.waitForTimeout(300); } };
 const waitCard = async (page: Page) => { await card(page).waitFor({ timeout: 8000 }); await page.waitForTimeout(400); };
 
 /** The chat request must describe the screen the browser shows. */
@@ -178,12 +182,12 @@ await page.route("**/api/**", async (route) => {
   return j({});
 });
 
-// 1 — picker truth: SURI merchant is not launchable (portal unverified) →
-// "not yet supported", no Submit for it.
+// 1 — picker truth: SURI merchant is not launchable (portal unverified).
+// The redesigned launch screen (2026-10-02) offers no workflow cards and says
+// nothing is ready; the raw picker keeps production truth (data level).
 await ensureSignedIn(page, base, "/businesses/b1/agency-run");
-await page.waitForTimeout(800);
-const pickerText = await page.locator("[aria-label='Clara chat']").innerText();
-check("picker: SURI merchant filing is visible", /Merchant registration/.test(pickerText));
+await page.getByText("Finding the filings for this project").waitFor({ state: "detached", timeout: 20000 }).catch(() => {});
+await page.waitForTimeout(400);
 // The override only applies on the ?requirement= resume path below; the raw
 // picker keeps production truth.
 {
@@ -191,10 +195,12 @@ check("picker: SURI merchant filing is visible", /Merchant registration/.test(pi
   const opt = raw.flatMap((g) => g.filings).find((f) => f.requirement_id === "DOC_MERCHANT_REGISTRATION");
   check("picker: SURI merchant is not launchable (portal unverified)", opt?.filing_status === "not_available" && opt?.supported === false);
 }
-check("picker: no Submit button for the SURI merchant filing", (await page.getByRole("button", { name: "Submit", exact: true }).count()) === 0);
+check("picker: launch screen offers no workflow cards", (await page.getByTestId("clara-workflow-card").count()) === 0);
+check("picker: launch screen says nothing is ready", await page.getByTestId("clara-no-workflows").isVisible());
 await page.screenshot({ path: `${OUT}/suri-${TAG}-0-picker.png` });
 
 // 2 — supervised-pilot resume: ?requirement= reopens the in-progress run.
+resumeMode = true;
 await page.goto(`${base}/businesses/b1/agency-run?requirement=DOC_MERCHANT_REGISTRATION`, { waitUntil: "networkidle" });
 await page.waitForTimeout(1500);
 
@@ -293,7 +299,7 @@ check("confirmation: card names the visible screen", confText.includes(v.heading
 // The server records the agent-reported reference and marks the run submitted.
 run = { ...run, status: "submitted", filing_confirmation: conf, events: [...events] };
 await page.waitForTimeout(1500);
-const submittedText = await page.locator("[aria-label='Clara chat']").innerText();
+const submittedText = await page.locator('[aria-label="Clara\'s progress"]').innerText();
 check("confirmation: reference captured from the portal page", new RegExp(conf.replace(/-/g, "-")).test(submittedText), conf);
 await page.screenshot({ path: `${OUT}/suri-${TAG}-2-confirmation.png` });
 

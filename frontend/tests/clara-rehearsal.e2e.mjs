@@ -69,10 +69,10 @@ await page.route("**/api/**", async (route) => {
 });
 const results = [];
 const check = (name, ok, detail = "") => results.push(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? " — " + detail : ""}`);
-const chat = () => page.locator("[aria-label='Clara chat']");
+const chat = () => page.locator("[aria-label=\"Clara's progress\"]");
 const card = () => page.locator("#agency-intervention");
 const chatMetrics = () => page.evaluate(() => {
-  const box = document.querySelector("[aria-label='Clara chat'] .overflow-y-auto");
+  const box = document.querySelector("[aria-label=\"Clara's progress\"] .overflow-y-auto");
   const content = box.firstElementChild; const last = content.lastElementChild;
   const b = box.getBoundingClientRect(), l = last.getBoundingClientRect();
   return { fromBottom: Math.round(box.scrollHeight - box.scrollTop - box.clientHeight), lastVisible: l.bottom <= b.bottom + 2 && l.top >= b.top - 2 || (l.top < b.bottom && l.bottom <= b.bottom + 2), docScroll: document.documentElement.scrollHeight - innerHeight };
@@ -82,10 +82,12 @@ const frame = () => page.frameLocator("iframe");
 const takeOver = async () => { await card().getByRole("button", { name: "Take over the browser" }).click(); await page.waitForTimeout(700); };
 const imDone = async () => { await page.getByRole("button", { name: "I'm done" }).click(); await page.waitForTimeout(1800); };
 const mobile = W < 1024;
-const showChat = async () => { if (mobile) { await page.getByRole("tab", { name: "Conversation" }).click(); await page.waitForTimeout(300); } };
+const showChat = async () => { if (mobile) { await page.getByRole("tab", { name: "Status" }).click(); await page.waitForTimeout(300); } };
 
 await ensureSignedIn(page, base);
-await page.getByRole("button", { name: "Submit", exact: true }).click();
+// Redesigned launch screen (2026-10-02): the filing is a workflow card button;
+// the pre-flight card still carries "Start filing".
+await page.getByTestId("clara-workflow-card").first().click();
 await page.waitForTimeout(900);
 await page.getByRole("button", { name: "Start filing" }).click();
 await page.waitForTimeout(2200);

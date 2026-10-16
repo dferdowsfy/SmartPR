@@ -33,12 +33,22 @@ const base = process.env.BASE_URL || "http://localhost:3000";
 const FT = "DEPT_STATE_CORPORATE_FILING";
 const WIZ = (step: string) => `${base}/rehearsal-portal/dept-state/wizard?step=${step}`;
 
-const passport = {
+let passport: Record<string, unknown> = {
   business: { legalName: "Brisa Tropical Corp.", entityType: "corporation" },
   contact: { fullName: "Ana Rivera", email: "ana@example.com", phone: "787-555-0199" },
   // A PO box on purpose: the registry rejects it (recorded validation).
   addresses: { principalPhysical: { line1: "PO Box 9021", postalCode: "00901" } },
 };
+/** Deep-merge a nested passport patch (the shape passportPatchFor produces). */
+function mergePassport(target: Record<string, unknown>, patch: Record<string, unknown>) {
+  for (const [k, v] of Object.entries(patch)) {
+    if (v && typeof v === "object" && !Array.isArray(v) && typeof target[k] === "object" && target[k] !== null) {
+      mergePassport(target[k] as Record<string, unknown>, v as Record<string, unknown>);
+    } else {
+      target[k] = v;
+    }
+  }
+}
 const obligations: ObligationLike[] = [
   { id: "obl-corp", name: "Certificate of Incorporation", requirement_id: "DOC_CERT_INCORPORATION", agency: "Department of State", status: "MISSING" },
   { id: "obl-llc", name: "Certificate of Organization (LLC)", requirement_id: "DOC_CERT_ORGANIZATION", agency: "Department of State", status: "MISSING" },
@@ -107,12 +117,12 @@ const card = (page: Page) => page.locator("#agency-intervention");
 const pwInputs = (page: Page) => page.evaluate(() => document.querySelectorAll("input[type=password]").length);
 const chatPinned = (page: Page) =>
   page.evaluate(() => {
-    const box = document.querySelector("[aria-label='Clara chat'] .overflow-y-auto") as HTMLElement;
+    const box = document.querySelector('[aria-label="Clara\'s progress"] .overflow-y-auto') as HTMLElement;
     return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
   });
 const mobile = W < 1024;
 const showBrowser = async (page: Page) => { if (mobile) { await page.getByRole("tab", { name: "Browser" }).click(); await page.waitForTimeout(300); } };
-const showChat = async (page: Page) => { if (mobile) { await page.getByRole("tab", { name: "Conversation" }).click(); await page.waitForTimeout(300); } };
+const showChat = async (page: Page) => { if (mobile) { await page.getByRole("tab", { name: "Status" }).click(); await page.waitForTimeout(300); } };
 const waitCard = async (page: Page) => { await card(page).waitFor({ timeout: 8000 }); await page.waitForTimeout(400); };
 
 /** The chat request must describe the screen the browser shows. */
@@ -149,6 +159,13 @@ await page.route("**/api/**", async (route) => {
   const j = (b: unknown) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
   if (p === "/api/admin/me") return j({ admin: false });
   if (p === "/api/businesses/b1/payment-settings") return j({ filingFeeCard: { brand: "visa", last4: "4242", expMonth: 12, expYear: 2031, consentedAt: "2026-09-01T00:00:00Z", expired: false } });
+  if (p === "/api/businesses/b1" && m === "PATCH") {
+    // The missing-requirements modal saves to the Business Passport; merge the
+    // patch so the refetched filing groups recompute real launch state.
+    const body = route.request().postDataJSON() as { passport?: Record<string, unknown> } | null;
+    if (body?.passport) mergePassport(passport, body.passport);
+    return j({ ok: true, business: { legal_name: "Brisa Tropical Corp.", municipality: "San Juan" } });
+  }
   if (p.startsWith("/api/businesses/")) return j({ business: { legal_name: "Brisa Tropical Corp.", municipality: "San Juan" } });
   if (p === "/api/agency-actions/filings") return j({ groups: filingGroups(), readiness: {
     documents: [
@@ -167,38 +184,55 @@ await page.route("**/api/**", async (route) => {
   return j({});
 });
 
-// 1 — launch switch off: visible, not startable; LLC and annual report non-launchable; others visible.
+// 1 — launch switch off: nothing launchable. Routing and the switch still come
+// from the real resolveFilingOptions (data level); the redesigned launch screen
+// (2026-10-02) offers no workflow cards and says nothing is ready (UI level).
 await ensureSignedIn(page, base, "/businesses/b1/agency-run");
-await page.waitForTimeout(800);
-const corpCard = page.locator("[data-testid=filing-card]", { hasText: "Form a corporation" });
-check("switch off: corporation filing is visible", await corpCard.isVisible());
-check("switch off: shows 'Not yet available' with no Submit", /Not yet available/.test(await corpCard.innerText()) && (await corpCard.getByRole("button", { name: "Submit", exact: true }).count()) === 0);
-const pickerText = await page.locator("[aria-label='Clara chat']").innerText();
-check("LLC routes to its own variant, not the corporation", /Form an LLC \(Certificate of Organization\)/.test(pickerText));
-check("annual report routes to its own variant", /Annual report \/ annual fee/.test(pickerText));
-check("unsupported requirements stay visible", /Health \/ Sanitary Permit/.test(pickerText) && /Not yet supported/.test(pickerText));
-check("no Submit anywhere while the switch is off", (await page.getByRole("button", { name: "Submit", exact: true }).count()) === 0);
-const docs = await page.locator("[data-testid=documents-on-file]").innerText();
-check("picker: documents on file listed with Complete", /EIN Confirmation Letter/.test(docs) && /Complete/.test(docs));
-check("picker: assistance quick actions present", (await page.locator("[data-testid=assist-panel]").innerText()).includes("Show missing items"));
-if (W < 1024) { /* composer lives in the chat pane on mobile too */ }
-const composer = page.getByRole("textbox", { name: "Message SmartPR" });
-await composer.fill("my password is hunter2");
-await composer.press("Enter");
-await page.waitForTimeout(300);
-check("composer: refuses a password and sends nothing", asked.length === 0 && /Don't share passwords/.test(await page.locator("[data-testid=chat-composer]").innerText()));
-await composer.fill("What does the Department of State need?");
-await composer.press("Enter");
-await page.waitForTimeout(800);
-check("composer: question goes to the SmartPR assistant", asked.length === 1 && /Certificate of Incorporation is filed/.test(await page.locator("[aria-label='Clara chat']").innerText()));
+// Wait for the filings fetch to resolve (first dev-server load compiles slowly).
+await page.getByText("Finding the filings for this project").waitFor({ state: "detached", timeout: 20000 }).catch(() => {});
+await page.waitForTimeout(400);
+{
+  const raw = filingGroups().flatMap((g) => g.filings);
+  const corp = raw.find((f) => f.requirement_id === "DOC_CERT_INCORPORATION");
+  check("switch off: corporation filing is not launchable", corp?.filing_status === "not_available" && corp?.supported === false);
+  const llc = raw.find((f) => f.requirement_id === "DOC_CERT_ORGANIZATION");
+  check("switch off: LLC routes to its own variant, not the corporation", /Form an LLC \(Certificate of Organization\)/.test(llc?.title_en ?? "") && llc?.filing_status === "not_available");
+  const annual = raw.find((f) => f.requirement_id === "DOC_ANNUAL_REPORT");
+  check("switch off: annual report routes to its own variant", /Annual report \/ annual fee/.test(annual?.title_en ?? "") && annual?.filing_status === "not_available");
+  const health = raw.find((f) => f.requirement_id === "DOC_HEALTH_PERMIT");
+  check("switch off: health permit has no browser filing", health?.filing_status === "unsupported" && health?.supported === false);
+}
+check("switch off: no workflow cards offered", (await page.getByTestId("clara-workflow-card").count()) === 0);
+check("switch off: launch screen says nothing is ready", await page.getByTestId("clara-no-workflows").isVisible());
+check("switch off: passport autofill strip present", await page.getByTestId("clara-autofill-strip").isVisible());
 await page.screenshot({ path: `${OUT}/dos-${TAG}-0-picker-off.png` });
 
-// 2 — pilot switch on: startable.
+// 2 — pilot switch on: the corporation filing needs one passport item. Completing
+// it in the modal makes the filing launchable through the real eligibility path
+// (PATCH merges into the stub passport; the refetch recomputes resolveFilingOptions).
 launchEnv = { MITA_FLOW_DEPT_STATE_CORPORATION: "on" };
 await page.reload({ waitUntil: "networkidle" });
-await page.waitForTimeout(800);
-check("switch on: only the corporation filing gets Submit", (await page.getByRole("button", { name: "Submit", exact: true }).count()) === 1);
-await page.getByRole("button", { name: "Submit", exact: true }).click();
+await page.getByText("Finding the filings for this project").waitFor({ state: "detached", timeout: 20000 }).catch(() => {});
+await page.waitForTimeout(400);
+{
+  const raw = filingGroups().flatMap((g) => g.filings);
+  const corp = raw.find((f) => f.requirement_id === "DOC_CERT_INCORPORATION");
+  check("switch on: corporation filing needs info, not silently blocked", corp?.filing_status === "missing_information" && corp?.supported === true);
+}
+check("switch on: corporation sits in 'Not ready yet'", await page.getByTestId("clara-not-ready").isVisible());
+const notReadyCard = page.getByTestId("clara-not-ready-card").filter({ hasText: "Form a corporation" });
+check("switch on: not-ready card names the corporation filing", await notReadyCard.isVisible());
+check("switch on: not-ready card counts the missing item", /1 item missing/.test(await notReadyCard.innerText()));
+await notReadyCard.getByTestId("clara-complete-requirements").click();
+await page.getByTestId("clara-missing-modal").waitFor({ timeout: 8000 });
+await page.locator('[data-field="addresses.municipality"]').fill("San Juan");
+await page.getByTestId("clara-missing-save").click();
+await page.waitForTimeout(1500);
+const corpCard = page.getByTestId("clara-workflow-card").filter({ hasText: "Form a corporation" });
+await corpCard.waitFor({ timeout: 8000 });
+check("requirements completed: corporation workflow card appears", await corpCard.isVisible());
+await page.screenshot({ path: `${OUT}/dos-${TAG}-0b-picker-on.png` });
+await corpCard.click();
 await page.waitForTimeout(900);
 await page.getByRole("button", { name: "Start filing" }).click();
 await page.waitForTimeout(1500);
@@ -321,7 +355,7 @@ const conf = (await f.locator("[data-testid=dos-confirmation]").innerText()).mat
 await page.getByRole("button", { name: "I'm done" }).click();
 await page.waitForTimeout(1800);
 await showChat(page);
-const finalChat = await page.locator("[aria-label='Clara chat']").innerText();
+const finalChat = await page.locator('[aria-label="Clara\'s progress"]').innerText();
 check("confirmation recorded after the human submitted", Boolean(conf) && finalChat.includes(conf!) && /You submitted this filing/.test(finalChat), conf);
 await page.screenshot({ path: `${OUT}/dos-${TAG}-5-confirmation.png` });
 
