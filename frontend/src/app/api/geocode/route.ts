@@ -21,6 +21,7 @@ import { getPool } from "../../graph/db";
 import { ensureSchema } from "../../graph/store";
 import { getClientIpKey, rateLimitAllow } from "../../../lib/rateLimit";
 import { formatCoordinate, parseLatLngQuery, validateCoordinates } from "../../locations/geo";
+import { locateInPuertoRico } from "../../locations/boundaries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,7 +80,11 @@ export async function GET(req: Request) {
         return Response.json({ results: [result], provider: geocoder.id, attribution, coordinates: true }, { headers: { "Cache-Control": "no-store" } });
       }
       // Candidates in the municipio the query names lead (live Run 12).
-      const results = await searchInNamedMunicipio(geocoder, q, { limit: 5, lang });
+      const results = await searchInNamedMunicipio(geocoder, q, {
+        limit: 5,
+        lang,
+        locate: (lat, lng) => locateInPuertoRico(lat, lng)?.municipio.name ?? null,
+      });
       const attribution = [...new Set(results.map((r) => attributionFor(r.place_source)).filter(Boolean))];
       return Response.json({ results, provider: geocoder.id, attribution }, { headers: { "Cache-Control": "no-store" } });
     }

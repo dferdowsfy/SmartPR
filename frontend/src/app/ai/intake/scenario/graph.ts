@@ -492,7 +492,11 @@ export function evaluateScenario(
     controlling.push({ id: "change_of_use", label: "Whether the use or occupancy changes", paths: ["project.possibleChangeOfUse"], branch: "use_authorization" });
     // When the authorized use is stated, the graph compares it with the
     // proposed use itself — the agency, not the user, confirms the change.
-    if (tier2 && !authorizedUseMatters && !ctx.property.authorizedUse) {
+    // When the user answered "Not sure" (or "Another authorized use") to the
+    // authorized-use question, nothing can be compared, so ask the change
+    // directly instead of leaving it as an open "may also need" item.
+    const authorizedUseUnanswerable = authorizedUseMatters && skip.has("sq_authorized_use");
+    if (tier2 && (!authorizedUseMatters || authorizedUseUnanswerable) && !ctx.property.authorizedUse) {
       ask({
         id: "sq_change_of_use",
         controls: "change_of_use",
