@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { computeCoverage, coverageParts, formatShare, parcelPlanarArea } from "./coverage.ts";
+import { clipRingToBox, computeCoverage, coverageParts, formatShare, parcelPlanarArea, parcelWindow, PRECLIP_PAD_DEG } from "./coverage.ts";
 import { applyCoverage, parsePlanTerritorialExtra, parsePtDate, readPlanTerritorialDates, wktPolygons, type ParcelBoundary } from "./parcel.ts";
 import { resolveParcelFindings } from "./parcelService.ts";
 import { resetEndpointHealth } from "./layerService.ts";
@@ -259,4 +259,74 @@ test("PUT geometry request fails (not refused) → classes still checked, areas 
   assert.equal(put.status, "verified");
   assert.equal(put.coverage ?? null, null);
   assert.match(put.parcel_limitation!, /areas not computed — the geometry request failed \(http_504\); classes checked with a 3 m edge tolerance/);
+});
+
+
+// ---------------------------------------------------------------------------
+// Run 13 (2026-10-16): island-scale source polygons froze the server.
+// FEMA Zone X / JP calificación features for one rural pin came back as
+// ~1.6 MB of rings; clipping them whole with polygon-clipping took 50–100 s
+// of synchronous CPU, so every other request (map layers included) timed out
+// and read "temporarily unavailable". Rings are now pre-clipped to the
+// parcel's padded box; the intersection with the parcel is unchanged.
+// ---------------------------------------------------------------------------
+
+/** Closed, clockwise "circle" ring with n vertices (lon/lat), radius in metres. */
+function bigRing(n: number, radiusM: number, cx = LNG0 + DLNG / 2, cy = LAT0 + DLAT / 2): number[][] {
+  const mLat = 110_574, mLng = 111_320 * Math.cos((cy * Math.PI) / 180);
+  const out: number[][] = [];
+  for (let i = 0; i < n; i++) {
+    const t = -(2 * Math.PI * i) / n; // clockwise
+    const r = radiusM * (1 + 0.002 * Math.sin(i * 7)); // jagged, like a real map edge
+    out.push([cx + (r * Math.cos(t)) / mLng, cy + (r * Math.sin(t)) / mLat]);
+  }
+  out.push(out[0]!);
+  return out;
+}
+const ringAreaDeg = (r: number[][]) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j]![0]! + r[i]![0]!) * (r[j]![1]! - r[i]![1]!); return Math.abs(a) / 2; };
+
+test("clipRingToBox: inside unchanged, outside dropped, enclosing ring becomes the box", () => {
+  const win = parcelWindow(PARCEL);
+  const inner = box(0.2, 0.4, 0.2, 0.4)[0]!;
+  assert.equal(clipRingToBox(inner, win), inner, "a ring inside the window is returned as is");
+  const far = box(50, 51)[0]!;
+  assert.equal(clipRingToBox(far, win), null, "a ring entirely outside the window is dropped");
+  const clipped = clipRingToBox(bigRing(4000, 3000), win)!;
+  assert.ok(clipped, "an enclosing ring is kept");
+  const wArea = (win.maxX - win.minX) * (win.maxY - win.minY);
+  assert.ok(near(ringAreaDeg(clipped), wArea, wArea * 1e-9), "an enclosing ring clips to exactly the window");
+  assert.ok(clipped.length < 20, `clipped ring is small (${clipped.length} vertices)`);
+  assert.ok(PRECLIP_PAD_DEG > 0 && win.minX < LNG0 && win.maxY > LAT0 + DLAT, "window contains the parcel with a pad");
+});
+
+test("clipRingToBox: a ring that leaves and re-enters the window keeps the right area inside", () => {
+  // U-shape: covers the parcel's west and east thirds, joined far to the south (outside the window).
+  const x = (f: number) => LNG0 + f * DLNG, y = (f: number) => LAT0 + f * DLAT;
+  const u = [[x(0), y(1)], [x(1 / 3), y(1)], [x(1 / 3), y(-20)], [x(2 / 3), y(-20)], [x(2 / 3), y(1)], [x(1), y(1)], [x(1), y(-30)], [x(0), y(-30)], [x(0), y(1)]];
+  const c = computeCoverage(PARCEL, [{ key: "U", rings: [u] }, { key: "M", rings: box(1 / 3, 2 / 3) }], { exclusive: true });
+  const U = c.parts.find((p) => p.key === "U")!, M = c.parts.find((p) => p.key === "M")!;
+  assert.ok(near(U.share, 2 / 3, 0.003), `U ${U.share}`);
+  assert.ok(near(M.share, 1 / 3, 0.003), `M ${M.share}`);
+  assert.ok(c.overlap_share < 0.001 && c.complete);
+});
+
+test("island-scale features (100k+ vertices) are clipped in well under a second, with the same shares", () => {
+  // A huge Zone-X-like polygon around the parcel with a hole over its east half,
+  // plus the east half as its own zone, plus a second huge polygon far away.
+  const hole = box(0.5, 1.5)[0]!.slice().reverse();
+  const features = [
+    { key: "X", rings: [bigRing(120_000, 4000), hole] },
+    { key: "AE", rings: box(0.5, 1) },
+    { key: "FAR", rings: [bigRing(60_000, 2000, LNG0 + 0.2, LAT0 + 0.2)] },
+  ];
+  const t0 = Date.now();
+  const c = computeCoverage(PARCEL, features, { exclusive: true, pin: { latitude: LAT0 + DLAT / 2, longitude: LNG0 + DLNG / 4 } });
+  const ms = Date.now() - t0;
+  assert.ok(ms < 1500, `computeCoverage took ${ms} ms (was tens of seconds before the pre-clip)`);
+  const X = c.parts.find((p) => p.key === "X")!, AE = c.parts.find((p) => p.key === "AE")!;
+  assert.ok(near(X.share, 0.5, 0.003), `X ${X.share}`);
+  assert.ok(near(AE.share, 0.5, 0.003), `AE ${AE.share}`);
+  assert.ok(!c.parts.some((p) => p.key === "FAR"), "a far polygon contributes nothing");
+  assert.equal(c.pin_key, "X");
+  assert.ok(c.complete && c.overlap_share < 0.001);
 });

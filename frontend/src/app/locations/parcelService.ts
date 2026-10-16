@@ -20,7 +20,7 @@ import {
   applyCoverage, buildSoilsExtra, parseFloodZones, parseParcelBoundary, parsePlanTerritorialExtra, parsePresenceExtra, parsePutExtra, parseSoilsParcel, parseZoningDistricts,
   type ExtraFinding, type ExtraId, type ParcelBoundary, type ParcelFindings,
 } from "./parcel.ts";
-import { computeCoverage, parcelPlanarArea, type CoverageFeature } from "./coverage.ts";
+import { clipRingsToBox, computeCoverage, parcelPlanarArea, parcelWindow, type CoverageFeature } from "./coverage.ts";
 import polygonClipping from "polygon-clipping";
 import { ringsToGeoJson } from "./parcel.ts";
 
@@ -348,10 +348,13 @@ function displayShape(parcel: ParcelBoundary["geometry"], features: CoverageFeat
   try {
     const subj = (parcel.type === "Polygon" ? [parcel.coordinates] : parcel.coordinates) as unknown as Parameters<typeof polygonClipping.intersection>[0];
     let acc: ReturnType<typeof polygonClipping.union> = [];
+    // Same pre-clip as computeCoverage: island-scale source rings otherwise
+    // block the event loop for tens of seconds (Run 13).
+    const win = parcelWindow(parcel);
     for (const f of features) {
       if (!("rings" in f)) continue;
       let shape: ReturnType<typeof polygonClipping.union> = [];
-      for (const r of f.rings) if (r.length >= 4) shape = polygonClipping.xor(shape, [[r as [number, number][]]]);
+      for (const r of clipRingsToBox(f.rings, win)) if (r.length >= 4) shape = polygonClipping.xor(shape, [[r as [number, number][]]]);
       acc = polygonClipping.union(acc, polygonClipping.intersection(subj, shape));
     }
     return acc.length ? { type: "MultiPolygon", coordinates: acc as unknown as number[][][][] } : null;
