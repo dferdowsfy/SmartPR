@@ -1508,5 +1508,37 @@
     "citation": "40 C.F.R. Part 63, Subpart HHHHHH (National Emission Standards for Paint Stripping and Miscellaneous Surface Coating at Area Sources), §§ 63.11169, 63.11173 and 63.11175",
     "citation_url": "https://www.ecfr.gov/current/title-40/chapter-I/subchapter-C/part-63/subpart-HHHHHH",
     "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_CLIA_CERTIFICATE",
+    "name": "CLIA Certificate (Form CMS-116)",
+    "agency": "Centers for Medicare & Medicaid Services (CMS) — through the Departamento de Salud (SARSP)",
+    "category": "Federal",
+    "agency_url": "https://www.cms.gov/medicare/quality/clinical-laboratory-improvement-amendments/apply",
+    "agency_canonical": "CMS (CLIA)",
+    "download_url": "https://www.cms.gov/Medicare/CMS-Forms/CMS-Forms/Downloads/CMS116.pdf",
+    "download_kind": "form_pdf",
+    "download_note": "File Form CMS-116 with the Puerto Rico state agency, the Departamento de Salud's Secretaría Auxiliar para la Regulación de la Salud Pública (SARSP), Laboratory Licensure Section (clialab@salud.pr.gov). Do not send payment with the form: the agency issues a fee coupon with the CLIA number. A laboratory applying for a Certificate of Compliance or Accreditation first receives a Registration Certificate, which lets it test until the survey or accreditation is verified.",
+    "citation": "Public Health Service Act § 353 (42 U.S.C. § 263a); 42 C.F.R. §§ 493.3(a) y 493.5(c); Reglamento Núm. 9508 del Departamento de Salud (2023), Cap. II Art. 9(d)",
+    "citation_url": "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-493",
+    "citation_confidence": "regulation"
+  },
+  {
+    "id": "DOC_CLINICAL_LAB_LICENSE",
+    "name": "Clinical Laboratory Operating License (Licencia de Laboratorio de Análisis Clínico)",
+    "agency": "Departamento de Salud — Secretaría Auxiliar para la Regulación de la Salud Pública (SARSP)",
+    "category": "Health",
+    "agency_url": "https://www.salud.pr.gov/",
+    "agency_canonical": "Departamento de Salud",
+    "download_url": null,
+    "download_kind": "none",
+    "download_note": "Filed on the Departamento de Salud's online platform with SARSP's Clinical Laboratory Licensure Section at least 45 days before the planned opening (Reg. 9508, Cap. II Art. 8). The initial file includes the use permit, the Permiso Único, the CLIA registration certificate, the biomedical-waste generator number, staff credentials, the test list, the equipment inventory and a floor sketch (Art. 9). SARSP inspects before it issues the license, which is renewed every year.",
+    "citation": "Ley Núm. 97 de 25 de junio de 1962 (Ley de Laboratorios de Análisis Clínicos), Arts. 1 y 3; Reglamento Núm. 9508 del Departamento de Salud (2023), Cap. II Arts. 1, 4, 8 y 9",
+    "citation_url": "https://bvirtualogp.pr.gov/ogp/Bvirtual/leyesreferencia/PDF/97-1962.pdf",
+    "citation_confidence": "statute",
+    "depends_on_document_ids": [
+      "DOC_PERMISO_UNICO",
+      "DOC_CLIA_CERTIFICATE"
+    ]
   }
 ]

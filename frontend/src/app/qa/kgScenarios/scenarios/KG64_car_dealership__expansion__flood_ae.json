@@ -1,0 +1,155 @@
+{
+  "id": "KG64",
+  "title": "Existing used-car dealership: 1,200 sq ft showroom addition on its own lot — Isabela, flood zone AE",
+  "matrix": {
+    "businessType": "car_dealership",
+    "projectType": "expansion",
+    "locationContext": "flood_ae"
+  },
+  "description": "Our used-car dealership in Isabela wants to expand: we will build a 1,200 square foot addition to our showroom on the lot we own. We already operate here with six employees.",
+  "profile": {
+    "business_type": "Car Dealership",
+    "municipality": "Isabela",
+    "location_type": "Commercial Space",
+    "number_of_employees": 6,
+    "industry": "Automotive",
+    "business_structure": "Corporation"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_USED_VEHICLE_SALES": true,
+    "Q_CUSTOMERS_VISIT": true
+  },
+  "projectIntent": "existing_business",
+  "modelProjectContext": {
+    "expansion": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "expand"
+    },
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "our showroom"
+    },
+    "property_tenure": {
+      "value": "owned",
+      "confidence": 0.9,
+      "evidence": "the lot we own"
+    },
+    "square_footage": {
+      "value": 1200,
+      "confidence": 0.9,
+      "evidence": "1,200 square foot addition"
+    }
+  },
+  "site": {
+    "municipality": "Isabela",
+    "geo": "flood_ae"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0718: expansion = true -> construction permit for the addition (Ley 161-2009).",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0706: pin in the SFHA (zone AE) with a development fact (expansion) -> Reg. 13 floodplain compliance (JP Reglamento de Planificacion Num. 13, Octava Revision).",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_DACO_DEALER_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0698 (verified): motor-vehicle dealers must hold the DACO dealer license (Registro Unico de Dealers); an existing dealer verifies it (compliance_mode verify_existing).",
+        "applicabilityIn": [
+          "verify_existing",
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_PROPERTY_DEED",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0649: confirmed owned tenure ('the lot we own') -> the deed is supporting evidence for the permit file.",
+        "applicabilityIn": [
+          "supporting_evidence"
+        ]
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007 (verify_existing): an operating business verifies the Permiso Unico it already holds."
+      },
+      {
+        "key": "DOC_ANNUAL_REPORT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0636: a corporation files the Informe Anual with the Departamento de Estado (Ley 164-2009, Art. 15.01(A))."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_CERT_INCORPORATION",
+        "confidence": "verified-in-code",
+        "rationale": "Existing business (projectIntent existing_business): formation rules are gated by requires_new_unformed_business."
+      },
+      {
+        "key": "DOC_VEHICLE_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0216 is heuristic (missing vehicle_ownership): dealer inventory is merchandise, not a company fleet (Darius-validated G12/G24/G25), so it must never be REQUIRED.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_LEASE_AGREEMENT",
+        "confidence": "verified-in-code",
+        "rationale": "Tenure is known from the description ('the lot we own', RULE_0649 deed): the unanswered-lease conditional may stay conditional per the 2026-09-16 validated review, but must not claim tenure is unknown (needs_more_information) or be REQUIRED. Fixed 2026-10-16 in kb.ts appendUnansweredTriggerConditionals.",
+        "applicabilityIn": [
+          "required",
+          "needs_more_information"
+        ]
+      },
+      {
+        "key": "DOC_FLOODWAY_NO_RISE_CERTIFICATION",
+        "confidence": "verified-in-code",
+        "rationale": "Zone AE outside the floodway: RULE_0732 (no-rise certification) needs location.flood_zone.floodway."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial district on urban land, same use: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_CONTRACTOR_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "Selling vehicles is not construction services: RULE_0232/0237/0642 need Q_OFFERS_CONSTRUCTION_SERVICES."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PATENTE_MUNICIPAL depends on DOC_PERMISO_UNICO."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-16 by the scenario loop: first car-dealership, first expansion-by-an-existing-business-in-AE and first Isabela scenario. It found an engine inconsistency, fixed in the same PR: when the description stated the property is owned (confirmed project fact property_tenure = owned, which already produces the deed card), the unanswered-lease conditional still rendered needs_more_information as if tenure were unknown, because only an explicit Q_OWNS_PROPERTY answer counted. Confirmed project tenure now counts as known tenure (kb.ts), so the lease card stays conditional as the 2026-09-16 validated review prescribes; suggested (unconfirmed) reads stay inert (leaseHonesty.test.ts). Not asserted, for expert review: (1) whether a 1,200 sq ft addition is a 'substantial improvement' under Reg. 13 (that depends on the addition's cost relative to the structure's market value, which the intake does not collect), so only the Reg. 13 card itself is asserted, not elevation requirements; (2) whether a used-car dealer that does reconditioning on site also needs the DRNA used-oil generator ID (RULE_0678-0681 cover auto-repair business types only)."
+}

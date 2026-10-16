@@ -957,7 +957,14 @@ function appendUnansweredTriggerConditionals(
     if (rule.question_id === "Q_EXISTING_LEASE") {
       // Tenure is "known" only if the user explicitly said they own; a
       // defaulted or negative ownership answer leaves tenure unknown.
-      const ownsAnswered = input.answers["Q_OWNS_PROPERTY"] === true;
+      // A confirmed project-context tenure of "owned" (e.g. "on the lot we
+      // own" in the description) is the same known tenure as Q_OWNS_PROPERTY:
+      // the deed card already rests on it (RULE_0649), so the intake must not
+      // also claim tenure is unknown. Suggested (unconfirmed) reads stay inert.
+      const tenureFact = input.projectFacts?.["property_tenure"];
+      const tenureConfirmed = input.factMeta?.["property_tenure"]?.confirmedInCurrentIntake !== false;
+      const ownsFromProject = tenureFact === "owned" && tenureConfirmed;
+      const ownsAnswered = input.answers["Q_OWNS_PROPERTY"] === true || ownsFromProject;
       const isMobile = input.answers["Q_FOOD_TRUCK_MOBILE"] === true;
       const isHome = input.answers["Q_HOME_BASED"] === true;
       const isOnline = input.answers["Q_ONLINE_ONLY"] === true;

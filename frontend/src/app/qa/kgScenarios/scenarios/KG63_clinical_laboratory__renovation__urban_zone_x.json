@@ -1,0 +1,173 @@
+{
+  "id": "KG63",
+  "title": "Clinical laboratory: interior renovation of a leased medical-plaza suite — Trujillo Alto, zone X",
+  "matrix": {
+    "businessType": "clinical_laboratory",
+    "projectType": "renovation",
+    "locationContext": "urban_zone_x"
+  },
+  "description": "We are opening a clinical laboratory in a leased suite in a medical plaza in Trujillo Alto. We will draw blood and run diagnostic tests on patient samples. Interior renovation only: new partition walls, a sink line and a sample-processing room; no exterior changes. Five employees, including licensed medical technologists.",
+  "profile": {
+    "business_type": "Clinical Laboratory",
+    "municipality": "Trujillo Alto",
+    "location_type": "Commercial Space",
+    "number_of_employees": 5,
+    "industry": "Healthcare",
+    "business_structure": "LLC"
+  },
+  "answers": {
+    "Q_EMPLOYEES_HIRED": true,
+    "Q_EXISTING_LEASE": true,
+    "Q_HEALTHCARE_SERVICES": true,
+    "Q_PATIENTS_VISIT": true,
+    "Q_DIAGNOSTIC_TESTING": true,
+    "Q_MEDICAL_WASTE": true,
+    "Q_NEEDLES_INVASIVE": true,
+    "Q_PROFESSIONAL_LICENSES": true,
+    "Q_RENOVATIONS": true
+  },
+  "projectIntent": "new_business",
+  "modelProjectContext": {
+    "existing_building": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "leased suite in a medical plaza"
+    },
+    "property_tenure": {
+      "value": "leased",
+      "confidence": 0.9,
+      "evidence": "leased suite"
+    },
+    "new_walls": {
+      "value": true,
+      "confidence": 0.9,
+      "evidence": "new partition walls"
+    },
+    "exterior_work": {
+      "value": false,
+      "confidence": 0.9,
+      "evidence": "no exterior changes"
+    }
+  },
+  "site": {
+    "municipality": "Trujillo Alto",
+    "geo": "urban_zone_x"
+  },
+  "expect": {
+    "mustInclude": [
+      {
+        "key": "DOC_CLINICAL_LAB_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0762 (added 2026-10-16, verified): Ley 97-1962 Art. 1 bars establishing or operating a clinical laboratory without a license from the Secretario de Salud; Reg. 9508 (2023) Cap. II Arts. 8-9 set the initial application.",
+        "applicabilityIn": [
+          "required"
+        ],
+        "agencyMatches": "Departamento de Salud"
+      },
+      {
+        "key": "DOC_CLIA_CERTIFICATE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0763 (added 2026-10-16, verified): 42 U.S.C. 263a; 42 C.F.R. 493.3(a) — every non-exempt laboratory needs a CLIA certificate (Form CMS-116, filed with the PR state agency SARSP); Puerto Rico is not CLIA-exempt.",
+        "applicabilityIn": [
+          "required"
+        ],
+        "agencyMatches": "CMS"
+      },
+      {
+        "key": "DOC_PROFESSIONAL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0096 / RULE_0029: licensed medical technologists -> Junta Examinadora professional licenses."
+      },
+      {
+        "key": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0644: interior work (new partition walls, sink line) reads as project_type renovation -> construction permit (Ley 161-2009)."
+      },
+      {
+        "key": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0007: physical commercial premises -> Permiso Unico (Art. 8.4A, Ley 161-2009); Reg. 9508 Art. 9(b)-(c) also lists the use permit and Permiso Unico in the lab-license file."
+      },
+      {
+        "key": "DOC_BIOMEDICAL_WASTE_GENERATOR_ID",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0683: medical waste generated (blood draws, sharps) -> biomedical-waste generator ID; heuristic (missing biomedical_waste_types), so needs_more_information.",
+        "applicabilityIn": [
+          "needs_more_information",
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_CERT_ORGANIZATION",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0651: new LLC -> Certificate of Organization (Departamento de Estado)."
+      },
+      {
+        "key": "DOC_PATENTE_MUNICIPAL",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0004 municipality baseline: Patente Municipal (Ley 107-2020)."
+      },
+      {
+        "key": "DOC_WORKERS_COMP",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0020: employees -> CFSE workers' compensation policy."
+      }
+    ],
+    "mustNotInclude": [
+      {
+        "key": "DOC_HEALTH_PERMIT",
+        "confidence": "verified-in-code",
+        "rationale": "RULE_0097 is heuristic (missing facility_license_category): DOC_HEALTH_PERMIT is the food-establishment sanitary permit and must never be REQUIRED for a laboratory that sells no food.",
+        "applicabilityIn": [
+          "required"
+        ]
+      },
+      {
+        "key": "DOC_ALCOHOL_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "No alcohol: RULE_0013/0014/0015 need Q_ALCOHOL_SOLD / SERVED / MANUFACTURED; business-type alcohol rules exist only for Bar / Juice Bar."
+      },
+      {
+        "key": "DOC_JP_FLOOD_REG13",
+        "confidence": "verified-in-code",
+        "rationale": "FEMA zone X: RULE_0706/0707 need location.flood_zone.sfha / floodway, which zone X never sets."
+      },
+      {
+        "key": "DOC_CZM_COASTAL_REVIEW",
+        "confidence": "verified-in-code",
+        "rationale": "Pin outside the official coastal zone (NOAA CZMA 'outside'): RULE_0708 needs location.czm."
+      },
+      {
+        "key": "DOC_CONSULTA_UBICACION",
+        "confidence": "verified-in-code",
+        "rationale": "Commercial district on urban land, no change of use: RULE_0709-0712 cannot fire."
+      },
+      {
+        "key": "DOC_DEA_REGISTRATION",
+        "confidence": "verified-in-code",
+        "rationale": "No controlled substances stated: RULE_0734 needs Q_CONTROLLED_SUBSTANCES."
+      }
+    ],
+    "ordering": [
+      {
+        "before": "DOC_CLIA_CERTIFICATE",
+        "after": "DOC_CLINICAL_LAB_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_CLINICAL_LAB_LICENSE depends on DOC_CLIA_CERTIFICATE (Reg. 9508 Art. 9(d) and Cap. III: a new laboratory must hold a CLIA registration certificate before the state license issues)."
+      },
+      {
+        "before": "DOC_PERMISO_UNICO",
+        "after": "DOC_CLINICAL_LAB_LICENSE",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_CLINICAL_LAB_LICENSE depends on DOC_PERMISO_UNICO (Reg. 9508 Art. 9(b)-(c): use permit and Permiso Unico are part of the initial license file)."
+      },
+      {
+        "before": "DOC_OGPE_CONSTRUCTION_PERMIT",
+        "after": "DOC_PERMISO_UNICO",
+        "confidence": "verified-in-code",
+        "rationale": "KB documents.json: DOC_PERMISO_UNICO depends on DOC_OGPE_CONSTRUCTION_PERMIT."
+      }
+    ]
+  },
+  "notes": "Added 2026-10-16 by the scenario loop: first clinical-laboratory and first Trujillo Alto scenario. It found a KB gap, fixed in the same PR: the only state health card for a lab was DOC_HEALTH_PERMIT (the food sanitary permit, needs_more_information by design), and neither the Ley 97-1962 operating license nor the federal CLIA certificate existed. Added DOC_CLINICAL_LAB_LICENSE (RULE_0762) and DOC_CLIA_CERTIFICATE (RULE_0763), both verified against primary sources: Ley 97-1962 Arts. 1 y 3 (bvirtualogp.pr.gov), Departamento de Salud Reglamento Num. 9508 of 3 Oct 2023 (salud.pr.gov/CMS/DOWNLOAD/9063), 42 C.F.R. 493.3 and 493.5 (eCFR), and CMS Form CMS-116 with the CMS CLIA state-agency list. Not encoded, for expert review: (1) Reg. 9508 Art. 9(a) and Cap. III(c) also require a Certificado de Necesidad y Conveniencia (CNC, Ley 2 de 7 de noviembre de 1975) before a new lab is licensed; the KB has no CNC document and the CNC law's exemptions should be confirmed before it is added. (2) Reg. 9508 Art. 9(e) lists the biomedical-waste generator number as part of the license file, which argues for RULE_0683 being REQUIRED for a lab; it stays heuristic until the waste-stream fact is modeled. (3) A physician office running only waived tests also needs a CLIA Certificate of Waiver (42 C.F.R. 493.5(c)) and a Salud office-testing certification (Reg. 9508 Cap. II Art. 5); a Q_DIAGNOSTIC_TESTING trigger is not added here."
+}

@@ -135,7 +135,7 @@ const TOBACCO_GATED = new Set(["DOC_TOBACCO_RETAIL_LICENSE", "DOC_TOBACCO_SALES_
 // controlled-substance, cannabis, telecom, marine, recycling and auto-body
 // documents. The Bayamón bar profile triggers none of them, so they stay
 // provisional for it (MATCH_TRACE_MISSING, never a placeholder).
-const KB_GAPS_GATED = new Set(["DOC_ICP_HISTORIC_RECOMMENDATION", "DOC_SHPO_SECTION106_REVIEW", "DOC_FLOODWAY_NO_RISE_CERTIFICATION", "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION", "DOC_DEA_REGISTRATION", "DOC_CANNABIS_DISPENSARY_LICENSE", "DOC_TELECOM_TOWER_SITING", "DOC_FAA_7460_NOTICE", "DOC_FCC_ASR", "DOC_NET_TOWER_REGISTRY", "DOC_DRNA_VESSEL_REGISTRATION", "DOC_DRNA_BOAT_RENTAL_LICENSE", "DOC_DRNA_MARITIME_CONCESSION", "DOC_USACE_SECTION10", "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT", "DOC_EPA_AUTOBODY_NESHAP_NOTICE"]);
+const KB_GAPS_GATED = new Set(["DOC_ICP_HISTORIC_RECOMMENDATION", "DOC_SHPO_SECTION106_REVIEW", "DOC_FLOODWAY_NO_RISE_CERTIFICATION", "DOC_PR_CONTROLLED_SUBSTANCES_REGISTRATION", "DOC_DEA_REGISTRATION", "DOC_CANNABIS_DISPENSARY_LICENSE", "DOC_TELECOM_TOWER_SITING", "DOC_FAA_7460_NOTICE", "DOC_FCC_ASR", "DOC_NET_TOWER_REGISTRY", "DOC_DRNA_VESSEL_REGISTRATION", "DOC_DRNA_BOAT_RENTAL_LICENSE", "DOC_DRNA_MARITIME_CONCESSION", "DOC_USACE_SECTION10", "DOC_DRNA_RECYCLING_FACILITY_ENDORSEMENT", "DOC_EPA_AUTOBODY_NESHAP_NOTICE", "DOC_CLINICAL_LAB_LICENSE", "DOC_CLIA_CERTIFICATE"]);
 
 // Ambulant-gated: the municipal ambulant-business license applies only to
 // mobile/ambulant businesses (RULE_0653, Q_FOOD_TRUCK_MOBILE/BT_FOOD_TRUCK)
@@ -155,7 +155,7 @@ const AMBULANT_GATED = new Set(["DOC_AMBULANT_BUSINESS_LICENSE"]);
 // (REG-GUIDE-USEDOIL-001, 2026-10-06).
 const USEDOIL_HAZMAT_GATED = new Set(["DOC_USED_OIL_GENERATOR_ID", "DOC_EPA_HAZARDOUS_WASTE_ID"]);
 
-test("same Bayamón bar: all sixty-five source-backed explanations are distinct and actionable in EN/ES", () => {
+test("same Bayamón bar: all sixty-seven source-backed explanations are distinct and actionable in EN/ES", () => {
   for (const language of ["en", "es"] as const) {
     const output = Object.keys(PR_REQUIREMENT_GUIDANCE).map(id => buildRequirementGuidance(req(id), { ...ctx, language }));
     for (const g of output) {
@@ -175,7 +175,7 @@ test("same Bayamón bar: all sixty-five source-backed explanations are distinct 
       assert.doesNotMatch(g.whyThisApplies, /You confirmed|Confirmaste/);
       assert.doesNotMatch(JSON.stringify(g), /Old generic text|BarBayamón|compliance profile current|issued or required by/);
     }
-    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 65);
+    for (const field of ["regulatoryReason", "purpose", "nextAction", "consequenceOrNextStep"] as const) assert.equal(new Set(output.map(g => g[field])).size, 67);
   }
 });
 
