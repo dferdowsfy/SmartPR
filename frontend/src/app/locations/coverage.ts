@@ -125,6 +125,88 @@ export type CoverageFeature =
   /** GeoJSON-style polygons in lon/lat. */
   | { key: string; polygons: number[][][][] };
 
+// ---------------------------------------------------------------------------
+// Pre-clip to the parcel's neighbourhood (performance; results unchanged)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pad (degrees, ~55 m) around the parcel's bounding box for the pre-clip.
+ * Anything farther than this from the parcel cannot intersect it.
+ */
+export const PRECLIP_PAD_DEG = 0.0005;
+
+export type LonLatBox = { minX: number; minY: number; maxX: number; maxY: number };
+
+/** Bounding box (lon/lat) of a parcel geometry, grown by `pad` degrees. */
+export function parcelWindow(g: ParcelBoundary["geometry"], pad = PRECLIP_PAD_DEG): LonLatBox {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const polys = g.type === "Polygon" ? [g.coordinates] : g.coordinates;
+  for (const poly of polys) for (const ring of poly) for (const p of ring) {
+    const x = p[0]!, y = p[1]!;
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { minX: minX - pad, minY: minY - pad, maxX: maxX + pad, maxY: maxY + pad };
+}
+
+/**
+ * Clip one closed lon/lat ring to an axis-aligned box (Sutherland–Hodgman,
+ * O(n)). Returns a closed ring, or null when nothing of it is in the box.
+ *
+ * Why: FEMA Zone X and JP calificación polygons come back island-scale (up to
+ * ~1.6 MB / 100k+ vertices for one pin). Feeding them whole to
+ * polygon-clipping took 50–100 s of synchronous CPU per parcel, which froze
+ * the whole Node process (every other request, including the map layers,
+ * timed out and showed "temporarily unavailable"). Clipping each ring to the
+ * parcel's padded box first gives the same intersection with the parcel,
+ * because the parcel lies strictly inside the box: (A xor B) ∩ W =
+ * (A ∩ W) xor (B ∩ W). Any zero-width seams Sutherland–Hodgman leaves lie on
+ * the box edge, at least PRECLIP_PAD_DEG away from the parcel.
+ */
+export function clipRingToBox(ring: number[][], b: LonLatBox): number[][] | null {
+  if (!Array.isArray(ring) || ring.length < 4) return null;
+  // Fast paths: ring bbox entirely inside (unchanged) or entirely outside (dropped).
+  let rMinX = Infinity, rMinY = Infinity, rMaxX = -Infinity, rMaxY = -Infinity;
+  for (const p of ring) {
+    const x = p[0]!, y = p[1]!;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    if (x < rMinX) rMinX = x; if (x > rMaxX) rMaxX = x;
+    if (y < rMinY) rMinY = y; if (y > rMaxY) rMaxY = y;
+  }
+  if (rMaxX < b.minX || rMinX > b.maxX || rMaxY < b.minY || rMinY > b.maxY) return null;
+  if (rMinX >= b.minX && rMaxX <= b.maxX && rMinY >= b.minY && rMaxY <= b.maxY) return ring;
+  // Open ring (drop the closing vertex) for clipping.
+  let pts: number[][] = ring.slice(0, ring.length - 1);
+  const edges: Array<[(p: number[]) => boolean, (a: number[], c: number[]) => number[]]> = [
+    [(p) => p[0]! >= b.minX, (a, c) => { const t = (b.minX - a[0]!) / (c[0]! - a[0]!); return [b.minX, a[1]! + t * (c[1]! - a[1]!)]; }],
+    [(p) => p[0]! <= b.maxX, (a, c) => { const t = (b.maxX - a[0]!) / (c[0]! - a[0]!); return [b.maxX, a[1]! + t * (c[1]! - a[1]!)]; }],
+    [(p) => p[1]! >= b.minY, (a, c) => { const t = (b.minY - a[1]!) / (c[1]! - a[1]!); return [a[0]! + t * (c[0]! - a[0]!), b.minY]; }],
+    [(p) => p[1]! <= b.maxY, (a, c) => { const t = (b.maxY - a[1]!) / (c[1]! - a[1]!); return [a[0]! + t * (c[0]! - a[0]!), b.maxY]; }],
+  ];
+  for (const [inside, cross] of edges) {
+    if (!pts.length) break;
+    const out: number[][] = [];
+    for (let i = 0; i < pts.length; i++) {
+      const cur = pts[i]!, prev = pts[(i + pts.length - 1) % pts.length]!;
+      const ci = inside(cur), pi = inside(prev);
+      if (ci) { if (!pi) out.push(cross(prev, cur)); out.push(cur); }
+      else if (pi) out.push(cross(prev, cur));
+    }
+    pts = out;
+  }
+  // Drop consecutive duplicates; need at least a triangle with area.
+  const dedup = pts.filter((p, i, a) => { const q = a[(i + a.length - 1) % a.length]!; return a.length === 1 || p[0] !== q[0] || p[1] !== q[1]; });
+  if (dedup.length < 3 || ringArea(dedup) === 0) return null;
+  return [...dedup, dedup[0]!];
+}
+
+/** Clip every ring of an ArcGIS feature to the box; rings with nothing inside are dropped. */
+export function clipRingsToBox(rings: number[][][], b: LonLatBox): number[][][] {
+  const out: number[][][] = [];
+  for (const r of rings) { const c = clipRingToBox(r, b); if (c) out.push(c); }
+  return out;
+}
+
 /**
  * Compute coverage of `parcel` by `features`. `pin` (lon/lat) is optional.
  * Pure; never throws (a feature that cannot be intersected is reported).
@@ -136,6 +218,7 @@ export function computeCoverage(
 ): Coverage {
   const subject = projectParcel(parcel);
   const parcelArea = planarArea(subject);
+  const win = parcelWindow(parcel);
   const byKey = new Map<string, { pieces: PcMulti[]; raw: number; features: number }>();
   const failed = new Set<string>(opts.missingGeometry ?? []);
   const seen = new Set<string>();
@@ -153,7 +236,7 @@ export function computeCoverage(
     let clipped: PcMulti | null = null;
     for (const grid of [0, 0.01, 0.1]) {
       try {
-        const raw = "rings" in f ? evenOdd(f.rings, grid) : f.polygons.length ? polygonClipping.union(snapMulti(projectMulti(f.polygons), grid)) : [];
+        const raw = "rings" in f ? evenOdd(clipRingsToBox(f.rings, win), grid) : f.polygons.length ? polygonClipping.union(snapMulti(projectMulti(f.polygons), grid)) : [];
         if (!raw.length) { clipped = []; break; }
         clipped = polygonClipping.intersection(subjectAt(grid), raw);
         if (grid) snapped.set(f.key, Math.max(grid, snapped.get(f.key) ?? 0));
