@@ -41,7 +41,7 @@ export const USE_TERMS: UseTerm[] = [
   { pattern: "warehous(?:e|es|ing)|storage(?: facility)?|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
   { pattern: "offices?", label: "office", family: "office", display: "Office" },
   { pattern: "manufacturing(?: plant| facility)?|factory|industrial(?: facility| building| plant)?|plant", label: "manufacturing", family: "industrial", display: "Manufacturing" },
-  { pattern: "auto(?:motive)? repair(?: shop)?|body shop|car wash|dealership", label: "automotive", family: "automotive", display: "Automotive" },
+  { pattern: "gas(?:oline)? station|fuel station|service station|gasolinera|auto(?:motive)? repair(?: shop)?|body shop|car wash|dealership", label: "automotive", family: "automotive", display: "Automotive" },
   // "bar" is its own use (the KB distinguishes Bar from Restaurant), kept in
   // the food family so land-use reasoning treats it like food service.
   { pattern: "juice bar|bar|nightclub|tavern|pub", label: "bar", family: "food", display: "Bar" },
