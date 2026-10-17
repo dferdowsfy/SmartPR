@@ -148,8 +148,18 @@ const NON_PREMISES = /online|remote|home|mobile|food truck/i;
  * a renovation, an address). Picks the option matching the use, else the
  * first physical option the business type allows. Null when the description
  * does not establish premises — then the user is asked.
+ *
+ * `pickFirst: false` is for the generic all-types list (no business type yet,
+ * or one without its own list): its first physical option ("Commercial
+ * Office") says nothing about this business, so with no use match the user
+ * is asked instead (Run 16: a confirmed address turned a coffee hacienda and a
+ * boatyard into "Commercial Office" with no question).
  */
-export function locationTypeFromScenario(ctx: ScenarioContext | null, allowed: readonly string[]): string | null {
+export function locationTypeFromScenario(
+  ctx: ScenarioContext | null,
+  allowed: readonly string[],
+  opts: { pickFirst?: boolean } = {},
+): string | null {
   if (!ctx) return null;
   const p = ctx.property;
   const pr = ctx.project;
@@ -172,7 +182,7 @@ export function locationTypeFromScenario(ctx: ScenarioContext | null, allowed: r
       if (fams.includes(fam) && physical.includes(label)) return label;
     }
   }
-  return physical[0];
+  return opts.pickFirst === false ? null : physical[0];
 }
 
 /** The single KB business type the scenario's activity resolves to, if exactly one. */

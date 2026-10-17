@@ -2422,7 +2422,12 @@ export default function SmartPRIntake() {
       municipality: mergedScenario.property.municipality?.value ?? null,
       business_structure: entity && entity.source !== 'inferred' ? entity.value : null,
       business_type: businessType,
-      location_type: locationTypeFromScenario(mergedScenario, LOCATION_TYPES_BY_BUSINESS_TYPE[businessType ?? profile.business_type] || LOCATION_TYPES),
+      // Run 16: only a business type's own list has a meaningful first
+      // option; the generic list's first ("Commercial Office") is no answer.
+      location_type: (() => {
+        const ownList = LOCATION_TYPES_BY_BUSINESS_TYPE[businessType ?? profile.business_type];
+        return locationTypeFromScenario(mergedScenario, ownList || LOCATION_TYPES, { pickFirst: !!ownList });
+      })(),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- KB is module state refreshed with kbReady
   }, [mergedScenario, scenarioActive, projectIntent, profile.business_type, kbReady]);
