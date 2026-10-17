@@ -59,6 +59,31 @@ const FLEET_BUCKETS_WITH_VEHICLES = ["1-3", "4-10", "10+"];
 const SIGNAGE_TYPES_WITH_SIGN = ["Wall Sign", "Freestanding Sign", "Illuminated Sign", "Digital Sign"];
 const PHYSICAL_KB_LOCATION_TYPES = ["Commercial Facility", "Industrial Facility"];
 
+/**
+ * Business types whose own KB rule requires DOC_PROFESSIONAL_LICENSE with no
+ * condition (verify_existing, not heuristic), beyond the licensed professions
+ * listed in the registry below. Asking "Will professional licenses be required
+ * for staff?" for them cannot change the outcome.
+ */
+export const LICENSED_BY_OWN_RULE_BUSINESS_TYPES: readonly string[] = [
+  "BT_MEDICAL_OFFICE",
+  "BT_DENTAL_OFFICE",
+  "BT_PHARMACY",
+  "BT_CLINICAL_LABORATORY",
+  "BT_MENTAL_HEALTH_PRACTICE",
+  "BT_PHYSICAL_THERAPY_CLINIC",
+  "BT_VETERINARY_CLINIC",
+  "BT_URGENT_CARE_CENTER",
+  "BT_MEDICAL_SPA",
+  "BT_HOME_HEALTH_AGENCY",
+  "BT_APPRAISAL_FIRM",
+  "BT_BARBERSHOP",
+  "BT_TATTOO_SHOP",
+  "BT_BEAUTY_SALON",
+  "BT_NAIL_SALON",
+  "BT_ESTHETICS_STUDIO",
+];
+
 // --- Small builders keep the registry readable ------------------------------
 
 const det = (
@@ -636,6 +661,19 @@ export const INTAKE_RELATIONSHIPS: IntakeRelationship[] = [
   ].map((id) =>
     fromBusinessType(`REL_${id}_LICENSED`, id, [det("Q_PROFESSIONAL_LICENSES", true)],
       "This profession cannot be practised in Puerto Rico without a licence.")
+  ),
+  // Run 18 (live 2026-10-17, Sabana Grande tattoo studio): these business
+  // types carry their OWN unconditional professional-licence rule in
+  // rules.json (verify_existing, not heuristic: Ley 318-1999 tattoo artists,
+  // Ley 146-1968 barbers, Ley 9-1972 beauty specialists, the health examining
+  // boards, appraisers). The intake still asked "Will professional licenses be
+  // required for staff?", and a No changed nothing: the card stayed Required.
+  // The business type already settles the question, so it is shown as settled
+  // instead of asked. LICENSED_BY_OWN_RULE_BUSINESS_TYPES is checked against
+  // rules.json in relationships.test.ts so the two cannot drift apart.
+  ...LICENSED_BY_OWN_RULE_BUSINESS_TYPES.map((id) =>
+    fromBusinessType(`REL_${id}_LICENSED`, id, [det("Q_PROFESSIONAL_LICENSES", true)],
+      "This business type's own rule requires a professional licence, so the question is already settled.")
   ),
 
   // --- Tourism & lodging ----------------------------------------------------

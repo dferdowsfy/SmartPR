@@ -245,18 +245,18 @@
     "label": "Food Served"
   },
   {
-    "id": "IF_question__Q_FOOD_DELIVERY",
-    "fact_address": "question:Q_FOOD_DELIVERY",
-    "fact_type": "question",
-    "fact_key": "Q_FOOD_DELIVERY",
-    "label": "Food Delivery"
-  },
-  {
     "id": "IF_question__Q_FOOD_SOLD",
     "fact_address": "question:Q_FOOD_SOLD",
     "fact_type": "question",
     "fact_key": "Q_FOOD_SOLD",
     "label": "Food Sold"
+  },
+  {
+    "id": "IF_question__Q_FOOD_DELIVERY",
+    "fact_address": "question:Q_FOOD_DELIVERY",
+    "fact_type": "question",
+    "fact_key": "Q_FOOD_DELIVERY",
+    "label": "Food Delivery"
   },
   {
     "id": "IF_question__Q_HEALTHCARE_SERVICES",
@@ -672,6 +672,62 @@
     "label": "Bt Mortgage Broker"
   },
   {
+    "id": "IF_business_type__BT_PHARMACY",
+    "fact_address": "business_type:BT_PHARMACY",
+    "fact_type": "business_type",
+    "fact_key": "BT_PHARMACY",
+    "label": "Bt Pharmacy"
+  },
+  {
+    "id": "IF_business_type__BT_VETERINARY_CLINIC",
+    "fact_address": "business_type:BT_VETERINARY_CLINIC",
+    "fact_type": "business_type",
+    "fact_key": "BT_VETERINARY_CLINIC",
+    "label": "Bt Veterinary Clinic"
+  },
+  {
+    "id": "IF_business_type__BT_APPRAISAL_FIRM",
+    "fact_address": "business_type:BT_APPRAISAL_FIRM",
+    "fact_type": "business_type",
+    "fact_key": "BT_APPRAISAL_FIRM",
+    "label": "Bt Appraisal Firm"
+  },
+  {
+    "id": "IF_business_type__BT_BARBERSHOP",
+    "fact_address": "business_type:BT_BARBERSHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_BARBERSHOP",
+    "label": "Bt Barbershop"
+  },
+  {
+    "id": "IF_business_type__BT_TATTOO_SHOP",
+    "fact_address": "business_type:BT_TATTOO_SHOP",
+    "fact_type": "business_type",
+    "fact_key": "BT_TATTOO_SHOP",
+    "label": "Bt Tattoo Shop"
+  },
+  {
+    "id": "IF_business_type__BT_BEAUTY_SALON",
+    "fact_address": "business_type:BT_BEAUTY_SALON",
+    "fact_type": "business_type",
+    "fact_key": "BT_BEAUTY_SALON",
+    "label": "Bt Beauty Salon"
+  },
+  {
+    "id": "IF_business_type__BT_NAIL_SALON",
+    "fact_address": "business_type:BT_NAIL_SALON",
+    "fact_type": "business_type",
+    "fact_key": "BT_NAIL_SALON",
+    "label": "Bt Nail Salon"
+  },
+  {
+    "id": "IF_business_type__BT_ESTHETICS_STUDIO",
+    "fact_address": "business_type:BT_ESTHETICS_STUDIO",
+    "fact_type": "business_type",
+    "fact_key": "BT_ESTHETICS_STUDIO",
+    "label": "Bt Esthetics Studio"
+  },
+  {
     "id": "IF_business_type__BT_AIRBNB_SHORT_TERM_RENTAL",
     "fact_address": "business_type:BT_AIRBNB_SHORT_TERM_RENTAL",
     "fact_type": "business_type",
@@ -917,27 +973,6 @@
     "label": "Bt Livestock Operation"
   },
   {
-    "id": "IF_business_type__BT_BEAUTY_SALON",
-    "fact_address": "business_type:BT_BEAUTY_SALON",
-    "fact_type": "business_type",
-    "fact_key": "BT_BEAUTY_SALON",
-    "label": "Bt Beauty Salon"
-  },
-  {
-    "id": "IF_business_type__BT_BARBERSHOP",
-    "fact_address": "business_type:BT_BARBERSHOP",
-    "fact_type": "business_type",
-    "fact_key": "BT_BARBERSHOP",
-    "label": "Bt Barbershop"
-  },
-  {
-    "id": "IF_business_type__BT_NAIL_SALON",
-    "fact_address": "business_type:BT_NAIL_SALON",
-    "fact_type": "business_type",
-    "fact_key": "BT_NAIL_SALON",
-    "label": "Bt Nail Salon"
-  },
-  {
     "id": "IF_business_type__BT_SPA",
     "fact_address": "business_type:BT_SPA",
     "fact_type": "business_type",
@@ -952,20 +987,6 @@
     "label": "Bt Massage Therapy Studio"
   },
   {
-    "id": "IF_business_type__BT_ESTHETICS_STUDIO",
-    "fact_address": "business_type:BT_ESTHETICS_STUDIO",
-    "fact_type": "business_type",
-    "fact_key": "BT_ESTHETICS_STUDIO",
-    "label": "Bt Esthetics Studio"
-  },
-  {
-    "id": "IF_business_type__BT_TATTOO_SHOP",
-    "fact_address": "business_type:BT_TATTOO_SHOP",
-    "fact_type": "business_type",
-    "fact_key": "BT_TATTOO_SHOP",
-    "label": "Bt Tattoo Shop"
-  },
-  {
     "id": "IF_business_type__BT_MUSIC_VENUE",
     "fact_address": "business_type:BT_MUSIC_VENUE",
     "fact_type": "business_type",
@@ -978,34 +999,6 @@
     "fact_type": "business_type",
     "fact_key": "BT_THEATER",
     "label": "Bt Theater"
-  },
-  {
-    "id": "IF_business_type__BT_SOLAR_INSTALLER",
-    "fact_address": "business_type:BT_SOLAR_INSTALLER",
-    "fact_type": "business_type",
-    "fact_key": "BT_SOLAR_INSTALLER",
-    "label": "Bt Solar Installer"
-  },
-  {
-    "id": "IF_question__Q_RENEWABLE_INSTALL",
-    "fact_address": "question:Q_RENEWABLE_INSTALL",
-    "fact_type": "question",
-    "fact_key": "Q_RENEWABLE_INSTALL",
-    "label": "Renewable Install"
-  },
-  {
-    "id": "IF_business_type__BT_BATTERY_STORAGE_INSTALLER",
-    "fact_address": "business_type:BT_BATTERY_STORAGE_INSTALLER",
-    "fact_type": "business_type",
-    "fact_key": "BT_BATTERY_STORAGE_INSTALLER",
-    "label": "Bt Battery Storage Installer"
-  },
-  {
-    "id": "IF_business_type__BT_RENEWABLE_ENERGY_COMPANY",
-    "fact_address": "business_type:BT_RENEWABLE_ENERGY_COMPANY",
-    "fact_type": "business_type",
-    "fact_key": "BT_RENEWABLE_ENERGY_COMPANY",
-    "label": "Bt Renewable Energy Company"
   },
   {
     "id": "IF_business_type__BT_CONSTRUCTION_GOVERNMENT_CONTRACTOR",

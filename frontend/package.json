@@ -41,7 +41,7 @@
     "test:locations:e2e": "tsx tests/passport-location.e2e.mts",
     "test:requirements:e2e": "tsx tests/requirements-checklist.e2e.mts",
     "test:reasoning-paths": "tsx tests/reasoning-paths/run.mts",
-    "test:intake:scenario": "tsx --test src/app/ai/intake/scenario/*.test.ts src/app/ai/intake/infoNeeds.test.ts src/app/ai/intake/caribeDemo.test.ts src/app/ai/intake/linkBusiness.test.ts",
+    "test:intake:scenario": "tsx --test src/app/ai/intake/scenario/*.test.ts src/app/ai/intake/infoNeeds.test.ts src/app/ai/intake/caribeDemo.test.ts src/app/ai/intake/linkBusiness.test.ts src/app/ai/intake/settledSources.test.ts",
     "billing:verify": "tsx scripts/verify-stripe-prices.mts",
     "geo:capture": "tsx scripts/geo-capture.mts",
     "geo:drift": "tsx scripts/geo-drift.mts"
