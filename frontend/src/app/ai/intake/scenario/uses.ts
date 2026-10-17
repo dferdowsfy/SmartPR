@@ -38,7 +38,13 @@ export interface UseTerm {
 // Order matters: longer / more specific phrases first.
 export const USE_TERMS: UseTerm[] = [
   { pattern: "day[\\s-]?care(?: center)?|child[\\s-]?care(?: center)?|pre-?school", label: "daycare", family: "childcare", display: "Daycare" },
-  { pattern: "warehous(?:e|es|ing)|storage(?: facility)?|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
+  // An open-air storage YARD or LOT (boats on land, towed vehicles) is not a
+  // warehouse building: "dry-storage yard", "vehicle storage yard", "boat
+  // storage" leave the use unread so the user is asked. Live Run 16/17: a
+  // boat-repair dry-storage yard (Arroyo) and a tow yard (Barceloneta) came
+  // back as Location Type "Warehouse" and Business Type "Warehouse Operator /
+  // Distributor" from the word "storage" alone.
+  { pattern: "warehous(?:e|es|ing)|(?<!(?:dry|boat|vehicle|car|outdoor|open)[\\s-])storage(?![\\s-]+(?:yards?|lots?)\\b)(?: facility)?|distribution cent(?:er|re)", label: "warehouse", family: "storage", display: "Warehouse" },
   { pattern: "offices?", label: "office", family: "office", display: "Office" },
   { pattern: "manufacturing(?: plant| facility)?|factory|industrial(?: facility| building| plant)?|plant", label: "manufacturing", family: "industrial", display: "Manufacturing" },
   { pattern: "gas(?:oline)? station|fuel station|service station|gasolinera|auto(?:motive)? repair(?: shop)?|body shop|car wash|dealership", label: "automotive", family: "automotive", display: "Automotive" },
