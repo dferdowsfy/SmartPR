@@ -52,7 +52,13 @@ export const USE_TERMS: UseTerm[] = [
   // the food family so land-use reasoning treats it like food service.
   { pattern: "juice bar|bar|nightclub|tavern|pub", label: "bar", family: "food", display: "Bar" },
   { pattern: "restaurant|caf[eé]|coffee\\s*shop|coffeehouse|bakery|commercial kitchen|food service", label: "restaurant", family: "food", display: "Restaurant / food service" },
-  { pattern: "retail(?: store| space)?|store(?:front)?|shop", label: "retail", family: "retail", display: "Retail" },
+  // A trade "shop" where things are made (welding, metal fabrication, machine,
+  // woodworking / cabinet shops) is not a store: the bare word "shop" left the
+  // use unread as retail. Live Run 20: a welding and metal fabrication shop
+  // (iron gates, rejas) in Cayey got Location Type "Retail Storefront" right
+  // after "Use this location", with and without the interpreter. These leave
+  // the use unread so the user is asked.
+  { pattern: "retail(?: store| space)?|store(?:front)?|(?<!(?:weld(?:ing)?|fabrication|fabricating|machine|machining|metal|metalwork(?:ing)?|iron(?:work)?|steel|woodwork(?:ing)?|wood|cabinet(?:ry)?|carpentry|millwork)[\\s-])shop", label: "retail", family: "retail", display: "Retail" },
   { pattern: "(?:medical )?clinic|medical office|pharmacy|laboratory", label: "clinic", family: "healthcare", display: "Clinic / healthcare" },
   { pattern: "private school|school|tutoring center|training cent(?:er|re)", label: "school", family: "education", display: "School" },
   { pattern: "gym|fitness (?:studio|center)|event venue|church|theater|theatre", label: "assembly", family: "assembly", display: "Assembly / venue" },
