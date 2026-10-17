@@ -80,3 +80,40 @@ export function locationTypeInAllowed(current: string | null | undefined, allowe
   if (!group) return "";
   return allowed.find((option) => group.some((label) => canon(label) === canon(option))) ?? "";
 }
+
+/**
+ * G9: a location type needs no "Needs confirmation" badge when the business
+ * type's own list offers it first, or when it names an ordinary premises
+ * (storefront, shop, office, warehouse, facility) that list offers.
+ */
+export function locationTypeSettled(locationType: string | null | undefined, allowed: readonly string[]): boolean {
+  const loc = (locationType || "").trim();
+  return !!loc && allowed.includes(loc) && (allowed[0] === loc || /storefront|store|shop|office|warehouse|facility/i.test(loc));
+}
+
+/**
+ * Run 17 (live, Morovis solar installer): the interpreter suggested "Mixed
+ * Use Property" at mid confidence, which the Solar Installer list does not
+ * offer, so Location Type was flagged "Needs confirmation". The description's
+ * own read then replaced the invalid value with "Commercial Office", but the
+ * flag stayed on the field. A flagged field is inert for the requirements
+ * engine, so the location-derived Permiso Único silently disappeared from
+ * the report while the form showed a settled office location.
+ *
+ * The flag belongs to the value it was raised for. When the visible value is
+ * the description's own read (not the interpreter's suggestion), the user has
+ * not touched the field, and that value would not have needed a badge under
+ * G9, the stale flag is cleared.
+ */
+export function staleLocationConfirmation(input: {
+  locationType: string | null | undefined;
+  flagged: boolean;
+  userEdited: boolean;
+  descriptionValue: string | null | undefined;
+  allowed: readonly string[];
+}): boolean {
+  const loc = (input.locationType || "").trim();
+  if (!loc || !input.flagged || input.userEdited) return false;
+  if ((input.descriptionValue || "").trim() !== loc) return false;
+  return locationTypeSettled(loc, input.allowed);
+}

@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { KB } from "../../kb.ts";
 import type { KnowledgeBase } from "../../rulesEngine.ts";
 import { interpretScenario } from "./scenario/interpret.ts";
+import { locationTypeSettled, staleLocationConfirmation } from "../../locationTypes.ts";
 import { evaluateScenario } from "./scenario/graph.ts";
 import { identityFieldsKnown, mergePassportIntoScenario, type PassportSnapshot } from "./scenario/passport.ts";
 import {
@@ -94,11 +95,80 @@ describe("the description answers facts once", () => {
     );
     assert.equal(locationTypeFromScenario(hacienda, ALL_LOCATIONS, { pickFirst: false }), null);
     const boatyard = withAddress("Opening a boat repair and dry-storage yard for small fishing and recreational boats by the shore in Arroyo");
-    assert.notEqual(locationTypeFromScenario(boatyard, ALL_LOCATIONS, { pickFirst: false }), "Commercial Office");
+    assert.equal(locationTypeFromScenario(boatyard, ALL_LOCATIONS, { pickFirst: false }), null);
     // A use the description names still answers it from the generic list.
     assert.equal(locationTypeFromScenario(ctx, ALL_LOCATIONS, { pickFirst: false }), "Industrial Facility");
     // A business type's own list keeps its first option as the default.
     assert.equal(locationTypeFromScenario(hacienda, ["Agricultural Property", "Retail Storefront"]), "Agricultural Property");
+  });
+});
+
+// Run 16 follow-through / Run 17 (live): "dry-storage yard" (boats kept on
+// land) and "vehicle storage yard" (a tow yard) read as a warehouse building:
+// Location Type became "Warehouse" right after "Use this location" and the
+// business type resolved to the Warehouse Operator / Distributor pair. An
+// open-air storage yard is not a warehouse; the user is asked instead.
+describe("storage yards are not warehouses", () => {
+  const withAddress = (text: string) => {
+    const c = interpretScenario(text);
+    c.property.address = { value: "Carretera 3, Arroyo", source: "explicit", confidence: 0.95, evidenceText: "Carretera 3" };
+    return c;
+  };
+  it("a boat dry-storage yard or a tow yard leaves Location Type and Business Type to the user", () => {
+    for (const text of [
+      "Opening a boat repair and dry-storage yard for small fishing and recreational boats by the shore in Arroyo",
+      "Starting a tow truck (grúa) service with two flatbed trucks and a fenced vehicle storage yard on Carretera 2 in Barceloneta",
+      "Opening an outdoor storage lot for trailers and containers in Cataño",
+    ]) {
+      const c = withAddress(text);
+      assert.notEqual(c.property.proposedUse?.value, "warehouse", text);
+      assert.equal(locationTypeFromScenario(c, ALL_LOCATIONS, { pickFirst: false }), null, text);
+      assert.equal(businessTypeFromScenario(c, kb), null, text);
+    }
+  });
+  it("a storage building still reads as a warehouse", () => {
+    for (const text of [
+      "Opening a distribution warehouse in Guaynabo",
+      "Opening a self-storage facility with 80 units in Ceiba",
+      "Opening a cold storage facility for produce in Santa Isabel",
+    ]) {
+      const c = withAddress(text);
+      assert.equal(c.property.proposedUse?.value, "warehouse", text);
+      assert.equal(locationTypeFromScenario(c, ALL_LOCATIONS, { pickFirst: false }), "Warehouse", text);
+    }
+  });
+});
+
+// Run 17 (live, Morovis solar installer): the interpreter suggested "Mixed
+// Use Property" (not offered for Solar Installer), so Location Type was
+// flagged "Needs confirmation". The description's own read then filled
+// "Commercial Office", but the flag stayed, the field stayed inert for the
+// engine, and Permiso Único silently dropped from the report.
+describe("a stale location confirmation flag does not outlive its value", () => {
+  const SOLAR = ["Commercial Office", "Warehouse", "Agricultural Property", "Vacant Land", "Outdoor / Open Land"];
+  it("clears when the visible value is the description's own settled read", () => {
+    assert.equal(
+      staleLocationConfirmation({ locationType: "Commercial Office", flagged: true, userEdited: false, descriptionValue: "Commercial Office", allowed: SOLAR }),
+      true,
+    );
+  });
+  it("keeps the flag when the value is the interpreter's own suggestion, the user edited it, or G9 would badge it", () => {
+    // The interpreter's suggestion is still showing (the description read differs).
+    assert.equal(staleLocationConfirmation({ locationType: "Vacant Land", flagged: true, userEdited: false, descriptionValue: "Commercial Office", allowed: SOLAR }), false);
+    // No description read at all.
+    assert.equal(staleLocationConfirmation({ locationType: "Commercial Office", flagged: true, userEdited: false, descriptionValue: null, allowed: SOLAR }), false);
+    // The user touched the field: their choice is never second-guessed.
+    assert.equal(staleLocationConfirmation({ locationType: "Commercial Office", flagged: true, userEdited: true, descriptionValue: "Commercial Office", allowed: SOLAR }), false);
+    // A value G9 would still badge (not first, not an ordinary premises).
+    assert.equal(staleLocationConfirmation({ locationType: "Outdoor / Open Land", flagged: true, userEdited: false, descriptionValue: "Outdoor / Open Land", allowed: SOLAR }), false);
+    // Not flagged: nothing to clear.
+    assert.equal(staleLocationConfirmation({ locationType: "Commercial Office", flagged: false, userEdited: false, descriptionValue: "Commercial Office", allowed: SOLAR }), false);
+  });
+  it("G9 settles the list's first option and ordinary premises only when the list offers them", () => {
+    assert.equal(locationTypeSettled("Commercial Office", SOLAR), true);
+    assert.equal(locationTypeSettled("Warehouse", SOLAR), true);
+    assert.equal(locationTypeSettled("Vacant Land", SOLAR), false);
+    assert.equal(locationTypeSettled("Mixed Use Property", SOLAR), false);
   });
 });
 

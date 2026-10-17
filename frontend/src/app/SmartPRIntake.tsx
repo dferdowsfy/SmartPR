@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import JSZip from 'jszip';
 import { L } from './i18n';
 import { computeRequirementsFromKB, requirementForProcessDocument, documentIdForCode, runRulesEngineForProfile, buildEngineInput, KB, INTAKE_INDUSTRIES, initKbFromServer, discoveryQuestionsForBusinessType, readinessWeightFor, businessTypeNamesForIndustry, downloadKindLabel, agencySiteUrl, UNANSWERED_TRIGGER_QUESTIONS } from './kb';
-import { isOnlineOnlyLocation, locationTypeInAllowed } from './locationTypes';
+import { isOnlineOnlyLocation, locationTypeInAllowed, locationTypeSettled, staleLocationConfirmation } from './locationTypes';
 import { ACTIVE_JURISDICTION } from './jurisdictions';
 import { translateTriggerReason } from './triggerReason';
 import { buildRequirementGuidance, legalBasisFor, sourceRowValue, newPremisesContextLabel, POTENTIAL_ADVISORY_REASON_ES } from './requirementGuidance';
@@ -2578,6 +2578,20 @@ export default function SmartPRIntake() {
   // marked as needing the user's confirmation. Cleared when the user edits or
   // confirms the field.
   const [confirmationsNeeded, setConfirmationsNeeded] = useState<Record<string, boolean>>({});
+  // A "Needs confirmation" flag raised for an interpreter suggestion the
+  // business type does not offer must not stick to the description's own
+  // read that replaced it (live Run 17: the stale flag made the location
+  // inert and Permiso Único silently dropped). See staleLocationConfirmation.
+  useEffect(() => {
+    const stale = staleLocationConfirmation({
+      locationType: profile.location_type,
+      flagged: !!confirmationsNeeded.location_type,
+      userEdited: userEditedRef.current.has('location_type'),
+      descriptionValue: scenarioProfileFill?.location_type ?? null,
+      allowed: LOCATION_TYPES_BY_BUSINESS_TYPE[profile.business_type] || LOCATION_TYPES,
+    });
+    if (stale) setConfirmationsNeeded((prev) => (prev.location_type ? { ...prev, location_type: false } : prev));
+  }, [profile.location_type, profile.business_type, scenarioProfileFill, confirmationsNeeded.location_type]);
 
   /** Clear a "needs confirmation" flag once the user manually edits or confirms the field. */
   /**
@@ -3514,7 +3528,7 @@ export default function SmartPRIntake() {
         || (typeof profilePatch.business_type === 'string' ? profilePatch.business_type : null);
       const loc = typeof fullProfile.location_type === 'string' ? fullProfile.location_type : null;
       const allowed = bt ? (LOCATION_TYPES_BY_BUSINESS_TYPE[bt] || LOCATION_TYPES) : LOCATION_TYPES;
-      const clearLoc = !!loc && allowed.includes(loc) && (allowed[0] === loc || /storefront|store|shop|office|warehouse|facility/i.test(loc));
+      const clearLoc = locationTypeSettled(loc, allowed);
       const keys = clearLoc ? confirmKeys.filter((k) => k !== 'location_type') : confirmKeys;
       if (keys.length > 0) {
         setConfirmationsNeeded((prev) => {
