@@ -78,6 +78,28 @@ describe("the description answers facts once", () => {
   it("never picks a non-premises option", () => {
     assert.equal(locationTypeFromScenario(ctx, ["Home-Based Business", "Online / Remote Only"]), null);
   });
+
+  // Run 16 (live): once the user confirmed an address, a coffee hacienda with
+  // guest cabins (Jayuya) and a boat-repair yard (Arroyo) — business types with
+  // no location list of their own — were silently filled as "Commercial
+  // Office", the generic list's first physical option, and never asked.
+  it("asks instead of defaulting to the generic list's first option", () => {
+    const withAddress = (text: string) => {
+      const c = interpretScenario(text);
+      c.property.address = { value: "Carretera 144, Jayuya", source: "explicit", confidence: 0.95, evidenceText: "Carretera 144" };
+      return c;
+    };
+    const hacienda = withAddress(
+      "Opening an agrotourism coffee hacienda in Jayuya with coffee farm tours and four rental guest cabins for overnight visitors",
+    );
+    assert.equal(locationTypeFromScenario(hacienda, ALL_LOCATIONS, { pickFirst: false }), null);
+    const boatyard = withAddress("Opening a boat repair and dry-storage yard for small fishing and recreational boats by the shore in Arroyo");
+    assert.notEqual(locationTypeFromScenario(boatyard, ALL_LOCATIONS, { pickFirst: false }), "Commercial Office");
+    // A use the description names still answers it from the generic list.
+    assert.equal(locationTypeFromScenario(ctx, ALL_LOCATIONS, { pickFirst: false }), "Industrial Facility");
+    // A business type's own list keeps its first option as the default.
+    assert.equal(locationTypeFromScenario(hacienda, ["Agricultural Property", "Retail Storefront"]), "Agricultural Property");
+  });
 });
 
 describe("tiers by branch", () => {
