@@ -17,6 +17,7 @@ import {
   normalizeNominatimPlace,
   politeProvider,
   searchInNamedMunicipio,
+  isAreaCentroid,
   routeRefQuery,
   stripMunicipioSuffix,
 } from "./index.ts";
@@ -298,6 +299,35 @@ test("named municipio: candidates in the municipio the query names lead (Run 12)
   assert.equal((await searchInNamedMunicipio(g, "Calle Peñuelas, Caguas"))[0]!.municipality, "Caguas");
   // No municipio named: provider order untouched.
   assert.deepEqual((await searchInNamedMunicipio(g, "Calle Sin Pueblo")).map((c) => c.municipality), ["Caguas", "Ponce"]);
+});
+
+test("named municipio fallback: the town's place node leads, not the boundary centroid (Run 18)", async () => {
+  // Live Run 18: "Calle Matienzo Cintrón, Las Marías" has no OSM match, so the
+  // municipio itself was searched. Nominatim ranks the boundary relation
+  // first, and its point (the polygon centroid) sits in barrio Palma Escrita,
+  // ~1.8 km from the pueblo. The town node must lead.
+  const mk = (lat: number, lon: number, id: string): GeocodeCandidate => ({
+    latitude: lat, longitude: lon, formatted_address: "Las Marías, Puerto Rico, 00670, United States", address_line_1: null,
+    city: null, municipality: "Las Marías", state_or_region: "PR", postal_code: "00670", country_code: "PR",
+    place_source: "nominatim", place_source_id: id,
+  });
+  const centroid = mk(18.2388706, -66.9825882, "relation/1898390");
+  const town = mk(18.2522446, -66.9918133, "node/151507693");
+  const answers: Record<string, GeocodeCandidate[]> = {
+    "Calle Matienzo Cintrón, Las Marías, Puerto Rico": [],
+    "Las Marías, Puerto Rico": [centroid, town],
+  };
+  const g = { search: async (q: string) => answers[q] ?? [] };
+  const r = await searchInNamedMunicipio(g, "Calle Matienzo Cintrón, Las Marías, Puerto Rico");
+  assert.equal(r[0]!.place_source_id, "node/151507693", "the pueblo's place node leads");
+  assert.equal(r.length, 1);
+  // When only the boundary is offered (e.g. San Juan), it is still used.
+  const onlyArea = { search: async (q: string) => (q === "Las Marías, Puerto Rico" ? [centroid] : []) };
+  assert.equal((await searchInNamedMunicipio(onlyArea, "Calle X, Las Marías, Puerto Rico"))[0]!.place_source_id, "relation/1898390");
+  assert.equal(isAreaCentroid(centroid), true);
+  assert.equal(isAreaCentroid(town), false);
+  assert.equal(isAreaCentroid({ place_source_id: "way/1" }), false);
+  assert.equal(isAreaCentroid({ place_source_id: null }), false);
 });
 
 test("searchInNamedMunicipio: official boundaries decide when the provider label disagrees (Run 14)", async () => {
