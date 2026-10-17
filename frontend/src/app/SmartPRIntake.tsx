@@ -49,6 +49,7 @@ import { kbQuestionIdFor, mirrorAnswersToProfile, prefillKeysForPatch, questionI
 // question it can answer. It produces facts only — requirements still come
 // exclusively from the rules engine.
 import { resolveIntakeFacts, type ResolutionResult } from './ai/intake/relationships';
+import { withoutUnconfirmedSources } from './ai/intake/settledSources';
 import type { IntakePatch, ValidatedInterpretation } from './ai/intake/validateInterpretation';
 import { toIntakePatch } from './ai/intake/validateInterpretation';
 import {
@@ -2578,6 +2579,14 @@ export default function SmartPRIntake() {
   // marked as needing the user's confirmation. Cleared when the user edits or
   // confirms the field.
   const [confirmationsNeeded, setConfirmationsNeeded] = useState<Record<string, boolean>>({});
+  // What may settle a question by derivation: the same facts minus every
+  // "Needs confirmation" key, because the engine treats those as inert. A
+  // flagged "2 employees" must not settle "Will employees be hired?" while the
+  // engine ignores it (live Run 18: employer registrations silently dropped).
+  const settledFacts = React.useMemo(() => {
+    const src = withoutUnconfirmedSources(profile, discoveryAnswers, confirmationsNeeded);
+    return src.profile === profile && src.answers === discoveryAnswers ? intakeFacts : resolveFactsFor(src.profile, src.answers);
+  }, [profile, discoveryAnswers, confirmationsNeeded, intakeFacts]);
   // A "Needs confirmation" flag raised for an interpreter suggestion the
   // business type does not offer must not stick to the description's own
   // read that replaced it (live Run 17: the stale flag made the location
@@ -3165,23 +3174,23 @@ export default function SmartPRIntake() {
     (wizardKey: string): boolean => {
       if (reopenedDerivedKeys.includes(wizardKey) || discoveryAnswers[wizardKey] !== undefined) return false;
       const questionId = questionIdForAnswerKey(wizardKey);
-      return questionId !== null && intakeFacts.resolvedQuestionOrigins?.[questionId] === "derived";
+      return questionId !== null && settledFacts.resolvedQuestionOrigins?.[questionId] === "derived";
     },
-    [reopenedDerivedKeys, discoveryAnswers, intakeFacts]
+    [reopenedDerivedKeys, discoveryAnswers, settledFacts]
   );
   const isQuestionPreAnswered = React.useCallback(
     (wizardKey: string): boolean => {
       if (aiPrefilledKeys.includes(wizardKey)) return true;
       if (discoveryAnswers[wizardKey] !== undefined) return false;
       const questionId = questionIdForAnswerKey(wizardKey);
-      if (questionId === null || !intakeFacts.resolvedQuestionIds.has(questionId)) return false;
+      if (questionId === null || !settledFacts.resolvedQuestionIds.has(questionId)) return false;
       // User/explicit facts suppress, and so do deterministic implications
       // (shown on the "already settled" card). Inferred facts never do: a
       // guess is not an answer.
-      const origin = intakeFacts.resolvedQuestionOrigins?.[questionId];
+      const origin = settledFacts.resolvedQuestionOrigins?.[questionId];
       return origin === "user" || origin === "explicit" || derivedSettled(wizardKey);
     },
-    [aiPrefilledKeys, discoveryAnswers, intakeFacts, derivedSettled]
+    [aiPrefilledKeys, discoveryAnswers, settledFacts, derivedSettled]
   );
 
   /** First eligible, unanswered question at or after `start`. */
@@ -3216,7 +3225,7 @@ export default function SmartPRIntake() {
   };
   const derivedSettledQuestions = questionList
     .filter((q) => !aiPrefilledKeys.includes(q.id) && derivedSettled(q.id))
-    .map((q) => ({ id: q.id, text: q.text, value: intakeFacts.questionValues[questionIdForAnswerKey(q.id) ?? ''] === true }));
+    .map((q) => ({ id: q.id, text: q.text, value: settledFacts.questionValues[questionIdForAnswerKey(q.id) ?? ''] === true }));
   // project_only asks zero business-formation questions: the visible profile
   // keeps only the project name and the project municipality; industry,
   // business type, location type, entity type, and headcount never appear.
