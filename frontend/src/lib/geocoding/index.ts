@@ -448,6 +448,14 @@ export function routeRefQuery(query: string): string | null {
   return rewritten === query.trim() ? null : rewritten;
 }
 
+/**
+ * An OSM relation's point is the centroid of an area (a municipio or barrio
+ * boundary), not a place anyone is at. Nodes and ways are real points.
+ */
+export function isAreaCentroid(c: Pick<GeocodeCandidate, "place_source_id">): boolean {
+  return /^relation\//.test(c.place_source_id ?? "");
+}
+
 export async function searchInNamedMunicipio(
   geocoder: Pick<GeocodingProvider, "search">,
   query: string,
@@ -484,7 +492,13 @@ export async function searchInNamedMunicipio(
   const plain = `${named}, Puerto Rico`;
   if (query.trim().toLowerCase() === plain.toLowerCase()) return results;
   const fallback = await geocoder.search(plain, { ...searchOpts, limit: 3 }).catch(() => [] as GeocodeCandidate[]);
-  const lead = fallback.find(inNamed);
+  // Run 18 (live, Las Marías): for "<municipio>, Puerto Rico" OSM ranks the
+  // municipio's boundary relation first, and its point is the polygon's
+  // centroid, not the town. A barbershop "in Las Marías pueblo" whose street
+  // OSM doesn't know was pinned ~1.8 km out in barrio Palma Escrita and the
+  // whole site report described that point. The town / city place node is
+  // where "the place the user named" is, so it leads when it is offered.
+  const lead = fallback.filter((c) => !isAreaCentroid(c)).find(inNamed) ?? fallback.find(inNamed);
   return lead ? [lead, ...outside].slice(0, Math.max(opts.limit ?? 5, 1)) : results;
 }
 
