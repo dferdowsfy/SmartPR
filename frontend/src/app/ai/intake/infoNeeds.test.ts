@@ -139,6 +139,38 @@ describe("storage yards are not warehouses", () => {
   });
 });
 
+// Run 20 (live, Cayey): "a welding and metal fabrication shop that makes iron
+// gates, window bars (rejas) and railings" got Location Type "Retail
+// Storefront" right after "Use this location" (with and without the
+// interpreter), because the bare word "shop" read as the retail use. A shop
+// where things are made is not a store; the user is asked instead.
+describe("trade shops are not storefronts", () => {
+  const withAddress = (text: string) => {
+    const c = interpretScenario(text);
+    c.property.address = { value: "Carretera 1, Cayey", source: "explicit", confidence: 0.95, evidenceText: "Carretera 1" };
+    return c;
+  };
+  it("a welding, machine, sheet-metal or woodworking shop leaves Location Type to the user", () => {
+    for (const text of [
+      "Opening a welding and metal fabrication shop that makes iron gates, window bars (rejas) and railings on Carretera 1 in Cayey",
+      "Opening a machine shop in Bayamón",
+      "Opening a sheet metal shop for HVAC ducts in Carolina",
+      "Opening a cabinet and woodworking shop in Caguas",
+    ]) {
+      const c = withAddress(text);
+      assert.notEqual(c.property.proposedUse?.value, "retail", text);
+      assert.equal(locationTypeFromScenario(c, ALL_LOCATIONS, { pickFirst: false }), null, text);
+    }
+  });
+  it("a store-like shop still reads as retail", () => {
+    for (const text of ["Opening a gift shop in Culebra", "Opening a tire shop in Villalba", "Opening a retail store in Ponce"]) {
+      const c = withAddress(text);
+      assert.equal(c.property.proposedUse?.value, "retail", text);
+      assert.equal(locationTypeFromScenario(c, ALL_LOCATIONS, { pickFirst: false }), "Retail Storefront", text);
+    }
+  });
+});
+
 // Run 17 (live, Morovis solar installer): the interpreter suggested "Mixed
 // Use Property" (not offered for Solar Installer), so Location Type was
 // flagged "Needs confirmation". The description's own read then filled
