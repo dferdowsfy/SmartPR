@@ -19,7 +19,7 @@ import {
   resolveIntakeFacts,
   type ResolutionResult,
 } from "./relationships.ts";
-import { INTAKE_RELATIONSHIPS } from "./relationshipRegistry.ts";
+import { INTAKE_RELATIONSHIPS, LICENSED_BY_OWN_RULE_BUSINESS_TYPES } from "./relationshipRegistry.ts";
 import { questionIdForAnswerKey, WIZARD_KEY_TO_QUESTION } from "./questionKeyMap.ts";
 import { validateInterpretation, toIntakePatch, type RawInterpretation } from "./validateInterpretation.ts";
 
@@ -219,6 +219,49 @@ test("childcare: a daycare definitionally has children present", () => {
 
 test("professional services: an architecture firm needs licensed professionals", () => {
   assert.equal(q(resolve({ business_type: "Architecture Firm" }), "Q_PROFESSIONAL_LICENSES"), true);
+});
+
+// Run 18 (live 2026-10-17, Sabana Grande tattoo studio): the intake asked
+// "Will professional licenses be required for staff?" and a No changed
+// nothing, because the Tattoo Shop's own rule (Ley 318-1999) requires the
+// licence. Business types whose own rule settles it derive the answer.
+test("licensed trades: a tattoo shop, barbershop or salon already settles the professional-licence question", () => {
+  for (const bt of ["Tattoo Shop", "Barbershop", "Beauty Salon", "Nail Salon", "Esthetics Studio", "Physical Therapy Clinic", "Veterinary Clinic", "Pharmacy"]) {
+    assert.equal(q(resolve({ business_type: bt }), "Q_PROFESSIONAL_LICENSES"), true, bt);
+  }
+});
+
+test("licensed trades: the derived list matches the business types whose own rule requires the licence", () => {
+  // Every business type with an unconditional, non-heuristic business-type
+  // rule for DOC_PROFESSIONAL_LICENSE settles the question by derivation.
+  const settledByRule = new Set(
+    (KB.rules as unknown as Array<Record<string, unknown> & { missing_fact_keys?: string[] }>)
+      .filter((r) => r.rule_type === "business_type" && r.requires_document_id === "DOC_PROFESSIONAL_LICENSE"
+        && !r.question_id && r.compliance_mode === "verify_existing" && r.verification !== "heuristic"
+        && !(r.missing_fact_keys ?? []).length)
+      .map((r) => r.business_type_id as string)
+  );
+  const derived = new Set(
+    INTAKE_RELATIONSHIPS
+      .filter((rel) => rel.source.type === "business_type"
+        && rel.effects.some((e) => e.target.key === "Q_PROFESSIONAL_LICENSES" && e.value === true && e.certainty === "deterministic"))
+      .map((rel) => rel.source.key)
+  );
+  for (const bt of settledByRule) assert.ok(derived.has(bt), `${bt} has its own licence rule but still asks the question`);
+  // And the new list names only business types that really have such a rule.
+  for (const bt of LICENSED_BY_OWN_RULE_BUSINESS_TYPES) assert.ok(settledByRule.has(bt), `${bt} has no unconditional licence rule`);
+});
+
+test("licensed trades: settling the question does not change the requirement set", () => {
+  // The user's old No and the derived Yes produce the same documents: the
+  // business type's own rule already requires the licence.
+  for (const bt of ["Tattoo Shop", "Barbershop", "Beauty Salon", "Medical Office", "Veterinary Clinic"]) {
+    const base = { municipalityName: "Sabana Grande", businessTypeName: bt };
+    const no = docsFor({ ...base, answers: { Q_PHYSICAL_LOCATION: true, Q_PROFESSIONAL_LICENSES: false } }).sort();
+    const yes = docsFor({ ...base, answers: { Q_PHYSICAL_LOCATION: true, Q_PROFESSIONAL_LICENSES: true } }).sort();
+    assert.deepEqual(yes, no, bt);
+    assert.ok(yes.includes("DOC_PROFESSIONAL_LICENSE"), bt);
+  }
 });
 
 test("property: owning or leasing the operating space implies a physical location", () => {
